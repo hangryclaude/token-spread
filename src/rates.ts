@@ -36,3 +36,9 @@ export function cardAgeDays(card: RateCard, asOf: Date): number {
   const captured = Date.parse(card.capturedAt + "T00:00:00Z");
   return Math.floor((asOf.getTime() - captured) / 86_400_000);
 }
+
+// Readonly<> is erased at runtime, so freeze the card: a mutated rate would silently
+// change every figure in every report with nothing to show for it in the provenance.
+Object.freeze(RATE_CARD_2026_08_08);
+Object.freeze(RATE_CARD_2026_08_08.rates);
+for (const r of Object.values(RATE_CARD_2026_08_08.rates)) Object.freeze(r);

@@ -15,6 +15,8 @@ export interface Metrics {
   overall: Totals;
   byModel: Record<string, Totals>;
   byProject: Record<string, Totals>;
+  /** Slice 2 budgets per account; the axis has to exist before the ledger does. */
+  byAccount: Record<string, Totals>;
   /** cacheRead / (cacheRead + freshInput). Cache *writes* are excluded from the denominator. */
   cacheHitRate: number;
   skipped: { unknown_model: number; malformed: number };
@@ -40,6 +42,7 @@ export function computeMetrics(events: UsageEvent[], card: RateCard): Metrics {
   const overall = empty();
   const byModel: Record<string, Totals> = {};
   const byProject: Record<string, Totals> = {};
+  const byAccount: Record<string, Totals> = {};
   const skipped = { unknown_model: 0, malformed: 0 };
   const unknown = new Set<string>();
 
@@ -53,16 +56,18 @@ export function computeMetrics(events: UsageEvent[], card: RateCard): Metrics {
 
     byModel[e.model] ??= empty();
     byProject[e.projectId] ??= empty();
+    byAccount[e.accountId] ??= empty();
     add(overall, e, priced.microCents);
     add(byModel[e.model], e, priced.microCents);
     add(byProject[e.projectId], e, priced.microCents);
+    add(byAccount[e.accountId], e, priced.microCents);
   }
 
   const eligible = overall.cacheReadTokens + overall.inputTokens;
   const cacheHitRate = eligible === 0 ? 0 : overall.cacheReadTokens / eligible;
 
   return {
-    overall, byModel, byProject, cacheHitRate, skipped,
+    overall, byModel, byProject, byAccount, cacheHitRate, skipped,
     unknownModels: [...unknown].sort(),
   };
 }

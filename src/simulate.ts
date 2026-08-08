@@ -1,5 +1,6 @@
 import type { Metrics, Totals } from "./metrics";
-import type { ModelRate, RateCard } from "./rates";
+import { costOfEvent } from "./pricing";
+import type { RateCard } from "./rates";
 
 export interface Assumptions {
   /** Integer percents, 0-100. A curve, never a single point. */
@@ -62,7 +63,7 @@ const scale = (b: Bundle, pct: number): Bundle => ({
  * count describes the *old* cache regime and cannot be carried into a simulated one.
  */
 function priceBundle(
-  b: Bundle, rate: ModelRate, cacheTargetPct: number | null, writeOverheadPct: number,
+  b: Bundle, model: string, card: RateCard, cacheTargetPct: number | null, writeOverheadPct: number,
 ): number {
   let fresh = b.inputTokens;
   let read = b.cacheReadTokens;
@@ -75,10 +76,18 @@ function priceBundle(
     written = Math.floor(eligible * writeOverheadPct / 100);
   }
 
-  return fresh * rate.input
-       + read * rate.cacheRead
-       + written * rate.cacheWrite
-       + b.outputTokens * rate.output;
+  // Priced through costOfEvent, never by a second copy of the formula: the simulation
+  // and the invoice must be incapable of disagreeing. The synthetic event carries token
+  // counts into the one pricing function and is never emitted or stored.
+  const priced = costOfEvent({
+    idempotencyKey: "", accountId: "", projectId: "",
+    ts: "", source: "claude_code", model,
+    inputTokens: fresh, cacheReadTokens: read,
+    cacheCreationTokens: written, outputTokens: b.outputTokens,
+  }, card);
+
+  if (!priced.ok) throw new Error(`cannot price simulated bundle on ${model}: ${priced.reason}`);
+  return priced.microCents;
 }
 
 /** Total cost across all models, optionally routing `routePct` of every bundle to the target. */
@@ -86,16 +95,14 @@ function totalCost(
   metrics: Metrics, card: RateCard,
   routePct: number, targetModel: string, cacheTargetPct: number | null, writeOverheadPct: number,
 ): number {
-  const target = card.rates[targetModel];
-  if (!target) throw new Error(`target model not in rate card: ${targetModel}`);
+  if (!card.rates[targetModel]) throw new Error(`target model not in rate card: ${targetModel}`);
 
   let sum = 0;
   for (const [model, totals] of Object.entries(metrics.byModel)) {
-    const rate = card.rates[model];
-    if (!rate) continue; // already bucketed as unknown_model by computeMetrics
+    if (!card.rates[model]) continue; // already bucketed as unknown_model by computeMetrics
     const whole = bundleOf(totals);
-    sum += priceBundle(scale(whole, 100 - routePct), rate, cacheTargetPct, writeOverheadPct);
-    sum += priceBundle(scale(whole, routePct), target, cacheTargetPct, writeOverheadPct);
+    sum += priceBundle(scale(whole, 100 - routePct), model, card, cacheTargetPct, writeOverheadPct);
+    sum += priceBundle(scale(whole, routePct), targetModel, card, cacheTargetPct, writeOverheadPct);
   }
   return sum;
 }
@@ -122,6 +129,15 @@ export function simulate(metrics: Metrics, card: RateCard, a: Assumptions): Simu
     }
   }
 
+  // A target equal to the observed rate is not a behavior change — that traffic is
+  // already happening. Pricing it through the synthesized-write-volume path anyway
+  // charges phantom cache-write cost the real baseline never incurred (writeOverheadPct
+  // has no reason to match whatever the observed regime's actual write ratio was), which
+  // breaks the AC5 floor: "= observed ⇒ $0". Treat "= observed" as "no cache lever
+  // applied" and price the bundle exactly as observed, same as `cacheTargetPct: null`.
+  const cacheTargetPct =
+    a.targetCacheHitPct !== null && a.targetCacheHitPct === observedPct ? null : a.targetCacheHitPct;
+
   const baseline = metrics.overall.microCents;
 
   const routingCurve = a.routableFractionsPct.map((fractionPct) => {
@@ -130,7 +146,7 @@ export function simulate(metrics: Metrics, card: RateCard, a: Assumptions): Simu
   });
 
   const cacheHeadroom = a.targetCacheHitPct === null ? null : (() => {
-    const microCents = totalCost(metrics, card, 0, a.targetModel, a.targetCacheHitPct, writeOverheadPct);
+    const microCents = totalCost(metrics, card, 0, a.targetModel, cacheTargetPct, writeOverheadPct);
     return {
       targetCacheHitPct: a.targetCacheHitPct,
       microCents,
@@ -141,11 +157,10 @@ export function simulate(metrics: Metrics, card: RateCard, a: Assumptions): Simu
   // Attribution uses the LAST curve point as "the" routing scenario, so a caller that
   // passes a single fraction gets that fraction attributed.
   const routePct = a.routableFractionsPct.at(-1) ?? 0;
-  const cachePct = a.targetCacheHitPct;
 
-  const cacheOnly   = totalCost(metrics, card, 0,        a.targetModel, cachePct, writeOverheadPct);
-  const routingOnly = totalCost(metrics, card, routePct, a.targetModel, null,     writeOverheadPct);
-  const combined    = totalCost(metrics, card, routePct, a.targetModel, cachePct, writeOverheadPct);
+  const cacheOnly   = totalCost(metrics, card, 0,        a.targetModel, cacheTargetPct, writeOverheadPct);
+  const routingOnly = totalCost(metrics, card, routePct, a.targetModel, null,           writeOverheadPct);
+  const combined    = totalCost(metrics, card, routePct, a.targetModel, cacheTargetPct, writeOverheadPct);
 
   return {
     baselineMicroCents: baseline,

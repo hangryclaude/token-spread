@@ -69,3 +69,13 @@ test("names the unknown models rather than only counting them", () => {
   expect(m.skipped.unknown_model).toBe(3);
   expect(m.unknownModels).toEqual(["<synthetic>", "some-other-model"]); // deduped, sorted
 });
+
+test("aggregates by account, and account totals sum to the overall total", async () => {
+  const events = [
+    ...(await fixture("mixed.jsonl", "alpha")).map((e) => ({ ...e, accountId: "acct_a" })),
+    ...(await fixture("dupes.jsonl", "beta")).map((e) => ({ ...e, accountId: "acct_b" })),
+  ];
+  const m = computeMetrics(events, CARD);
+  expect(Object.keys(m.byAccount).sort()).toEqual(["acct_a", "acct_b"]);
+  expect(Object.values(m.byAccount).reduce((a, t) => a + t.microCents, 0)).toBe(m.overall.microCents);
+});

@@ -22,6 +22,7 @@ export interface Report {
   cacheHitRate: number;
   byModel: Record<string, Money>;
   byProject: Record<string, Money>;
+  byAccount: Record<string, Money>;
   savings: { cacheOnly: Money; routingOnly: Money; combined: Money };
   routingCurve: Array<{ fractionPct: number; cost: Money; saved: Money }>;
   cacheHeadroom: { targetCacheHitPct: number; cost: Money; saved: Money } | null;
@@ -97,6 +98,7 @@ export function buildReport(input: {
     cacheHitRate: metrics.cacheHitRate,
     byModel: mapMoney(metrics.byModel),
     byProject: mapMoney(metrics.byProject),
+    byAccount: mapMoney(metrics.byAccount),
     savings: {
       cacheOnly: money(sim.attribution.cacheOnlySavedMicroCents),
       routingOnly: money(sim.attribution.routingOnlySavedMicroCents),

@@ -68,8 +68,12 @@ export function importClaudeCodeJsonl(
     if (typeof rec.requestId === "string" && rec.requestId !== "") {
       idempotencyKey = `claude_code:${rec.requestId}`;
     } else {
+      // Scoped by tenant: a server-issued requestId is globally unique, but this hash
+      // is derived from timestamp + model + token counts, which two different projects
+      // can genuinely produce identically. Unscoped, it would collide across tenants
+      // the first time slice 2 used it as a ledger primary key.
       const canonical = [
-        "claude_code", ts, model,
+        "claude_code", accountId, opts.projectId, ts, model,
         inputTokens, cacheReadTokens, cacheCreationTokens, outputTokens,
       ].join("|");
       idempotencyKey = "syn:" + createHash("sha256").update(canonical).digest("hex").slice(0, 32);

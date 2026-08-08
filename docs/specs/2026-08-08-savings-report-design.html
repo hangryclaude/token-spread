@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savings Report — Design Spec</title>
+<style>
+  :root {
+    --ground:   #F2F1EC;
+    --surface:  #FBFAF6;
+    --surface-2:#E8E6DD;
+    --ink:      #191813;
+    --ink-mid:  #504E45;
+    --ink-soft: #837F72;
+    --rule:     #DAD7CC;
+    --rule-firm:#BCB8A9;
+    --accent:   #1C6E6E;
+    --accent-w: #D3E7E5;
+    --warn:     #9A5B12;
+    --warn-w:   #F0E1CB;
+    --good:     #2C6E37;
+    --bad:      #A32B22;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --s1:.4rem; --s2:.8rem; --s3:1.2rem; --s4:1.9rem; --s5:3rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#100F0C; --surface:#191813; --surface-2:#23221B;
+      --ink:#EDEBE1; --ink-mid:#AEAA9C; --ink-soft:#7E7B6E;
+      --rule:#2C2A22; --rule-firm:#413E32;
+      --accent:#47B0AC; --accent-w:#123230; --warn:#D39A44; --warn-w:#382916;
+      --good:#5BB067; --bad:#E0726A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#100F0C; --surface:#191813; --surface-2:#23221B;
+    --ink:#EDEBE1; --ink-mid:#AEAA9C; --ink-soft:#7E7B6E;
+    --rule:#2C2A22; --rule-firm:#413E32;
+    --accent:#47B0AC; --accent-w:#123230; --warn:#D39A44; --warn-w:#382916;
+    --good:#5BB067; --bad:#E0726A;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--ground); color: var(--ink);
+    font-family: var(--sans); font-size: 17px; line-height: 1.7;
+    margin: 0; padding: var(--s4) var(--s3) var(--s5);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: .003em;
+  }
+  .wrap { max-width: 50rem; margin: 0 auto; display: flex; flex-direction: column; gap: var(--s4); }
+
+  .eyebrow { font-family: var(--mono); font-size: .72rem; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-soft); margin: 0; }
+  h1 { font-size: clamp(1.7rem,4.5vw,2.4rem); line-height: 1.12; letter-spacing: -.026em; font-weight: 750; text-wrap: balance; margin: var(--s2) 0 0; }
+  h2 { font-size: 1.35rem; line-height: 1.2; letter-spacing: -.015em; font-weight: 700; margin: var(--s4) 0 0; padding-top: var(--s3); border-top: 1px solid var(--rule); text-wrap: balance; }
+  h2 .num { font-family: var(--mono); font-size: .9rem; color: var(--accent); margin-right: .5em; font-weight: 600; }
+  h3 { font-size: 1rem; font-weight: 700; margin: var(--s3) 0 0; }
+  p, li { max-width: 62ch; }
+  p { margin: var(--s2) 0 0; }
+  strong { color: var(--ink); font-weight: 680; }
+  em { font-style: italic; color: var(--ink-mid); }
+
+  header { border-bottom: 2px solid var(--rule-firm); padding-bottom: var(--s3); }
+  .lede { font-size: 1.12rem; color: var(--ink-mid); margin-top: var(--s3); max-width: 58ch; }
+
+  .path { font-family: var(--mono); font-size: .8rem; color: var(--ink-soft); margin-top: var(--s2); word-break: break-all; }
+
+  .meta { display: flex; flex-wrap: wrap; gap: var(--s3); font-family: var(--mono); font-size: .78rem; color: var(--ink-soft); margin-top: var(--s3); }
+  .meta b { color: var(--accent); font-weight: 700; }
+
+  ul, ol { margin: var(--s2) 0 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: var(--s1); }
+  li { color: var(--ink-mid); }
+
+  code { font-family: var(--mono); font-size: .86em; background: var(--surface-2); padding: .12em .4em; border-radius: 3px; color: var(--ink); }
+  pre { background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: 3px; padding: var(--s3); overflow-x: auto; margin: var(--s3) 0 0; }
+  pre code { background: none; padding: 0; font-size: .82rem; line-height: 1.6; color: var(--ink); }
+
+  .callout { border-radius: 3px; padding: var(--s3); margin: var(--s3) 0 0; border: 1px solid; display: flex; flex-direction: column; gap: var(--s1); }
+  .callout.key { background: var(--accent-w); border-color: var(--accent); }
+  .callout.key .tag { color: var(--accent); }
+  .callout.warn { background: var(--warn-w); border-color: var(--warn); }
+  .callout.warn .tag { color: var(--warn); }
+  .callout .tag { font-family: var(--mono); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
+  .callout p { margin: 0; color: var(--ink); }
+
+  .tablewrap { overflow-x: auto; margin: var(--s3) 0 0; border: 1px solid var(--rule); border-radius: 3px; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { padding: var(--s2); text-align: left; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th { font-family: var(--mono); font-size: .66rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; border-bottom: 1px solid var(--rule-firm); }
+  tbody td { color: var(--ink-mid); }
+  tbody td:first-child { color: var(--ink); font-weight: 600; }
+  tbody tr:last-child td { border-bottom: none; }
+  td code, th code { font-size: .82em; }
+
+  .divider { height: 1px; background: var(--rule); border: none; margin: 0; }
+
+  footer { border-top: 1px solid var(--rule); padding-top: var(--s3); margin-top: var(--s3); }
+  footer p { font-family: var(--mono); font-size: .78rem; color: var(--ink-soft); line-height: 1.7; max-width: none; }
+
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Token Spread · design spec · awaiting review</p>
+    <h1>Savings Report — the read-only first slice</h1>
+    <p class="lede">Reads usage that already happened and produces one auditable claim:
+      here is what your traffic costs today, and what it would cost under caching and
+      routing you're not yet using. No gateway, no keys, nothing at risk.</p>
+    <div class="meta">
+      <span>date <b>2026-08-08</b></span>
+      <span>stack <b>TypeScript · bun 1.3.14</b></span>
+      <span>risk <b>read-only</b></span>
+    </div>
+    <p class="path">~/dev/token-spread/docs/specs/2026-08-08-savings-report-design.md · branch spec/savings-report · local only</p>
+  </header>
+
+  <section>
+    <h2><span class="num">1</span>Purpose</h2>
+    <p>Produce a <strong>current-cost vs. projected-cost report</strong> from sanitized usage records:</p>
+    <ol>
+      <li>Recompute what the observed traffic actually cost, from real per-request token counts × a dated rate card. Must reconcile against the real bill.</li>
+      <li>Measure the <strong>observed cache-hit rate</strong> — a hard number, no assumption.</li>
+      <li><strong>Simulate</strong> two savings levers, each under an explicit, user-set assumption: routing routine work to a cheaper model, and raising the cache-hit rate.</li>
+      <li>Emit an <strong>auditable report</strong>: every figure traces back to the source rows and the stated assumptions; same input always yields the same report.</li>
+    </ol>
+
+    <div class="callout key">
+      <span class="tag">The single claim it proves</span>
+      <p>"X% of your input is already cache-eligible but served fresh, and Y% of your
+        requests look routable to a cheaper model. Together that's $Z/month of headroom in
+        spend you're already making." One hard number, two clearly-labelled projections.</p>
+    </div>
+
+    <h3>What it is not (YAGNI)</h3>
+    <ul>
+      <li>Not a gateway. Never serves a request or issues a key.</li>
+      <li>Never calls the Messages API, never writes to any Anthropic endpoint.</li>
+      <li>Never reads prompt or response <strong>content</strong> — only token-count metadata.</li>
+      <li>No web UI in this slice. CLI + JSON report first.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="num">2</span>Inputs — two importers, one output type</h2>
+    <p>Ships <strong>A</strong> first; <strong>B</strong> is specced behind the same interface so it lands second without touching downstream code.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Importer</th><th>Source</th><th>Why the order</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>A · Claude Code</td>
+            <td>Local JSONL at <code>~/.claude/projects/*/*.jsonl</code>. Reads <code>message.model</code> + <code>message.usage.*</code> + <code>timestamp</code> from <code>assistant</code> records only.</td>
+            <td>No org, no key, no network. Proves the premise on your own machine.</td>
+          </tr>
+          <tr>
+            <td>B · Admin API</td>
+            <td><code>GET /v1/organizations/usage_report/messages</code> with an admin key. Content-free by construction.</td>
+            <td>Authoritative vs. the bill, but Enterprise-only — so it's second.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="tag">Content is never touched</span>
+      <p><code>message.content</code> is never read. The importer extracts only the token-count
+        fields and discards the rest of the line in the same pass — content never enters a
+        record, memory beyond the parse, or any saved file.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">3</span>Canonical schema</h2>
+    <p>Every importer emits <code>UsageRecord[]</code>. There is no content field, by design.</p>
+    <pre><code>interface UsageRecord {
+  ts: string;                    // ISO 8601
+  source: "claude_code" | "admin_usage_report";
+  model: string;                 // canonical model id
+  inputTokens: number;           // fresh/uncached input (>= 0)
+  cacheReadTokens: number;       // served from cache (>= 0)
+  cacheCreationTokens: number;   // cache writes (>= 0)
+  outputTokens: number;          // >= 0
+  requestId?: string;            // opaque; dedup only
+}</code></pre>
+    <ul>
+      <li>Unknown model → <strong>flagged and excluded</strong> from cost math (a <code>skipped</code> bucket). Never priced at $0 or guessed.</li>
+      <li>Negative / non-integer token → rejected into <code>malformed</code>.</li>
+      <li>Duplicate <code>requestId</code> → dropped, counted in <code>deduped</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="num">4</span>Privacy boundaries</h2>
+    <p>Hard constraints, tested — not aspirations:</p>
+    <ul>
+      <li><strong>Local by default.</strong> Importer A touches only the filesystem. No outbound connection unless B is explicitly invoked with an admin key.</li>
+      <li><strong>No content, ever.</strong> A test asserts records carry no keys beyond the schema.</li>
+      <li><strong>Aggregates out.</strong> The report contains per-model totals and token counts only. <code>requestId</code> is dedup-only, never emitted.</li>
+      <li><strong>No telemetry.</strong> Phones nobody. No crash upload.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="num">5</span>Core calculations</h2>
+    <p>All money in <strong>integer cents</strong>, never binary float. Rates per-MTok, dated, one source-of-truth module.</p>
+
+    <h3>Rate card</h3>
+    <pre><code>claude-opus-5     in $5.00  out $25.00
+claude-sonnet-5   in $3.00  out $15.00   (standard; intro $2/$10 ends 2026-08-31)
+claude-haiku-4-5  in $1.00  out  $5.00
+cacheReadMultiplier   = 0.10
+cacheWriteMultiplier  = 1.25
+capturedAt            = 2026-06-24</code></pre>
+
+    <h3>Observed cache-hit rate — the hard number</h3>
+    <pre><code>cacheHitRate = cacheReadTokens_total
+             / (cacheReadTokens_total + inputTokens_total)</code></pre>
+    <p>Of the input eligible to be cached (fresh + read), the share actually read from cache.
+      <code>cacheCreationTokens</code> is the write cost and is <strong>excluded from the denominator</strong>;
+      the report states this inline so the number is never ambiguous.</p>
+
+    <div class="callout warn">
+      <span class="tag">Routing is a what-if, not a claim</span>
+      <p>A read-only pass has no per-request difficulty label, so routing savings is an explicit
+        <strong>what-if under a stated fraction</strong>. Output is a <em>curve</em> over
+        f ∈ {0, .25, .5, .75, 1} — never a single number dressed up as fact. f=0 ⇒ $0 saved (identity check).</p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">6</span>Architecture — small, isolated units</h2>
+    <pre><code>importers/claudeCode.ts   raw JSONL → UsageRecord[]   (strips content; pure)
+importers/adminReport.ts  API JSON  → UsageRecord[]   (ships second; same signature)
+rates.ts                  dated rate card, single source of truth
+metrics.ts                → currentCost, cacheHitRate, byModel   (pure)
+simulate.ts               + assumptions → projections            (pure)
+report.ts                 → Report object                        (pure)
+cli.ts                    the only unit that does I/O</code></pre>
+    <p>Each unit has one purpose and a typed interface. <code>metrics</code>, <code>simulate</code>,
+      <code>report</code> are fully deterministic — clock and rate-card date are injected, not read
+      ambiently, so the same input yields a <strong>byte-identical</strong> report.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">7</span>Acceptance criteria</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>#</th><th>Criterion</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Current cost is exact — matches an independently hand-computed cent value.</td></tr>
+          <tr><td>2</td><td>Cache-hit: no cache_read ⇒ 0%; all cache_read ⇒ 100%.</td></tr>
+          <tr><td>3</td><td>Routing identity: f=0 ⇒ $0.00; f=1 ⇒ full hand-computed delta.</td></tr>
+          <tr><td>4</td><td>Headroom below observed is rejected; = observed ⇒ $0.</td></tr>
+          <tr><td>5</td><td>Content never leaks — records carry only schema keys; report JSON contains no planted content substring.</td></tr>
+          <tr><td>6</td><td>Bad input is bucketed, not swallowed.</td></tr>
+          <tr><td>7</td><td>Determinism — two runs on one fixture, identical JSON.</td></tr>
+          <tr><td>8</td><td>No egress in importer A — completes with the network stubbed to throw.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">8</span>Validation — synthetic fixtures only</h2>
+    <p>No real transcripts in tests. Each fixture ships a <strong>separately hand-computed</strong>
+      expected result — so the assertion is checked against a different instrument than the code
+      that produced the number.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Fixture</th><th>Shape</th><th>Asserts</th></tr></thead>
+        <tbody>
+          <tr><td>zero</td><td>one model, no cache</td><td>cache-hit 0%, projected = current at f=0</td></tr>
+          <tr><td>allcache</td><td>input 0, cache_read &gt; 0</td><td>cache-hit ~100%</td></tr>
+          <tr><td>mixed</td><td>known 2-model split</td><td>current cost to the cent; routing endpoints</td></tr>
+          <tr><td>malformed</td><td>bad fields, unknown model</td><td>correct bucketing, excluded from cost</td></tr>
+          <tr><td>dupes</td><td>repeated requestId</td><td>dedup count, no double-billing</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">9</span>Out of scope for this slice</h2>
+    <p>Gateway, request proxying, key issuance, unattended writes, flat-rate billing, multi-tenant,
+      web UI, non-Anthropic models. Each is a later slice with its own spec. This one earns the
+      right to build those by <strong>proving the spread is real, on real data, with nothing at risk</strong>.</p>
+  </section>
+
+  <footer>
+    <p>Local render of the committed spec · token-spread · 2026-08-08<br>
+      Source: docs/specs/2026-08-08-savings-report-design.md (branch spec/savings-report, no remote)</p>
+  </footer>
+
+</div>
+</body>
+</html>

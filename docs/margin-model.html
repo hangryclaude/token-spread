@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}</style>
+</head>
+<body>
+<title>Token Spread — where the margin actually is</title>
+<style>
+  :root {
+    --ground:   #EEF1F0;
+    --surface:  #FFFFFF;
+    --sunken:   #E4E9E7;
+    --ink:      #121917;
+    --ink-soft: #4A5652;
+    --ink-mute: #7C8985;
+    --rule:     #CBD4D1;
+    --accent:   #1B6B50;
+    --accent-b: #2A8F6C;
+    --debit:    #8C3A2E;
+    --shadow:   rgba(18, 25, 23, 0.07);
+
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:   #0E1413;
+      --surface:  #151D1B;
+      --sunken:   #1B2523;
+      --ink:      #E7EDEB;
+      --ink-soft: #A8B5B1;
+      --ink-mute: #76837F;
+      --rule:     #2A3835;
+      --accent:   #4FC094;
+      --accent-b: #6BD7AC;
+      --debit:    #E08A75;
+      --shadow:   rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:   #0E1413;
+    --surface:  #151D1B;
+    --sunken:   #1B2523;
+    --ink:      #E7EDEB;
+    --ink-soft: #A8B5B1;
+    --ink-mute: #76837F;
+    --rule:     #2A3835;
+    --accent:   #4FC094;
+    --accent-b: #6BD7AC;
+    --debit:    #E08A75;
+    --shadow:   rgba(0, 0, 0, 0.4);
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 56px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0;
+  }
+
+  h1 {
+    font-family: var(--sans);
+    font-size: clamp(30px, 5vw, 46px);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    font-weight: 700;
+    margin: 12px 0 0;
+    text-wrap: balance;
+  }
+
+  h2 {
+    font-family: var(--sans);
+    font-size: 21px;
+    letter-spacing: -0.012em;
+    font-weight: 650;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  h3 {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 500;
+    margin: 0;
+  }
+
+  p { margin: 0; max-width: 68ch; color: var(--ink-soft); }
+  p.lede { font-size: 16px; color: var(--ink-soft); margin-top: 18px; }
+  strong { color: var(--ink); font-weight: 600; }
+
+  section { display: flex; flex-direction: column; gap: 20px; }
+
+  .head-rule {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 10px;
+  }
+  .head-rule .num {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  figure { margin: 0; display: flex; flex-direction: column; gap: 12px; }
+  figure svg { display: block; width: 100%; max-width: 100%; height: auto; }
+  figcaption { font-size: 12.5px; color: var(--ink-mute); line-height: 1.55; max-width: 72ch; }
+
+  .scroller { overflow-x: auto; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13.5px;
+    font-variant-numeric: tabular-nums;
+    min-width: 460px;
+  }
+  th {
+    text-align: right;
+    font-weight: 500;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    padding: 0 0 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  th:first-child, td:first-child { text-align: left; }
+  td {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--rule);
+    text-align: right;
+    color: var(--ink-soft);
+  }
+  td:first-child { color: var(--ink); }
+  tr:last-child td { border-bottom: none; }
+  td.work { color: var(--ink-mute); font-size: 12px; }
+  td.total, tr.total td { color: var(--ink); font-weight: 600; }
+  tr.total td { border-top: 2px solid var(--rule); border-bottom: none; padding-top: 10px; }
+
+  .statrow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .stat {
+    background: var(--surface);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat .k {
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .stat .v {
+    font-family: var(--sans);
+    font-size: 27px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .n { font-size: 12px; color: var(--ink-mute); }
+  .v.good { color: var(--accent); }
+  .v.bad  { color: var(--debit); }
+
+  .closed {
+    border-left: 3px solid var(--debit);
+    background: var(--sunken);
+    padding: 18px 22px;
+    border-radius: 0 3px 3px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .closed p { max-width: 74ch; }
+
+  ul.plain { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  ul.plain li {
+    display: grid;
+    grid-template-columns: 15ch 1fr;
+    gap: 16px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    align-items: baseline;
+  }
+  ul.plain li .key { color: var(--ink); font-variant-numeric: tabular-nums; }
+  @media (max-width: 560px) {
+    ul.plain li { grid-template-columns: 1fr; gap: 2px; }
+  }
+
+  .slices { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .slice { background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; }
+  .slice.now { border-color: var(--accent); }
+  .slice .tag {
+    align-self: flex-start;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+    background: var(--sunken);
+    color: var(--ink-mute);
+  }
+  .slice.now .tag { background: var(--accent); color: var(--surface); }
+  .slice pre {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.75;
+    color: var(--ink-soft);
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 20px;
+    font-size: 12px;
+    color: var(--ink-mute);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">token-spread · margin model · 2026-08-08</p>
+    <h1>The spread is real. It just isn&rsquo;t in the accounts.</h1>
+    <p class="lede">
+      You don&rsquo;t make money moving someone else&rsquo;s subscription around. You make it by
+      serving the same traffic for less than list, on your own key, and keeping the
+      difference. Here is that arithmetic in full, at published rates, with every
+      assumption named.
+    </p>
+  </header>
+
+  <div class="statrow">
+    <div class="stat">
+      <span class="k">Customer pays direct</span>
+      <span class="v">$750.00</span>
+      <span class="n">100 MTok in · 10 MTok out · all Opus 5</span>
+    </div>
+    <div class="stat">
+      <span class="k">Costs you to serve</span>
+      <span class="v bad">$317.05</span>
+      <span class="n">same traffic, cached + routed</span>
+    </div>
+    <div class="stat">
+      <span class="k">Gross margin</span>
+      <span class="v good">47.2%</span>
+      <span class="n">$282.95 on a $600 invoice</span>
+    </div>
+  </div>
+
+  <section>
+    <div class="head-rule">
+      <span class="num">01</span>
+      <h2>Every dollar of that bill goes one of three places</h2>
+    </div>
+    <figure>
+      <svg viewBox="0 0 900 176" role="img" aria-label="The customer's $750 direct bill splits into $317.05 cost to serve, $282.95 gross margin to you, and $150 saved by the customer.">
+        <text x="40" y="22" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.4" fill="var(--ink-mute)">TODAY&rsquo;S BILL, PAID DIRECT TO ANTHROPIC &mdash; $750.00</text>
+
+        <rect x="40" y="36" width="346.6" height="46" fill="var(--debit)" />
+        <rect x="386.6" y="36" width="309.4" height="46" fill="var(--accent)" />
+        <rect x="696" y="36" width="164" height="46" fill="var(--sunken)" stroke="var(--rule)" stroke-width="1" />
+
+        <text x="52" y="65" font-family="ui-monospace, monospace" font-size="13" font-weight="600" fill="var(--surface)">$317.05</text>
+        <text x="398.6" y="65" font-family="ui-monospace, monospace" font-size="13" font-weight="600" fill="var(--surface)">$282.95</text>
+        <text x="708" y="65" font-family="ui-monospace, monospace" font-size="13" font-weight="600" fill="var(--ink)">$150.00</text>
+
+        <line x1="40" y1="92" x2="40" y2="102" stroke="var(--rule)" stroke-width="1" />
+        <line x1="386.6" y1="92" x2="386.6" y2="102" stroke="var(--rule)" stroke-width="1" />
+        <line x1="696" y1="92" x2="696" y2="102" stroke="var(--rule)" stroke-width="1" />
+        <line x1="860" y1="92" x2="860" y2="102" stroke="var(--rule)" stroke-width="1" />
+
+        <text x="40" y="120" font-family="ui-monospace, monospace" font-size="12" font-weight="600" fill="var(--ink)">Cost to serve</text>
+        <text x="40" y="137" font-family="ui-monospace, monospace" font-size="11" fill="var(--ink-mute)">42.3% &mdash; upstream, at list</text>
+
+        <text x="386.6" y="120" font-family="ui-monospace, monospace" font-size="12" font-weight="600" fill="var(--ink)">Your margin</text>
+        <text x="386.6" y="137" font-family="ui-monospace, monospace" font-size="11" fill="var(--ink-mute)">37.7% &mdash; the spread</text>
+
+        <text x="696" y="120" font-family="ui-monospace, monospace" font-size="12" font-weight="600" fill="var(--ink)">Customer keeps</text>
+        <text x="696" y="137" font-family="ui-monospace, monospace" font-size="11" fill="var(--ink-mute)">20% &mdash; why they switch</text>
+
+        <text x="40" y="166" font-family="ui-monospace, monospace" font-size="11" fill="var(--ink-mute)">You invoice $600.00 &mdash; a fifth off their current bill &mdash; and it still clears $282.95.</text>
+      </svg>
+      <figcaption>
+        The whole business in one bar. The customer&rsquo;s saving isn&rsquo;t a discount you
+        absorb; it&rsquo;s carved from cost you removed. Nobody&rsquo;s quota is touched.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="head-rule">
+      <span class="num">02</span>
+      <h2>Two levers make that gap, and both are in the rate card</h2>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 900 300" role="img" aria-label="A request flows from the customer's app into your gateway, where it is metered, checked against a prefix cache, and routed to a model, then makes one upstream call to the Anthropic API. Usage returns to the ledger.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+          </marker>
+        </defs>
+
+        <g color="var(--ink-soft)">
+          <rect x="12" y="118" width="130" height="58" rx="2" fill="var(--surface)" stroke="var(--rule)" stroke-width="1" />
+          <text x="77" y="143" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" font-weight="600" fill="var(--ink)">Customer</text>
+          <text x="77" y="159" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="var(--ink-mute)">app</text>
+
+          <line x1="146" y1="147" x2="192" y2="147" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar)" />
+          <text x="169" y="138" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="var(--ink-mute)">request</text>
+
+          <rect x="200" y="40" width="470" height="220" rx="2" fill="none" stroke="var(--rule)" stroke-width="1" stroke-dasharray="4 3" />
+          <text x="212" y="60" font-family="ui-monospace, monospace" font-size="10" letter-spacing="1.4" fill="var(--ink-mute)">YOUR GATEWAY</text>
+
+          <rect x="216" y="74" width="438" height="48" rx="2" fill="var(--surface)" stroke="var(--rule)" stroke-width="1" />
+          <text x="230" y="94" font-family="ui-monospace, monospace" font-size="12" font-weight="600" fill="var(--ink)">1 · meter</text>
+          <text x="230" y="111" font-family="ui-monospace, monospace" font-size="11" fill="var(--ink-mute)">stamp idempotency key, attribute to account + project</text>
+
+          <rect x="216" y="134" width="438" height="48" rx="2" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5" />
+          <text x="230" y="154" font-family="ui-monospace, monospace" font-size="12" font-weight="600" fill="var(--accent)">2 · cache</text>
+          <text x="230" y="171" font-family="ui-monospace, monospace" font-size="11" fill="var(--ink-mute)">prefix already hot → that input bills at 0.10×</text>
+
+          <rect x="216" y="194" width="438" height="48" rx="2" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5" />
+          <text x="230" y="214" font-family="ui-monospace, monospace" font-size="12" font-weight="600" fill="var(--accent)">3 · route</text>
+          <text x="230" y="231" font-family="ui-monospace, monospace" font-size="11" fill="var(--ink-mute)">easy enough for Haiku → input at 1/5 the Opus rate</text>
+
+          <line x1="674" y1="147" x2="722" y2="147" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar)" />
+          <text x="698" y="138" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="var(--ink-mute)">one call</text>
+
+          <rect x="730" y="118" width="158" height="58" rx="2" fill="var(--surface)" stroke="var(--rule)" stroke-width="1" />
+          <text x="809" y="143" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" font-weight="600" fill="var(--ink)">Anthropic API</text>
+          <text x="809" y="159" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="var(--ink-mute)">your key, list rates</text>
+
+          <polyline points="809,182 809,282 435,282" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ar)" />
+          <text x="622" y="276" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="var(--ink-mute)">usage counts → ledger → budget check</text>
+        </g>
+      </svg>
+      <figcaption>
+        Green marks the two steps that create margin; everything else is plumbing. Remove
+        the cache box and the input line reverts to full price — remove the router and
+        every request pays Opus rates. The dashed return is what slice 1 already knows how
+        to read.
+      </figcaption>
+    </figure>
+
+    <div class="card">
+      <h3>Rate card · captured 2026-08-08 · USD per MTok</h3>
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr><th>Model</th><th>Input</th><th>Output</th><th>Cache read</th><th>Cache write</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>claude-opus-5</td><td>$5.00</td><td>$25.00</td><td>$0.50</td><td>$6.25</td></tr>
+            <tr><td>claude-sonnet-5</td><td>$3.00</td><td>$15.00</td><td>$0.30</td><td>$3.75</td></tr>
+            <tr><td>claude-haiku-4-5</td><td>$1.00</td><td>$5.00</td><td>$0.10</td><td>$1.25</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:12.5px">
+        Cache reads bill at <strong>0.10&times;</strong> input; cache writes at
+        <strong>1.25&times;</strong>. Haiku input is <strong>one fifth</strong> of Opus.
+        Those two ratios are the entire source of the spread — no negotiation, no special
+        pricing, published numbers anyone can look up.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="head-rule">
+      <span class="num">03</span>
+      <h2>The working, so you can check it</h2>
+    </div>
+
+    <div class="card">
+      <h3>Baseline — 100 MTok in, 10 MTok out, all Opus, no optimization</h3>
+      <div class="scroller">
+        <table>
+          <tbody>
+            <tr><td>Input</td><td class="work">100 MTok × $5.00</td><td>$500.00</td></tr>
+            <tr><td>Output</td><td class="work">10 MTok × $25.00</td><td>$250.00</td></tr>
+            <tr class="total"><td>What they pay today</td><td class="work"></td><td>$750.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Served through the gateway — 40% routed to Haiku, 70% cache hit on both</h3>
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr><th>Line</th><th>Working</th><th>Cost</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Opus · fresh input</td><td class="work">18 MTok × $5.00</td><td>$90.00</td></tr>
+            <tr><td>Opus · cache read</td><td class="work">42 MTok × $0.50</td><td>$21.00</td></tr>
+            <tr><td>Opus · cache write</td><td class="work">3 MTok × $6.25</td><td>$18.75</td></tr>
+            <tr><td>Opus · output</td><td class="work">6 MTok × $25.00</td><td>$150.00</td></tr>
+            <tr><td>Haiku · fresh input</td><td class="work">12 MTok × $1.00</td><td>$12.00</td></tr>
+            <tr><td>Haiku · cache read</td><td class="work">28 MTok × $0.10</td><td>$2.80</td></tr>
+            <tr><td>Haiku · cache write</td><td class="work">2 MTok × $1.25</td><td>$2.50</td></tr>
+            <tr><td>Haiku · output</td><td class="work">4 MTok × $5.00</td><td>$20.00</td></tr>
+            <tr class="total"><td>Cost to serve</td><td class="work"></td><td>$317.05</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>The spread</h3>
+      <div class="scroller">
+        <table>
+          <tbody>
+            <tr><td>You invoice</td><td class="work">$750.00 less 20%</td><td>$600.00</td></tr>
+            <tr><td>You pay upstream</td><td class="work">from above</td><td>$317.05</td></tr>
+            <tr class="total"><td>Gross margin</td><td class="work">47.2% of revenue</td><td>$282.95</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:12.5px">
+        The customer&rsquo;s bill falls by <strong>$150</strong> and yours clears
+        <strong>$282.95</strong> — out of the same traffic, because 57.7% of the cost was
+        never necessary. That is the product: not cheaper tokens, better-shaped requests.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="head-rule">
+      <span class="num">04</span>
+      <h2>What is assumed, stated plainly</h2>
+    </div>
+    <div class="card">
+      <ul class="plain">
+        <li><span class="key">70% cache hit</span><span>Operator-set. Not measured on your traffic yet — this is the single number most likely to be wrong, in either direction.</span></li>
+        <li><span class="key">40% routable</span><span>Operator-set. There is no per-request difficulty label yet, so this is a what-if, not a claim about which requests are routable.</span></li>
+        <li><span class="key">5% write overhead</span><span>Cache writes assumed at 5% of input volume. Real TTL churn will move this.</span></li>
+        <li><span class="key">Rate card 08-08</span><span>Sonnet intro pricing lapses 2026-08-31. A stale card silently inflates every figure above.</span></li>
+        <li><span class="key">A curve, not a point</span><span>Report these as a range over the routable fraction, never as one headline number. A single figure invites a challenge you cannot answer.</span></li>
+      </ul>
+    </div>
+    <p>
+      Slice 1 exists precisely to delete this section — to replace every operator-set
+      assumption with a measured number off real traffic.
+    </p>
+  </section>
+
+  <section>
+    <div class="head-rule">
+      <span class="num">05</span>
+      <h2>The build path we agreed</h2>
+    </div>
+    <div class="slices">
+      <div class="slice now">
+        <span class="tag">Slice 1 · now</span>
+        <strong>Savings Report, ledger-shaped</strong>
+        <p style="font-size:13px">Read local transcripts, price them, measure the real cache-hit rate. Pure pipeline — no storage, no network, no keys.</p>
+        <pre>importers/claudeCode.ts
+rates.ts
+metrics.ts     ← pure
+simulate.ts    ← pure
+report.ts      ← pure</pre>
+      </div>
+      <div class="slice">
+        <span class="tag">Slice 2 · next</span>
+        <strong>Ledger, budgets, reservations</strong>
+        <p style="font-size:13px">Wrap storage around slice 1&rsquo;s types. The cost function is reused verbatim, already tested.</p>
+        <pre>ledger.ts      immutable events
+budget.ts      soft + hard caps
+reserve.ts     concurrency
+reconcile.ts   settle actuals</pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head-rule">
+      <span class="num">&mdash;</span>
+      <h2>The door that stays shut</h2>
+    </div>
+    <div class="closed">
+      <p>
+        Drawing usage off subscription accounts and transferring it between users is
+        account sharing. It is banned under the terms, and it was repriced to roughly zero
+        margin on 15 Jun 2026 — so it fails on both counts, independently.
+      </p>
+      <p>
+        It also was never where the money was. Reselling a flat-rate seat is arbitrage on a
+        price gap that has since closed. Everything above runs on your own key, your own
+        invoice, your own optimization — and clears a wider margin than the closed route
+        ever did.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <span>token-spread · margin model · figures at published list rates, 2026-08-08</span>
+    <span>Every number on this page is recomputed in slice 1 from real traffic. Until then, treat them as a model, not a measurement.</span>
+  </footer>
+
+</div>
+
+</body>
+</html>

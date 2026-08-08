@@ -15,40 +15,40 @@
     align-items:baseline;gap:.6rem}
   .fld .v{font-family:var(--mono);color:var(--ink);font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums}
   input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;
-    background:var(--bg-2);border-radius:var(--r-pill);cursor:pointer;margin:.45rem 0}
+    background:var(--bg-2);border-radius:var(--r-full);cursor:pointer;margin:.45rem 0}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;
-    border-radius:50%;background:var(--acc);border:3px solid var(--surface);box-shadow:var(--shadow);cursor:pointer}
-  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--acc);
-    border:3px solid var(--surface);box-shadow:var(--shadow);cursor:pointer}
+    border-radius:50%;background:var(--acc-text);border:3px solid var(--bg-2);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--acc-text);
+    border:3px solid var(--bg-2);cursor:pointer}
   .panel .fld + .fld{margin-top:1.05rem}
   .out{display:flex;flex-direction:column;gap:.9rem}
   .bars{display:flex;flex-direction:column;gap:.6rem}
   .bar{display:grid;grid-template-columns:6.5rem 1fr 5.5rem;gap:.8rem;align-items:center;font-size:.86rem}
   .bar .nm{color:var(--ink)} .bar.off .nm,.bar.off .amt{color:var(--ink-3)}
-  .bar .tr{height:12px;background:var(--bg-2);border-radius:var(--r-pill);overflow:hidden}
-  .bar .tr i{display:block;height:100%;background:var(--acc);border-radius:var(--r-pill);
+  .bar .tr{height:12px;background:var(--bg-2);border-radius:var(--r-full);overflow:hidden}
+  .bar .tr i{display:block;height:100%;background:var(--acc-text);border-radius:var(--r-full);
     transition:width .3s cubic-bezier(.4,0,.2,1)}
   .bar .amt{font-family:var(--mono);text-align:right;color:var(--ink-2);font-variant-numeric:tabular-nums}
   .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1.1rem}
-  .tier{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
-    padding:1.7rem 1.6rem;display:flex;flex-direction:column;gap:.6rem;box-shadow:var(--shadow)}
-  .tier.feat{border-color:var(--acc-line);box-shadow:var(--shadow-lift)}
+  .tier{background:var(--bg-2);border-radius:var(--r-20);
+    padding:1.7rem 1.6rem;display:flex;flex-direction:column;gap:.6rem}
+  .tier.feat{border-color:var(--acc-line)}
   .tier .badge{align-self:flex-start;background:var(--tag-same-bg);color:var(--tag-same-ink);
     font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;
-    font-weight:700;padding:.28em .7em;border-radius:var(--r-pill);margin-bottom:.2rem}
+    font-weight:700;padding:.28em .7em;border-radius:var(--r-full);margin-bottom:.2rem}
   .tier .nm{font-size:.86rem;color:var(--ink-2)}
   .tier .pr{font-family:var(--mono);font-size:2rem;font-weight:650;letter-spacing:-.04em;line-height:1}
   .tier .pr small{font-size:.8rem;color:var(--ink-3);font-weight:400;letter-spacing:0}
   .tier .cap{font-size:.85rem;color:var(--ink-2)}
   .tier ul{list-style:none;display:flex;flex-direction:column;gap:.4rem;margin-top:.5rem}
   .tier li{font-size:.85rem;color:var(--ink-2);padding-left:1.2rem;position:relative}
-  .tier li::before{content:"→";position:absolute;left:0;color:var(--acc);font-family:var(--mono);font-size:.8rem}
+  .tier li::before{content:"→";position:absolute;left:0;color:var(--acc-text);font-family:var(--mono);font-size:.8rem}
   @media(max-width:820px){.calc{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<div class="navwrap"><div class="wrap"><nav><div class="inner">
+<nav><div class="inner">
   <a class="brand" href="index.html"><span class="dot"></span>idemlayer</a>
   <div class="links">
     <a href="how.html">How it works</a>
@@ -56,7 +56,7 @@
     <a href="pricing.html" aria-current="page">Pricing</a>
     <a class="btn pri sm" href="#audit">Free audit</a>
   </div>
-</div></nav></div></div>
+</div></nav>
 
 <header class="page-head"><div class="wrap head">
   <p class="eyebrow">Pricing</p>

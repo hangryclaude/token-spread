@@ -92,6 +92,34 @@
 
 <section><div class="wrap stack reveal">
   <div class="head">
+    <p class="eyebrow">What good looks like</p>
+    <h2>The fix is structural, not clever.</h2>
+    <p class="lede">ProjectDiscovery published exactly how they went from 7% to 84%. Every move is
+      the same shape: keep the stable things stable, and push everything that changes to the tail.</p>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Three breakpoints, deliberately placed</h3>
+      <p>Static system prompt on a 1-hour TTL. Tool definitions sorted alphabetically, dynamic
+        subagents last, also 1-hour. A sliding 5-minute breakpoint on the newest tool result, so
+        only the new turn is ever recharged.</p></div>
+    <div class="card"><h3>The relocation trick</h3>
+      <p>Working memory, skills and runtime context moved out of the prefix and into a single
+        message at the tail. That one change took them from <strong>7% to 74%</strong>.</p></div>
+    <div class="card"><h3>Placeholders over values</h3>
+      <p>Template variables rendered as <code>[provided in Runtime Context]</code> rather than the
+        actual value, so the same prefix is cacheable across every user instead of once per user.</p></div>
+    <div class="card"><h3>Freeze the clock</h3>
+      <p>A date with no time in it stays byte-identical all day. A timestamp with minutes in it
+        invalidates the prefix on every single request.</p></div>
+  </div>
+  <p class="note warn"><strong>The 20-block trap has a fix too.</strong> Because a breakpoint only
+    looks back twenty blocks, they placed intermediate marks every eighteen — extending usable
+    reach to roughly fifty-four blocks without exceeding the four-breakpoint limit. Techniques and
+    figures from <a href="https://projectdiscovery.io/blog/how-we-cut-llm-cost-with-prompt-caching" rel="noopener">their write-up</a>.</p>
+</div></section>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
     <p class="eyebrow">The audit</p>
     <h2>What happens when you run it.</h2>
     <p class="lede">Read-only, on your side, over usage you already have. Nothing is proxied and no

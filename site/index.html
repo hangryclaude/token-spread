@@ -111,16 +111,40 @@
   <div class="head">
     <p class="eyebrow">It happens to good teams</p>
     <h2>ProjectDiscovery ran at a 7% hit rate.</h2>
-    <p class="lede">A security-intelligence agent with 20,000-token system prompts. Caching was on.
-      It was working at 7% because working memory sat inside the cached prefix and changed on
-      nearly every step.</p>
+    <p class="lede">A security agent on Opus 4.5 with 2,500-line system prompts — over 20,000 tokens
+      each. Caching was on. It was working at 7% because working memory sat inside the cached
+      prefix and changed on nearly every step.</p>
   </div>
   <blockquote class="quote">
     <p>“Working memory changes on nearly every step. This was silently killing our cache hits.”</p>
-    <cite>Relocating it took them from <strong>7% → 84%</strong> hit rate and cut LLM cost
-      <strong>59%</strong>, later <strong>70%</strong>. —
-      <a href="https://projectdiscovery.io/blog/how-we-cut-llm-cost-with-prompt-caching" rel="noopener">ProjectDiscovery's write-up →</a></cite>
+    <cite>Moving it to the tail took them <strong>7% → 74%</strong> in one change, then
+      <strong>84%</strong> with follow-ups — cutting cost <strong>59%</strong>, later
+      <strong>70%</strong>, across <strong>9.8 billion</strong> cached tokens. —
+      <a href="https://projectdiscovery.io/blog/how-we-cut-llm-cost-with-prompt-caching" rel="noopener">their write-up →</a></cite>
   </blockquote>
+
+  <div class="head" style="margin-top:1.5rem">
+    <h3 style="font-size:1.3rem">And the longer the agent runs, the more it saves.</h3>
+    <p class="lede">Their own production data, by task length. This is the shape that matters: the
+      agentic work everyone is scaling into is exactly the work caching pays off hardest on.</p>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Task length</th><th class="num">Streams</th><th class="num">Avg cache rate</th><th class="num">Avg input tokens</th></tr></thead>
+      <tbody>
+        <tr><td>1 step</td><td class="num">2,801</td><td class="num">35.5%</td><td class="num">47,518</td></tr>
+        <tr><td>2–3 steps</td><td class="num">794</td><td class="num">30.0%</td><td class="num">161,442</td></tr>
+        <tr><td>4–5 steps</td><td class="num">620</td><td class="num">42.8%</td><td class="num">253,880</td></tr>
+        <tr><td>6–10 steps</td><td class="num">1,284</td><td class="num">53.6%</td><td class="num">379,818</td></tr>
+        <tr><td>11–20 steps</td><td class="num">1,729</td><td class="num">63.9%</td><td class="num">745,685</td></tr>
+        <tr><td>20+ steps</td><td class="num">3,139</td><td class="num">74.0%</td><td class="num">3,763,263</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note warn">At the extreme they measured tasks of <strong>57–68M input tokens</strong>
+    running at <strong>83–93%</strong> cache rates. A comparable task before the fix ran at
+    <strong>3.2%</strong> — roughly a <strong>60× cost difference</strong> on the same work.
+    All figures are ProjectDiscovery's own, published and linked above.</p>
 </div></section>
 
 <section><div class="wrap stack reveal">

@@ -26,7 +26,7 @@
 
   --acc-fill:#19BB77;      /* button fill — takes DARK text */
   --acc-ink:#131313;       /* label ON acc-fill              7.45:1 */
-  --acc-text:#0D8252;      /* links, eyebrows, on bg         4.85:1 */
+  --acc-text:#0B7A4B;      /* links, eyebrows  5.39:1 on bg, 4.92:1 on tint */
   --acc-soft:rgba(25,187,119,.10);
   --acc-line:rgba(13,130,82,.22);
 

@@ -67,6 +67,36 @@ deterministic, self-auditing object → `cli` prints it.
 | **Cache headroom** | What input cost falls to if you raise the hit rate to a target. |
 | **Compounding savings** | `cacheOnly`, `routingOnly`, `combined` — and `combined < cacheOnly + routingOnly`, because the levers overlap. No misleading sum. |
 
+## What you net
+
+Straight answer: **this slice nets you nothing on its own — it's the meter, not the tap.**
+It doesn't create tokens or move anyone's quota. What it does is put a hard number on the
+spend you can recover once you turn caching and routing on. On a heavy-Opus month, that
+number is large.
+
+Worked example — **100 MTok in / 10 MTok out, all Opus, no optimization** (computed from
+this repo's own code, not quoted from a doc):
+
+| Scenario | Cost / month | Recovered |
+|---|---:|---:|
+| Baseline — no optimization | **$750.00** | — |
+| Cache alone (70% hit) | $466.25 | −$283.75 |
+| Routing alone (40% → Haiku) | $510.00 | −$240.00 |
+| **Both, compounded** | **$317.05** | **−$432.95 · 57.7%** |
+
+Same output, **~42% of the cost** — your dollar stretches **2.37× further**. The two levers
+overlap, so the combined saving ($432.95) is *less* than the naive sum ($523.75); the report
+never shows the inflated sum.
+
+Two honesty notes, baked into the tool:
+
+- **Cache savings are measured** from your real `cache_read` data. **Routing is an
+  operator-set what-if** (40% here) — the report shows a curve, never a promise.
+- Slice 1 **proves the money is there**. *Capturing* it is the gateway (slice 3).
+
+Your real figure is whatever `bun run src/cli.ts --dir ~/.claude/projects` prints for *your*
+traffic. The example is the shape, not your bill.
+
 ## Quick start
 
 ```bash

@@ -1,0 +1,3 @@
+{"type":"assistant","timestamp":"2026-08-01T10:00:00Z","requestId":"req_a","message":{"model":"claude-opus-5","content":[{"type":"text","text":"SECRET_CANARY_ALPHA"}],"usage":{"input_tokens":18000000,"cache_read_input_tokens":42000000,"cache_creation_input_tokens":3000000,"output_tokens":6000000}}}
+{"type":"assistant","timestamp":"2026-08-01T10:05:00Z","requestId":"req_b","message":{"model":"claude-haiku-4-5","content":[{"type":"text","text":"SECRET_CANARY_BETA"}],"usage":{"input_tokens":12000000,"cache_read_input_tokens":28000000,"cache_creation_input_tokens":2000000,"output_tokens":4000000}}}
+{"type":"user","timestamp":"2026-08-01T10:04:00Z","message":{"content":"SECRET_CANARY_GAMMA"}}

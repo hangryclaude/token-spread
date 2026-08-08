@@ -87,7 +87,10 @@ export function buildReport(input: {
   const humanSummary = [
     `Current cost: ${formatCents(microCentsToCents(metrics.overall.microCents))} across ${metrics.overall.events} priced events.`,
     `Observed cache-hit rate: ${observedPct}% — defined as cache reads over (cache reads + fresh input); cache writes are excluded from the denominator.`,
-    `Savings levers compound and do not add: cache-only ${formatCents(microCentsToCents(sim.attribution.cacheOnlySavedMicroCents))}, routing-only ${formatCents(microCentsToCents(sim.attribution.routingOnlySavedMicroCents))}, both together ${formatCents(microCentsToCents(sim.attribution.combinedSavedMicroCents))}.`,
+    // The routing figures are attributed at ONE fraction — the last curve point. Naming
+    // it inline is not decoration: unlabelled, "routing saves $753" reads as a property
+    // of the traffic when it is really a property of an assumption nobody agreed to.
+    `Savings levers compound and do not add: cache-only ${formatCents(microCentsToCents(sim.attribution.cacheOnlySavedMicroCents))} (raising cache-hit to ${a.targetCacheHitPct ?? 0}%), routing-only ${formatCents(microCentsToCents(sim.attribution.routingOnlySavedMicroCents))} (at ${a.routableFractionsPct.at(-1) ?? 0}% of traffic routed to ${a.targetModel}), both together ${formatCents(microCentsToCents(sim.attribution.combinedSavedMicroCents))}.`,
     `Rate card captured ${card.capturedAt}. ${card.notes.join(" ")}`,
   ].join("\n");
 

@@ -24,11 +24,20 @@ const isCount = (v: unknown): v is number => Number.isInteger(v) && (v as number
  */
 export function importClaudeCodeJsonl(
   lines: Iterable<string>,
-  opts: { projectId: string; accountId?: string },
+  opts: {
+    projectId: string;
+    accountId?: string;
+    /**
+     * Caller-owned dedup set. Thread one across every file in an import run, or the
+     * same requestId appearing in two transcripts is counted twice and inflates the
+     * bill. Omitted, dedup is scoped to this call alone.
+     */
+    seen?: Set<string>;
+  },
 ): ImportResult {
   const accountId = opts.accountId ?? "local";
   const events: UsageEvent[] = [];
-  const seen = new Set<string>();
+  const seen = opts.seen ?? new Set<string>();
   const p: ImportProvenance = {
     linesSeen: 0, imported: 0, malformed: 0,
     deduped: 0, synthesizedKeys: 0, skippedNonAssistant: 0,

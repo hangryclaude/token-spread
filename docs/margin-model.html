@@ -484,7 +484,7 @@
     </div>
     <div class="card">
       <ul class="plain">
-        <li><span class="key">70% cache hit</span><span>Operator-set. Not measured on your traffic yet — this is the single number most likely to be wrong, in either direction.</span></li>
+        <li><span class="key">70% cache hit</span><span><strong>Measured, and falsified — see below.</strong> Real rate is 99.9987%, so this lever is worth nothing on already-cached traffic. Kept here because it still holds for raw, un-optimized API traffic, which is what a customer sends before you touch it.</span></li>
         <li><span class="key">40% routable</span><span>Operator-set. There is no per-request difficulty label yet, so this is a what-if, not a claim about which requests are routable.</span></li>
         <li><span class="key">5% write overhead</span><span>Cache writes assumed at 5% of input volume. Real TTL churn will move this.</span></li>
         <li><span class="key">Rate card 08-08</span><span>Sonnet intro pricing lapses 2026-08-31. A stale card silently inflates every figure above.</span></li>
@@ -500,6 +500,69 @@
   <section>
     <div class="head-rule">
       <span class="num">05</span>
+      <h2>Then we measured it, and half the model died</h2>
+    </div>
+
+    <div class="closed">
+      <p>
+        Slice 1 ran against 5,026 real events. The 70% cache-hit assumption above was
+        wrong, and not by a little: the measured rate is <strong>99.9987%</strong>.
+        Claude Code already caches everything worth caching. <strong>The cache lever has
+        no headroom on this traffic — it is worth $0.00.</strong>
+      </p>
+      <p>
+        That kills one of the two levers. It does not kill the business: routing still
+        cuts <strong>20% of spend for every quarter of traffic moved</strong>, and 98% of
+        the bill sits on Opus, which is exactly the traffic worth routing.
+      </p>
+    </div>
+
+    <div class="statrow">
+      <div class="stat">
+        <span class="k">Measured over</span>
+        <span class="v">5,026</span>
+        <span class="n">real priced events</span>
+      </div>
+      <div class="stat">
+        <span class="k">Cache-hit, measured</span>
+        <span class="v bad">99.9987%</span>
+        <span class="n">assumed 70% — lever already spent</span>
+      </div>
+      <div class="stat">
+        <span class="k">Concentrated on Opus</span>
+        <span class="v good">98.1%</span>
+        <span class="n">$924.68 of $942.49 — routable</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Routing curve on real traffic — the only lever left</h3>
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr><th>Traffic routed to Haiku</th><th>Cost</th><th>Saved</th><th>Cut</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0%</td><td>$942.49</td><td>$0.00</td><td class="work">—</td></tr>
+            <tr><td>25%</td><td>$754.13</td><td>$188.35</td><td class="work">20.0%</td></tr>
+            <tr><td>50%</td><td>$565.78</td><td>$376.71</td><td class="work">40.0%</td></tr>
+            <tr><td>75%</td><td>$377.43</td><td>$565.06</td><td class="work">60.0%</td></tr>
+            <tr class="total"><td>100%</td><td>$189.07</td><td>$753.41</td><td class="work">79.9%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:12.5px">
+        Read this as a curve, not a target. Nothing here says which requests are safe to
+        route — that needs a per-request difficulty label, which does not exist yet. The
+        honest claim is the shape: <strong>routing is linear and it is the whole
+        spread now.</strong>
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="head-rule">
+      <span class="num">06</span>
       <h2>The build path we agreed</h2>
     </div>
     <div class="slices">

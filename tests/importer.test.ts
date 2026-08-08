@@ -70,3 +70,15 @@ test("is deterministic", async () => {
   expect(JSON.stringify(importClaudeCodeJsonl(ls, { projectId: "demo" })))
     .toBe(JSON.stringify(importClaudeCodeJsonl(ls, { projectId: "demo" })));
 });
+
+test("dedups across files when the caller threads a shared seen set", async () => {
+  // The CLI calls the importer once per transcript file. Without a shared set, the
+  // same requestId in two files is counted twice and inflates the bill.
+  const ls = await lines("dupes.jsonl");
+  const seen = new Set<string>();
+  const a = importClaudeCodeJsonl(ls, { projectId: "demo", seen });
+  const b = importClaudeCodeJsonl(ls, { projectId: "demo", seen });
+  expect(a.events.length).toBe(1);
+  expect(b.events.length).toBe(0);   // every key already seen in file a
+  expect(b.provenance.deduped).toBe(2);
+});

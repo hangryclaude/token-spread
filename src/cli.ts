@@ -45,10 +45,13 @@ const provenance: ImportProvenance = {
   linesSeen: 0, imported: 0, malformed: 0, deduped: 0, synthesizedKeys: 0, skippedNonAssistant: 0,
 };
 
+// One dedup set for the whole run: the same requestId can appear in two files.
+const seen = new Set<string>();
+
 for (const { path, projectId } of transcripts(dir)) {
   if (only && basename(path) !== only) continue;
   const text = await Bun.file(path).text();
-  const r = importClaudeCodeJsonl(text.split("\n").filter((l) => l.trim() !== ""), { projectId });
+  const r = importClaudeCodeJsonl(text.split("\n").filter((l) => l.trim() !== ""), { projectId, seen });
   events.push(...r.events);
   for (const k of Object.keys(provenance) as (keyof ImportProvenance)[]) provenance[k] += r.provenance[k];
 }

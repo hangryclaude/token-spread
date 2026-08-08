@@ -45,7 +45,11 @@
   </div>
 </div></nav>
 
-<header class="hero"><div class="wrap">
+<header class="hero">
+  <div class="hero-art" aria-hidden="true">
+    <img src="assets/img/hero-a.avif" alt="" data-fx-parallax decoding="async" fetchpriority="high">
+  </div>
+  <div class="wrap">
   <p class="eyebrow">Idempotent by construction</p>
   <h1>The same output.<br><em>A smaller bill.</em></h1>
   <p class="lede">Your agents resend the same context every turn. Anthropic will serve it back at a
@@ -60,9 +64,9 @@
   <div class="rates">
     <span class="ratelab">Opus 5, per 1M input tokens — list rates</span>
     <div class="figs">
-      <div class="fig"><span class="k">Standard</span><span class="v dim">$5.00</span><span class="n">what you pay now</span></div>
-      <div class="fig"><span class="k">Cache read</span><span class="v acc">$0.50</span><span class="n">90% less, same tokens</span></div>
-      <div class="fig"><span class="k">Batch</span><span class="v acc">$2.50</span><span class="n">50% less, async work</span></div>
+      <div class="fig"><span class="k">Standard</span><span class="v dim" data-count="5.00" data-prefix="$">$5.00</span><span class="n">what you pay now</span></div>
+      <div class="fig"><span class="k">Cache read</span><span class="v acc" data-count="0.50" data-prefix="$">$0.50</span><span class="n">90% less, same tokens</span></div>
+      <div class="fig"><span class="k">Batch</span><span class="v acc" data-count="2.50" data-prefix="$">$2.50</span><span class="n">50% less, async work</span></div>
       <div class="fig"><span class="k">Quality change</span><span class="v acc">none</span><span class="n">identical model &amp; input</span></div>
     </div>
   </div>
@@ -92,13 +96,13 @@
   </div>
 
   <div class="grid g3 mt">
-    <div class="card"><span class="num">4</span><h3>breakpoints, max</h3>
+    <div class="card"><span class="num" data-count="4">4</span><h3>breakpoints, max</h3>
       <p>Anthropic allows four <code>cache_control</code> markers per request. Place them wrong and
         you pay to write a cache nothing reads.</p></div>
-    <div class="card"><span class="num">20</span><h3>block lookback</h3>
+    <div class="card"><span class="num" data-count="20">20</span><h3>block lookback</h3>
       <p>A breakpoint searches back only twenty content blocks. Eight parallel tool calls can
         overshoot that in one turn.</p></div>
-    <div class="card"><span class="num">512</span><h3>token minimum</h3>
+    <div class="card"><span class="num" data-count="512">512</span><h3>token minimum</h3>
       <p>Below the model's minimum cacheable prefix, caching silently does nothing at all.</p></div>
   </div>
 </div></section>
@@ -141,7 +145,8 @@
 </div></section>
 
 <section><div class="wrap reveal">
-  <div class="cta-band">
+  <div class="band">
+    <div class="art" aria-hidden="true"><img src="assets/img/dark-a.avif" alt="" loading="lazy" decoding="async"></div>
     <p class="eyebrow">Start with the number</p>
     <h2>Find out what you're leaving on the table.</h2>
     <p class="lede" style="max-width:46ch">Free, read-only, no integration. If it's under 20% we'll
@@ -164,7 +169,7 @@
     ProjectDiscovery figures are theirs, published, and linked.</small>
 </div></footer>
 
-<script type="module" src="assets/site.js"></script>
+<script type="module" src="assets/fx.js"></script>
 <script type="module">window.__ready = true;</script>
 </body>
 </html>

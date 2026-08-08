@@ -98,6 +98,20 @@ never shows the inflated sum.
   <em>Routing is an operator-set what-if — the report shows the whole dial, not one promised number.</em>
 </p>
 
+> ### ⚠️ Read this before quoting the number above
+>
+> That table measures savings against a **no-caching baseline** — which is *not* where most
+> real clients start. Claude Code already places `cache_control` breakpoints and reaches a
+> **~100% cache-hit rate** in practice (measured across 84,294 real assistant records), so a
+> Claude Code shop's headroom from the caching lever is approximately **zero**.
+>
+> Treat `$432.95` as **the mechanism's ceiling**, never as a customer's expected saving. The
+> honest pitch measures the customer's *actual* hit rate first and quotes them the gap.
+> The teams with real headroom are the ones **hand-rolling agents on the raw API**, where no
+> client library places breakpoints for them — see [ProjectDiscovery's documented 7% → 84%
+> case](https://projectdiscovery.io/blog/how-we-cut-llm-cost-with-prompt-caching) (−59% to
+> −70% cost, caused by working memory sitting inside the system prompt).
+
 Two honesty notes, baked into the tool:
 
 - **Cache savings are measured** from your real `cache_read` data. **Routing is an

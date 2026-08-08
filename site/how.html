@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%233DDC84'/%3E%3C/svg%3E">
+<title>How it works — idemlayer</title>
+<meta name="description" content="Why a prompt cache breaks silently, the four ways it happens, and what an audit measures before you change anything.">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .page-head{padding-block:clamp(3rem,7vw,4.5rem) 0}
+  .steps{counter-reset:s;display:flex;flex-direction:column;gap:1rem}
+  .step{counter-increment:s;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--r-lg);box-shadow:var(--shadow);padding:1.5rem 1.6rem;
+    display:grid;grid-template-columns:2.6rem 1fr;gap:1.2rem;align-items:start}
+  .step::before{content:counter(s);font-family:var(--mono);font-size:.82rem;font-weight:700;
+    color:var(--acc);background:var(--acc-soft);border:1px solid var(--acc-line);
+    width:2.6rem;height:2.6rem;border-radius:50%;display:grid;place-items:center}
+  .step h3{margin-bottom:.35rem}
+  .step p{font-size:.94rem;color:var(--ink-2)}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-top:1.4rem;
+    font-family:var(--mono);font-size:.8rem}
+  .flow span{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-pill);
+    padding:.45rem .9rem;box-shadow:var(--shadow)}
+  .flow span.on{border-color:var(--acc-line);color:var(--acc)}
+  .flow i{color:var(--ink-3);font-style:normal}
+</style>
+</head>
+<body>
+
+<div class="navwrap"><div class="wrap"><nav><div class="inner">
+  <a class="brand" href="index.html"><span class="dot"></span>idemlayer</a>
+  <div class="links">
+    <a href="how.html" aria-current="page">How it works</a>
+    <a href="methods.html" class="hide-sm">Methods</a>
+    <a href="pricing.html">Pricing</a>
+    <a class="btn pri sm" href="pricing.html#audit">Free audit</a>
+  </div>
+</div></nav></div></div>
+
+<header class="page-head"><div class="wrap head">
+  <p class="eyebrow">How it works</p>
+  <h1>Caching is free. Keeping it working isn't.</h1>
+  <p class="lede">Anthropic already gives you a 90% discount on repeated context. The hard part is
+    that nothing tells you when you stop receiving it.</p>
+</div></header>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
+    <p class="eyebrow">The mechanism</p>
+    <h2>What a cache hit actually is.</h2>
+    <p class="lede">Your request is a prefix — tools, then system prompt, then message history. If
+      that prefix is byte-identical to one Anthropic has seen recently, it serves the stored
+      computation instead of redoing it.</p>
+  </div>
+  <div class="flow">
+    <span class="on">tools</span><i>→</i><span class="on">system</span><i>→</i>
+    <span class="on">history</span><i>→</i><span>this turn</span>
+  </div>
+  <p class="note">The model reads the identical token sequence either way. A cache hit changes
+    <strong>billing and latency only</strong> — never what Claude computes. That's why there's no
+    quality question to argue about, and no eval to run.</p>
+</div></section>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
+    <p class="eyebrow">Why it breaks</p>
+    <h2>Four ways teams lose the discount.</h2>
+    <p class="lede">None of these raise an error. In every case the request succeeds, the answer is
+      correct, and the invoice quietly grows.</p>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>A moving field in a stable place</h3>
+      <p>A timestamp, a session id, a live to-do list or an evolving scratchpad inside the system
+        prompt. The prefix differs every turn, so nothing before it can ever match.</p></div>
+    <div class="card"><h3>Overshooting the lookback</h3>
+      <p>A breakpoint searches back at most twenty content blocks. A turn with eight parallel tool
+        calls contributes about sixteen on its own — and the next request never reaches the last
+        write.</p></div>
+    <div class="card"><h3>Churning the tool list</h3>
+      <p>Tools render before everything else, so adding, removing or reordering one invalidates
+        tools, system and messages together. An MCP server reconnecting mid-session does it too.</p></div>
+    <div class="card"><h3>Falling under the minimum</h3>
+      <p>Below the model's minimum cacheable prefix — 512 tokens on Opus 5, more on older models —
+        caching is skipped entirely. No error, both cache fields simply read zero.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
+    <p class="eyebrow">The audit</p>
+    <h2>What happens when you run it.</h2>
+    <p class="lede">Read-only, on your side, over usage you already have. Nothing is proxied and no
+      prompt text is read.</p>
+  </div>
+  <div class="steps">
+    <div class="step"><div><h3>Point it at your usage</h3>
+      <p>Local transcripts, or your organisation's usage report via an admin key. Either way it
+        reads token counts, model ids and timestamps — never message content.</p></div></div>
+    <div class="step"><div><h3>Measure the real hit rate</h3>
+      <p>Cache reads divided by cacheable input. This is a measurement, not an estimate — the
+        numbers come from Anthropic's own usage fields on every response you've already had.</p></div></div>
+    <div class="step"><div><h3>Price the gap</h3>
+      <p>What your traffic cost, against what the same traffic costs at a healthy hit rate. The
+        difference is your headroom, in dollars, per month.</p></div></div>
+    <div class="step"><div><h3>Get the diagnosis</h3>
+      <p>Which projects are leaking, and which of the four failures above is doing it. If the
+        headroom is under 20%, we say so and stop there.</p></div></div>
+  </div>
+  <p class="note warn"><strong>The honest limit.</strong> Caching discounts input tokens only —
+    output always bills at full rate. If your workload is mostly generation rather than context,
+    your ceiling is lower, and the audit will show you that rather than talk around it.</p>
+  <div class="row" style="margin-top:.5rem">
+    <a class="btn pri" href="pricing.html#audit">Run the free audit</a>
+    <a class="btn sec" href="methods.html">See every method</a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="fl">
+    <a class="brand" href="index.html" style="margin-bottom:.4rem"><span class="dot"></span>idemlayer</a>
+    <a href="how.html">How it works</a>
+    <a href="methods.html">Methods</a>
+    <a href="pricing.html">Pricing</a>
+  </div>
+  <small>Same model. Same tokens. Same output.<br>
+    Contact <span class="tbd" data-sc-tbd="contact email">— to supply —</span><br><br>
+    Cache read 0.1× · write 1.25× (5m) / 2× (1h) · batch 50%.<br>
+    Minimum cacheable prefix and lookback limits are Anthropic's, and current as of August 2026.</small>
+</div></footer>
+
+<script type="module" src="assets/site.js"></script>
+<script type="module">window.__ready = true;</script>
+</body>
+</html>

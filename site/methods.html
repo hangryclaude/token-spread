@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%233DDC84'/%3E%3C/svg%3E">
+<title>Methods — idemlayer</title>
+<meta name="description" content="Every way to cut a Claude bill, split by whether it can change your output. We ship the ones that can't.">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .page-head{padding-block:clamp(3rem,7vw,4.5rem) 0}
+  .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1.15rem}
+  .box{border-radius:var(--r-lg);padding:1.5rem 1.6rem;border:1px solid;
+    display:flex;flex-direction:column;gap:.6rem;box-shadow:var(--shadow)}
+  .box.ship{background:var(--tag-same-bg);border-color:var(--acc-line)}
+  .box.hold{background:var(--surface);border-color:var(--line)}
+  .box h3{font-size:1.05rem}
+  .box.ship h3{color:var(--tag-same-ink)}
+  .box p,.box li{font-size:.92rem;color:var(--ink-2)}
+  .box.ship p,.box.ship li{color:var(--tag-same-ink)}
+  ul.t{list-style:none;display:flex;flex-direction:column;gap:.4rem;margin-top:.2rem}
+  ul.t li{padding-left:1.15rem;position:relative}
+  ul.t li::before{content:"→";position:absolute;left:0;font-family:var(--mono);font-size:.8rem;opacity:.7}
+</style>
+</head>
+<body>
+
+<div class="navwrap"><div class="wrap"><nav><div class="inner">
+  <a class="brand" href="index.html"><span class="dot"></span>idemlayer</a>
+  <div class="links">
+    <a href="how.html">How it works</a>
+    <a href="methods.html" class="hide-sm" aria-current="page">Methods</a>
+    <a href="pricing.html">Pricing</a>
+    <a class="btn pri sm" href="pricing.html#audit">Free audit</a>
+  </div>
+</div></nav></div></div>
+
+<header class="page-head"><div class="wrap head">
+  <p class="eyebrow">Methods</p>
+  <h1>Every lever, and the line we won't cross.</h1>
+  <p class="lede">There are plenty of ways to make an AI bill smaller. Most of them change what the
+    model gives back. We only turn on the ones that can't.</p>
+</div></header>
+
+<section><div class="wrap stack reveal">
+  <div class="split">
+    <div class="box ship">
+      <h3>Ship by default</h3>
+      <p>Same model, same input tokens. There is no quality decision being made, so there is
+        nothing to test and nothing to argue about in a security review.</p>
+      <ul class="t">
+        <li>Prompt caching, text and images</li>
+        <li>Batch API for async work</li>
+        <li>Exact-match response cache</li>
+        <li>In-flight request dedup</li>
+        <li>Billing-path selection</li>
+      </ul>
+    </div>
+    <div class="box hold">
+      <h3>Off unless you ask</h3>
+      <p>Each of these genuinely saves money, and each changes what the model receives or which
+        model answers. We'll tell you what they'd save. We won't switch them on for you.</p>
+      <ul class="t">
+        <li>Routing to a cheaper model</li>
+        <li>Image downsampling</li>
+        <li>OCR instead of vision</li>
+        <li>Semantic / fuzzy caching</li>
+        <li>Trimming conversation history</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
+    <p class="eyebrow">The full list</p>
+    <h2>What each one does, and what it costs you.</h2>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Method</th><th class="num">Saves</th><th>Output</th><th>Where it applies</th></tr></thead>
+      <tbody>
+        <tr><td>Prompt caching</td><td class="num">90%</td><td><span class="tag same">identical</span></td><td>Any repeated prefix — system prompts, tool definitions, conversation history</td></tr>
+        <tr><td>Image caching</td><td class="num">90%</td><td><span class="tag same">identical</span></td><td>One image is 1,500–4,800 tokens. Same mechanism as text.</td></tr>
+        <tr><td>Batch API</td><td class="num">50%</td><td><span class="tag same">identical</span></td><td>Input <em>and</em> output. Async-tolerant work only — evals, bulk classification, offline runs.</td></tr>
+        <tr><td>Exact-match cache</td><td class="num">100%</td><td><span class="tag same">byte-identical</span></td><td>A true repeat returns the stored bytes. The only literal byte-identity guarantee here.</td></tr>
+        <tr><td>Request dedup</td><td class="num">varies</td><td><span class="tag same">identical</span></td><td>Concurrent identical calls collapse into one upstream request</td></tr>
+        <tr><td>Billing path</td><td class="num">~10%</td><td><span class="tag same">identical</span></td><td>Inference geography and commitment terms change the invoice, not the model</td></tr>
+        <tr><td>Model routing</td><td class="num">up to 5×</td><td><span class="tag diff">changes</span></td><td>A different model writes different words. Must be proven per workload.</td></tr>
+        <tr><td>Image downsampling</td><td class="num">~3×</td><td><span class="tag diff">changes</span></td><td>Fewer pixels reach the model. Small text degrades first.</td></tr>
+        <tr><td>OCR instead of vision</td><td class="num">~7×</td><td><span class="tag diff">changes</span></td><td>The model never sees the image — only an OCR engine's reading of it</td></tr>
+        <tr><td>Semantic cache</td><td class="num">high</td><td><span class="tag diff">changes</span></td><td>Answers a <em>similar</em> question with a stored response. Can be silently wrong.</td></tr>
+        <tr><td>History trimming</td><td class="num">caps growth</td><td><span class="tag diff">changes</span></td><td>The model permanently loses what it can no longer see</td></tr>
+        <tr><td>Pre-resizing images</td><td class="num">$0</td><td><span class="tag same">identical</span></td><td>Saves upload time, <strong>not</strong> tokens — Claude resizes server-side regardless. We don't bill it as savings.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note warn"><strong>Two honest limits.</strong> Caching discounts input only; output
+    always bills at full rate, which caps every input-side lever. And because inference isn't
+    bit-deterministic, "identical" here means <em>zero quality change by construction</em> — same
+    model, same input tokens — not identical bytes. Only an exact-match cache hit is literally
+    byte-for-byte, because it returns what was stored.</p>
+</div></section>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
+    <p class="eyebrow">Why the split matters</p>
+    <h2>Quality-neutral savings don't need a committee.</h2>
+    <p class="lede">Anything that changes model output has to be evaluated, argued about, and signed
+      off. That's where cost projects die. Everything in our default set skips that conversation
+      entirely — because nothing about the answer changed.</p>
+  </div>
+  <div class="row">
+    <a class="btn pri" href="pricing.html#audit">Run the free audit</a>
+    <a class="btn sec" href="how.html">How it works</a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="fl">
+    <a class="brand" href="index.html" style="margin-bottom:.4rem"><span class="dot"></span>idemlayer</a>
+    <a href="how.html">How it works</a>
+    <a href="methods.html">Methods</a>
+    <a href="pricing.html">Pricing</a>
+  </div>
+  <small>Savings percentages are per-method ceilings against an unoptimised baseline,<br>
+    not a promise for your workload. Your figure comes from measuring your traffic.<br><br>
+    Contact <span class="tbd" data-sc-tbd="contact email">— to supply —</span></small>
+</div></footer>
+
+<script type="module" src="assets/site.js"></script>
+<script type="module">window.__ready = true;</script>
+</body>
+</html>

@@ -5,243 +5,81 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%233DDC84'/%3E%3C/svg%3E">
 <title>idemlayer — the same output, a smaller bill</title>
-<meta name="description" content="We measure your Claude prompt-cache hit rate for free. Same model, same tokens, same output — you just stop paying full price for context you already sent.">
+<meta name="description" content="We measure your Claude prompt-cache hit rate for free. Same model, same tokens, same output — you stop paying full price for context you already sent.">
+<link rel="stylesheet" href="assets/style.css">
 <style>
-:root{
-  --bg:#0A0C0B; --bg-2:#101413; --surface:#151A18; --line:#232A27; --line-2:#323B37;
-  --ink:#ECEFEB; --ink-2:#9AA5A0; --ink-3:#7E8A84;
-  --acc:#3DDC84; --acc-dim:#1B7A4B; --acc-glow:rgba(61,220,132,.13);
-  --warn:#E0A458; --warn-dim:#3A2C15;
-  --stop:#E0705C; --stop-dim:#3A1E19;
-  --tag-same-bg:#14352A; --tag-same-ink:#6EE7A8;
-  --tag-diff-bg:#3A1E19; --tag-diff-ink:#F0907E;
-  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;
-  --gut:clamp(1.25rem,4vw,2.5rem);
-  --max:74rem;
-}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
-  --bg:#F4F4F1; --bg-2:#EBEBE6; --surface:#FFFFFF; --line:#DEDED8; --line-2:#C6C6BE;
-  --ink:#0E120F; --ink-2:#4C544E; --ink-3:#5A625C;
-  --acc:#0B7A47; --acc-dim:#8FD9B4; --acc-glow:rgba(11,122,71,.08);
-  --warn:#8A5A0E; --warn-dim:#F3E6CE; --stop:#A4382A; --stop-dim:#F5DFDA;
-  --tag-same-bg:#D6F0E2; --tag-same-ink:#0A5C36;
-  --tag-diff-bg:#F7DED8; --tag-diff-ink:#8C2E1F;
-}}
-:root[data-theme="light"]{
-  --bg:#F4F4F1; --bg-2:#EBEBE6; --surface:#FFFFFF; --line:#DEDED8; --line-2:#C6C6BE;
-  --ink:#0E120F; --ink-2:#4C544E; --ink-3:#5A625C;
-  --acc:#0B7A47; --acc-dim:#8FD9B4; --acc-glow:rgba(11,122,71,.08);
-  --warn:#8A5A0E; --warn-dim:#F3E6CE; --stop:#A4382A; --stop-dim:#F5DFDA;
-  --tag-same-bg:#D6F0E2; --tag-same-ink:#0A5C36;
-  --tag-diff-bg:#F7DED8; --tag-diff-ink:#8C2E1F;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;
-  -webkit-font-smoothing:antialiased;overflow-x:hidden}
-.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--gut)}
-.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
-code{font-family:var(--mono);font-size:.88em;background:var(--bg-2);color:var(--ink);
-  padding:.12em .38em;border-radius:3px;border:1px solid var(--line)}
-
-/* ── nav ── */
-nav{background:var(--bg);border-bottom:1px solid var(--line)}
-nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:1rem}
-.brand{font-weight:700;letter-spacing:-.02em;font-size:1.02rem;display:flex;align-items:center;gap:.5rem}
-.brand .dot{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc)}
-nav a.cta{font-family:var(--mono);font-size:.76rem;letter-spacing:.04em;text-transform:uppercase;
-  color:var(--bg);background:var(--acc);padding:.5rem .9rem;border-radius:3px;text-decoration:none;font-weight:700}
-nav a.cta:hover{filter:brightness(1.1)}
-
-/* ── hero ── */
-.hero{padding-block:clamp(3.5rem,11vw,7.5rem) clamp(3rem,8vw,5rem);position:relative;overflow:hidden}
-.hero::before{content:"";position:absolute;inset:-40% -20% auto -20%;height:80%;
-  background:radial-gradient(ellipse at 50% 0%,var(--acc-glow),transparent 62%);pointer-events:none}
-.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
-h1{font-size:clamp(2.3rem,7vw,4.6rem);line-height:1.02;letter-spacing:-.04em;font-weight:780;
-  text-wrap:balance;margin-top:1.1rem;max-width:16ch}
-h1 em{font-style:normal;color:var(--ink-3)}
-.sub{font-size:clamp(1.02rem,2.1vw,1.22rem);color:var(--ink-2);max-width:52ch;margin-top:1.4rem;line-height:1.55}
-.hero-cta{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:2.2rem;align-items:center}
-.btn{font-family:var(--mono);font-size:.82rem;letter-spacing:.03em;padding:.75rem 1.3rem;border-radius:3px;
-  text-decoration:none;font-weight:700;border:1px solid transparent;display:inline-block}
-.btn.pri{background:var(--acc);color:var(--bg)}
-.btn.pri:hover{filter:brightness(1.1)}
-.btn.sec{border-color:var(--line-2);color:var(--ink)}
-.btn.sec:hover{border-color:var(--ink-3)}
-.hero-note{font-size:.83rem;color:var(--ink-3);margin-top:1rem;font-family:var(--mono)}
-
-/* the ticker */
-.ticker{margin-top:clamp(2.5rem,6vw,4rem);border:1px solid var(--line);border-radius:5px;
-  background:var(--surface);overflow:hidden}
-.ticker-head{display:flex;justify-content:space-between;align-items:center;padding:.65rem 1rem;
-  border-bottom:1px solid var(--line);font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--ink-3)}
-.live{display:flex;align-items:center;gap:.4rem;color:var(--acc)}
-.live i{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:pulse 2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.ticker-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr))}
-.tk{padding:1.15rem 1rem;border-right:1px solid var(--line)}
-.tk:last-child{border-right:none}
-.tk .k,.tk .v,.tk .n{display:block}
-.tk .k{font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
-.tk .v{font-family:var(--mono);font-size:clamp(1.35rem,3.4vw,1.9rem);font-weight:650;letter-spacing:-.035em;
-  line-height:1.15;margin-top:.2rem;font-variant-numeric:tabular-nums}
-.tk .v.acc{color:var(--acc)} .tk .v.dim{color:var(--ink-2)}
-.tk .n{font-size:.72rem;color:var(--ink-3);margin-top:.1rem}
-
-/* ── sections ── */
-section{padding-block:clamp(3.2rem,8vw,5.5rem);border-top:1px solid var(--line)}
-.shead{max-width:58ch}
-h2{font-size:clamp(1.6rem,4vw,2.5rem);line-height:1.1;letter-spacing:-.03em;font-weight:740;text-wrap:balance;margin-top:.8rem}
-.lede{font-size:1.03rem;color:var(--ink-2);margin-top:1rem;max-width:56ch;line-height:1.6}
-p{max-width:62ch}
-
-/* problem */
-.term{margin-top:2.2rem;background:var(--surface);border:1px solid var(--line);border-radius:5px;
-  font-family:var(--mono);font-size:.83rem;overflow-x:auto}
-.term-bar{display:flex;gap:.4rem;padding:.6rem .9rem;border-bottom:1px solid var(--line)}
-.term-bar i{width:9px;height:9px;border-radius:50%;background:var(--line-2)}
-.term pre{padding:1.1rem;line-height:1.75;white-space:pre;color:var(--ink-2)}
-.term .g{color:var(--acc)} .term .r{color:var(--stop);font-weight:700} .term .d{color:var(--ink-3)}
-
-.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(15.5rem,1fr));gap:1px;
-  background:var(--line);border:1px solid var(--line);border-radius:5px;overflow:hidden;margin-top:2.2rem}
-.col{background:var(--surface);padding:1.4rem}
-.col h3{font-size:.98rem;font-weight:700;letter-spacing:-.01em}
-.col p{font-size:.9rem;color:var(--ink-2);margin-top:.5rem}
-.col .num{font-family:var(--mono);font-size:1.7rem;font-weight:650;letter-spacing:-.03em;color:var(--acc);display:block;margin-bottom:.3rem}
-
-/* proof */
-.quote{margin-top:2rem;border-left:2px solid var(--acc);padding-left:1.3rem}
-.quote p{font-size:clamp(1.05rem,2.4vw,1.3rem);line-height:1.5;letter-spacing:-.015em;color:var(--ink)}
-.quote cite{display:block;font-style:normal;font-family:var(--mono);font-size:.76rem;color:var(--ink-3);margin-top:.9rem}
-.quote cite a{color:var(--ink-2)}
-
-/* calculator */
-.calc{display:grid;grid-template-columns:minmax(0,17rem) minmax(0,1fr);gap:1.5rem;margin-top:2.4rem;align-items:start}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1.3rem;display:flex;flex-direction:column;gap:1.15rem}
-.fld{display:flex;flex-direction:column;gap:.35rem}
-.fld label{font-family:var(--mono);font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
-  display:flex;justify-content:space-between;align-items:baseline;gap:.6rem}
-.fld .v{color:var(--ink);font-weight:700;font-size:.82rem;letter-spacing:0;text-transform:none;font-family:var(--mono)}
-input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--line-2);border-radius:2px;cursor:pointer;margin:.35rem 0}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;border-radius:50%;
-  background:var(--acc);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--acc);cursor:pointer}
-input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--acc);
-  border:2px solid var(--surface);box-shadow:0 0 0 1px var(--acc);cursor:pointer}
-input[type=range]:focus-visible{outline:2px solid var(--acc);outline-offset:4px}
-.out{display:flex;flex-direction:column;gap:1rem}
-.bigrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));gap:1px;background:var(--line);
-  border:1px solid var(--line);border-radius:5px;overflow:hidden}
-.big{background:var(--surface);padding:1.2rem 1rem}
-.big .k,.big .v,.big .n{display:block}
-.big .k{font-family:var(--mono);font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
-.big .v{font-family:var(--mono);font-size:clamp(1.3rem,3.2vw,1.75rem);font-weight:650;letter-spacing:-.035em;line-height:1.15;margin-top:.15rem}
-.big .n{font-size:.71rem;color:var(--ink-3);margin-top:.1rem}
-.big.good .v{color:var(--acc)} .big.bad .v{color:var(--stop)}
-.bars{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1.2rem;display:flex;flex-direction:column;gap:.55rem}
-.bar{display:grid;grid-template-columns:6.5rem 1fr 5rem;gap:.7rem;align-items:center;font-size:.83rem}
-.bar .nm{color:var(--ink)} .bar.off .nm,.bar.off .amt{color:var(--ink-3)}
-.bar .tr{height:14px;background:var(--bg-2);border-radius:2px;overflow:hidden}
-.bar .tr i{display:block;height:100%;background:var(--acc);transition:width .3s cubic-bezier(.4,0,.2,1)}
-.bar .amt{font-family:var(--mono);text-align:right;color:var(--ink-2);font-variant-numeric:tabular-nums}
-.vd{font-size:.9rem;color:var(--ink-2);border-left:2px solid var(--acc);padding-left:.9rem;line-height:1.55}
-.vd.warn{border-left-color:var(--warn)} .vd.bad{border-left-color:var(--stop)}
-.vd strong{color:var(--ink)}
-
-/* table */
-.tw{overflow-x:auto;border:1px solid var(--line);border-radius:5px;margin-top:2.2rem;background:var(--surface)}
-table{border-collapse:collapse;width:100%;font-size:.86rem}
-th,td{padding:.75rem .9rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
-thead th{font-family:var(--mono);font-size:.63rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
-tbody td{color:var(--ink-2)} tbody td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
-tbody tr:last-child td{border-bottom:none}
-td.num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.tag{font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
-  padding:.16em .45em;border-radius:2px;white-space:nowrap}
-.tag.same{background:var(--tag-same-bg);color:var(--tag-same-ink)}
-.tag.diff{background:var(--tag-diff-bg);color:var(--tag-diff-ink)}
-
-/* pricing */
-.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:1rem;margin-top:2.2rem}
-.tier{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1.4rem;display:flex;flex-direction:column;gap:.55rem}
-.tier.feat{border-color:var(--acc);position:relative}
-.tier .badge{align-self:flex-start;background:var(--tag-same-bg);color:var(--tag-same-ink);
-  font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;
-  padding:.2em .5em;border-radius:2px}
-.tier .nm{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
-.tier .pr{font-family:var(--mono);font-size:1.9rem;font-weight:650;letter-spacing:-.035em;line-height:1}
-.tier .pr small{font-size:.8rem;color:var(--ink-3);font-weight:400;letter-spacing:0}
-.tier .cap{font-size:.83rem;color:var(--ink-2)}
-.tier ul{list-style:none;display:flex;flex-direction:column;gap:.35rem;margin-top:.4rem}
-.tier li{font-size:.83rem;color:var(--ink-2);padding-left:1.1rem;position:relative}
-.tier li::before{content:"→";position:absolute;left:0;color:var(--acc);font-family:var(--mono);font-size:.78rem}
-
-.note{font-size:.88rem;color:var(--ink-2);border-left:2px solid var(--warn);padding-left:.9rem;margin-top:1.6rem;max-width:60ch}
-.note strong{color:var(--ink)}
-.tbd{color:var(--warn);font-family:var(--mono);font-size:.9em}
-
-footer{border-top:1px solid var(--line);padding-block:2.5rem 3.5rem}
-footer .wrap{display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:space-between;align-items:flex-start}
-footer p{font-family:var(--mono);font-size:.74rem;color:var(--ink-3);line-height:1.8;max-width:46ch}
-footer a{color:var(--ink-2)}
-
-.reveal{opacity:0;transform:translateY(10px);transition:opacity .42s cubic-bezier(.16,1,.3,1),transform .42s cubic-bezier(.16,1,.3,1)}
-.reveal.in{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
-  .reveal{opacity:1;transform:none;transition:none}
-  .live i{animation:none}
-  *{transition:none!important}
-}
-@media(max-width:800px){.calc{grid-template-columns:1fr}.bar{grid-template-columns:5.5rem 1fr 4.5rem}}
+  .hero{position:relative;padding-block:clamp(3.5rem,9vw,6rem) clamp(3rem,7vw,4.5rem)}
+  .hero::before{content:"";position:absolute;inset:-30% -25% auto -25%;height:90%;
+    background:var(--glow);pointer-events:none;z-index:-1}
+  .hero h1{max-width:15ch;margin-top:1.2rem}
+  .hero h1 em{font-style:normal;color:var(--ink-3)}
+  .hero .lede{margin-top:1.5rem}
+  .hero .row{margin-top:2.2rem}
+  .hero .fine{font-size:.86rem;color:var(--ink-3);margin-top:1.1rem}
+  .rates{margin-top:clamp(2.5rem,6vw,4rem)}
+  .rates .figs{grid-template-columns:repeat(auto-fit,minmax(10rem,1fr))}
+  .ratelab{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-3);margin-bottom:.7rem;display:block}
+  .term{border-radius:var(--r-lg);border:1px solid var(--line);background:var(--surface);
+    box-shadow:var(--shadow);overflow:hidden;margin-top:2.4rem}
+  .term-bar{display:flex;gap:.4rem;padding:.8rem 1.1rem;border-bottom:1px solid var(--line)}
+  .term-bar i{width:10px;height:10px;border-radius:50%;background:var(--line-2)}
+  .term pre{padding:1.3rem;line-height:1.8;white-space:pre;overflow-x:auto;
+    font-family:var(--mono);font-size:.84rem;color:var(--ink-2)}
+  .term .g{color:var(--acc)} .term .r{color:var(--stop-ink);font-weight:700} .term .d{color:var(--ink-3)}
+  .quote{border-left:3px solid var(--acc);padding-left:1.4rem;margin-top:2rem}
+  .quote p{font-size:clamp(1.08rem,2.4vw,1.35rem);line-height:1.45;letter-spacing:-.018em;color:var(--ink)}
+  .quote cite{display:block;font-style:normal;font-size:.86rem;color:var(--ink-2);margin-top:1rem;line-height:1.7}
+  .cta-band{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xl);
+    box-shadow:var(--shadow);padding:clamp(2rem,5vw,3.2rem);text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:1.1rem}
+  .cta-band p{max-width:46ch}
 </style>
 </head>
 <body>
 
-<nav><div class="wrap">
-  <span class="brand"><span class="dot"></span>idemlayer</span>
-  <a class="cta" href="#audit">Free audit</a>
-</div></nav>
+<div class="navwrap"><div class="wrap"><nav><div class="inner">
+  <a class="brand" href="index.html"><span class="dot"></span>idemlayer</a>
+  <div class="links">
+    <a href="how.html">How it works</a>
+    <a href="methods.html" class="hide-sm">Methods</a>
+    <a href="pricing.html">Pricing</a>
+    <a class="btn pri sm" href="pricing.html#audit">Free audit</a>
+  </div>
+</div></nav></div></div>
 
 <header class="hero"><div class="wrap">
   <p class="eyebrow">Idempotent by construction</p>
   <h1>The same output.<br><em>A smaller bill.</em></h1>
-  <p class="sub">Your agents resend the same context on every turn. Anthropic will serve it back at
-    a tenth of the price — but only if the cache is actually working, and it fails silently.
-    We measure yours first, for free.</p>
-  <div class="hero-cta">
-    <a class="btn pri" href="#audit">Measure my hit rate</a>
-    <a class="btn sec" href="#how">How it works</a>
+  <p class="lede">Your agents resend the same context every turn. Anthropic will serve it back at a
+    tenth of the price — but only if your cache is actually working, and it fails silently. We
+    measure yours first, for free.</p>
+  <div class="row">
+    <a class="btn pri" href="pricing.html#audit">Measure my hit rate</a>
+    <a class="btn sec" href="how.html">How it works</a>
   </div>
-  <p class="hero-note">No integration. No traffic through us. Read-only.</p>
+  <p class="fine">No integration. No traffic through us. Read-only.</p>
 
-  <div class="ticker">
-    <div class="ticker-head">
-      <span>Opus 5 · per 1M input tokens</span>
-      <span class="live"><i></i>list rates</span>
-    </div>
-    <div class="ticker-body">
-      <div class="tk"><span class="k">Standard</span><span class="v dim">$5.00</span><span class="n">what you pay now</span></div>
-      <div class="tk"><span class="k">Cache read</span><span class="v acc">$0.50</span><span class="n">90% less, same tokens</span></div>
-      <div class="tk"><span class="k">Batch</span><span class="v acc">$2.50</span><span class="n">50% less, async work</span></div>
-      <div class="tk"><span class="k">Quality change</span><span class="v acc">none</span><span class="n">identical model &amp; input</span></div>
+  <div class="rates">
+    <span class="ratelab">Opus 5 · per 1M input tokens · list rates</span>
+    <div class="figs">
+      <div class="fig"><span class="k">Standard</span><span class="v dim">$5.00</span><span class="n">what you pay now</span></div>
+      <div class="fig"><span class="k">Cache read</span><span class="v acc">$0.50</span><span class="n">90% less, same tokens</span></div>
+      <div class="fig"><span class="k">Batch</span><span class="v acc">$2.50</span><span class="n">50% less, async work</span></div>
+      <div class="fig"><span class="k">Quality change</span><span class="v acc">none</span><span class="n">identical model &amp; input</span></div>
     </div>
   </div>
 </div></header>
 
-<section id="how"><div class="wrap">
-  <div class="shead reveal">
+<section><div class="wrap stack reveal">
+  <div class="head">
     <p class="eyebrow">The problem</p>
     <h2>A broken cache throws no error.</h2>
     <p class="lede">It doesn't crash. It doesn't warn. <code>cache_read_input_tokens</code> quietly
-      goes to zero and your bill goes up. One dynamic field in the wrong place is enough — and
-      nothing in your stack is watching for it.</p>
+      goes to zero and your bill goes up. One dynamic field in the wrong place is enough.</p>
   </div>
 
-  <div class="term reveal">
+  <div class="term">
     <div class="term-bar"><i></i><i></i><i></i></div>
 <pre><span class="d">// healthy — the prefix is being reused</span>
 "usage": {
@@ -256,206 +94,80 @@ footer a{color:var(--ink-2)}
 }</pre>
   </div>
 
-  <div class="cols reveal">
-    <div class="col"><h3><span class="num">4</span>breakpoints, max</h3>
+  <div class="grid g3 mt">
+    <div class="card"><span class="num">4</span><h3>breakpoints, max</h3>
       <p>Anthropic allows four <code>cache_control</code> markers per request. Place them wrong and
-        you pay to write a cache nothing ever reads.</p></div>
-    <div class="col"><h3><span class="num">20</span>block lookback</h3>
+        you pay to write a cache nothing reads.</p></div>
+    <div class="card"><span class="num">20</span><h3>block lookback</h3>
       <p>A breakpoint searches back only twenty content blocks. Eight parallel tool calls can
-        overshoot that in a single turn — and the whole prefix reprocesses.</p></div>
-    <div class="col"><h3><span class="num">512</span>token minimum</h3>
-      <p>Below the model's minimum cacheable prefix, caching silently does nothing at all. No error
-        is returned.</p></div>
+        overshoot that in one turn.</p></div>
+    <div class="card"><span class="num">512</span><h3>token minimum</h3>
+      <p>Below the model's minimum cacheable prefix, caching silently does nothing at all.</p></div>
   </div>
 </div></section>
 
-<section><div class="wrap">
-  <div class="shead reveal">
+<section><div class="wrap stack reveal">
+  <div class="head">
     <p class="eyebrow">It happens to good teams</p>
     <h2>ProjectDiscovery ran at a 7% hit rate.</h2>
     <p class="lede">A security-intelligence agent with 20,000-token system prompts. Caching was on.
       It was working at 7% because working memory sat inside the cached prefix and changed on
       nearly every step.</p>
   </div>
-  <blockquote class="quote reveal">
+  <blockquote class="quote">
     <p>“Working memory changes on nearly every step. This was silently killing our cache hits.”</p>
-    <cite>— ProjectDiscovery engineering.
-      Relocating it took them from <strong>7% → 84%</strong> hit rate and cut LLM cost
-      <strong>59%</strong>, later <strong>70%</strong>.
-      <a href="https://projectdiscovery.io/blog/how-we-cut-llm-cost-with-prompt-caching" rel="noopener">Read their write-up →</a></cite>
+    <cite>Relocating it took them from <strong>7% → 84%</strong> hit rate and cut LLM cost
+      <strong>59%</strong>, later <strong>70%</strong>. —
+      <a href="https://projectdiscovery.io/blog/how-we-cut-llm-cost-with-prompt-caching" rel="noopener">ProjectDiscovery's write-up →</a></cite>
   </blockquote>
 </div></section>
 
-<section id="audit"><div class="wrap">
-  <div class="shead reveal">
-    <p class="eyebrow">What you'd save</p>
-    <h2>Your number depends on where you start.</h2>
-    <p class="lede">There is no single savings figure, and anyone quoting you one hasn't looked at
-      your traffic. Move the sliders — the honest answer is a range that collapses once we measure.</p>
-  </div>
-
-  <div class="calc reveal">
-    <div class="panel">
-      <div class="fld"><label for="spend">Monthly Claude spend <span class="v" id="spend-v">$50,000</span></label>
-        <input type="range" id="spend" min="5000" max="400000" step="5000" value="50000"></div>
-      <div class="fld"><label for="hit">Cache-hit rate today <span class="v" id="hit-v">30%</span></label>
-        <input type="range" id="hit" min="0" max="100" step="1" value="30"></div>
-      <div class="fld"><label for="ins">Spend that is input <span class="v" id="ins-v">70%</span></label>
-        <input type="range" id="ins" min="30" max="95" step="5" value="70"></div>
-      <div class="fld"><label for="bat">Work that tolerates async <span class="v" id="bat-v">20%</span></label>
-        <input type="range" id="bat" min="0" max="80" step="5" value="20"></div>
-      <div class="fld"><label for="dup">Requests that are exact repeats <span class="v" id="dup-v">5%</span></label>
-        <input type="range" id="dup" min="0" max="40" step="1" value="5"></div>
-      <p style="font-size:.72rem;color:var(--ink-3);font-family:var(--mono);line-height:1.5">
-        Assumes an 85% achievable hit rate. Caching discounts input only.</p>
-    </div>
-
-    <div class="out">
-      <div class="bigrow">
-        <div class="big good"><span class="k">You save</span><span class="v" id="o-save">—</span><span class="n" id="o-pct">—</span></div>
-        <div class="big"><span class="k">New bill</span><span class="v" id="o-new">—</span><span class="n">was <span id="o-old">—</span></span></div>
-        <div class="big"><span class="k">Our fee</span><span class="v" id="o-fee">—</span><span class="n" id="o-tier">—</span></div>
-        <div class="big good"><span class="k">Net to you</span><span class="v" id="o-net">—</span><span class="n" id="o-roi">—</span></div>
-      </div>
-      <div class="bars">
-        <div class="bar" id="b-cache"><span class="nm">Caching</span><span class="tr"><i style="width:0"></i></span><span class="amt">—</span></div>
-        <div class="bar" id="b-batch"><span class="nm">Batch</span><span class="tr"><i style="width:0"></i></span><span class="amt">—</span></div>
-        <div class="bar" id="b-dedup"><span class="nm">Exact-match</span><span class="tr"><i style="width:0"></i></span><span class="amt">—</span></div>
-        <p class="vd" id="vd">—</p>
-      </div>
-    </div>
-  </div>
-  <p class="note"><strong>Levers compound, they don't add.</strong> Each applies to what's left after
-    the one before it. Any vendor summing them is overstating your saving.</p>
-</div></section>
-
-<section><div class="wrap">
-  <div class="shead reveal">
-    <p class="eyebrow">Every method</p>
-    <h2>We only ship the ones that can't change your output.</h2>
+<section><div class="wrap stack reveal">
+  <div class="head">
+    <p class="eyebrow">What we ship</p>
+    <h2>Only levers that can't change your output.</h2>
     <p class="lede">Same model, same tokens — so there's nothing to A/B, nothing to eval, and no
-      quality argument to have in procurement. The rest we'll tell you about, and won't turn on.</p>
+      quality argument to have in procurement.</p>
   </div>
-  <div class="tw reveal">
-    <table>
-      <thead><tr><th>Method</th><th class="num">Saves</th><th>Output</th><th>Where it applies</th></tr></thead>
-      <tbody>
-        <tr><td>Prompt caching</td><td class="num">90%</td><td><span class="tag same">identical</span></td><td>Any repeated prefix — system prompts, tool defs, conversation history</td></tr>
-        <tr><td>Image caching</td><td class="num">90%</td><td><span class="tag same">identical</span></td><td>One image is 1,500–4,800 tokens. Same mechanism.</td></tr>
-        <tr><td>Batch API</td><td class="num">50%</td><td><span class="tag same">identical</span></td><td>Input <em>and</em> output. Async-tolerant work only.</td></tr>
-        <tr><td>Exact-match cache</td><td class="num">100%</td><td><span class="tag same">byte-identical</span></td><td>Returns stored bytes on a true repeat</td></tr>
-        <tr><td>Request dedup</td><td class="num">varies</td><td><span class="tag same">identical</span></td><td>Collapses concurrent identical calls into one</td></tr>
-        <tr><td>Billing path</td><td class="num">~10%</td><td><span class="tag same">identical</span></td><td>Inference geography and commitment terms</td></tr>
-        <tr><td>Cheaper model routing</td><td class="num">up to 5×</td><td><span class="tag diff">changes</span></td><td>Different model, different words. Off by default.</td></tr>
-        <tr><td>Image downsampling</td><td class="num">~3×</td><td><span class="tag diff">changes</span></td><td>Fewer pixels reach the model. Text degrades first.</td></tr>
-        <tr><td>OCR instead of vision</td><td class="num">~7×</td><td><span class="tag diff">changes</span></td><td>The model never sees the image. Off by default.</td></tr>
-        <tr><td>Semantic cache</td><td class="num">high</td><td><span class="tag diff">changes</span></td><td>Answers a <em>similar</em> question. Can be silently wrong.</td></tr>
-      </tbody>
-    </table>
+  <div class="grid g2">
+    <div class="card"><h3>Measure, then decide</h3>
+      <p>The audit reads token counts from your usage — never prompt text. You get your real
+        hit rate and dollar headroom before you change anything or sign anything.</p></div>
+    <div class="card"><h3>Then keep it working</h3>
+      <p>Caching breaks silently as prompts, tools and models churn through a growing team.
+        We watch the hit rate and tell you the day it drops.</p></div>
   </div>
-  <p class="note"><strong>One honest limit.</strong> Caching discounts input only — output always
-    bills full rate. And inference isn't bit-deterministic, so we claim <em>zero quality change by
-    construction</em> (same model, same input), not identical bytes. Only an exact-match cache hit
-    is literally byte-for-byte.</p>
+  <p class="note">Caching discounts <strong>input only</strong> — output always bills full rate.
+    And inference isn't bit-deterministic, so we claim <em>zero quality change by construction</em>
+    (same model, same input), not identical bytes. Only an exact-match cache hit is literally
+    byte-for-byte. <a href="methods.html">See every method →</a></p>
 </div></section>
 
-<section><div class="wrap">
-  <div class="shead reveal">
-    <p class="eyebrow">Pricing</p>
-    <h2>Flat fee. Priced under what we save you.</h2>
-    <p class="lede">Metered on spend under management, not on your post-savings invoice — so our fee
-      doesn't shrink as we get better at our job, and we're never incentivised to save you less.</p>
+<section><div class="wrap reveal">
+  <div class="cta-band">
+    <p class="eyebrow">Start with the number</p>
+    <h2>Find out what you're leaving on the table.</h2>
+    <p class="lede" style="max-width:46ch">Free, read-only, no integration. If it's under 20% we'll
+      tell you and leave.</p>
+    <div class="row"><a class="btn pri" href="pricing.html#audit">Run the free audit</a></div>
   </div>
-  <div class="tiers reveal">
-    <div class="tier"><span class="nm">Audit</span><span class="pr">$0</span>
-      <p class="cap">Read-only. Your real hit rate and dollar headroom.</p>
-      <ul><li>No integration</li><li>No traffic through us</li><li>Token counts only, never prompt text</li><li>Yours to keep either way</li></ul></div>
-    <div class="tier"><span class="nm">Starter</span><span class="pr">$499<small>/mo</small></span>
-      <p class="cap">Up to $10k/mo under management</p>
-      <ul><li>Continuous hit-rate monitoring</li><li>Regression alerts</li><li>Identity-preserving levers only</li></ul></div>
-    <div class="tier feat"><span class="badge">Most teams</span><span class="nm">Growth</span><span class="pr">$1,999<small>/mo</small></span>
-      <p class="cap">Up to $35k/mo under management</p>
-      <ul><li>Everything in Starter</li><li>Per-project attribution</li><li>Batch routing for async work</li><li>Break diagnosis with fixes</li></ul></div>
-    <div class="tier"><span class="nm">Scale</span><span class="pr">$5,999<small>/mo</small></span>
-      <p class="cap">Up to $120k/mo under management</p>
-      <ul><li>Everything in Growth</li><li>SSO and audit log</li><li>Self-hosted deployment</li><li>Quarterly realisation review</li></ul></div>
-  </div>
-  <p class="note"><strong>If the audit finds under 20% on the table, we'll tell you and leave.</strong>
-    A vendor whose fee exceeds your saving is a vendor who cost you money.</p>
 </div></section>
 
 <footer><div class="wrap">
-  <div>
-    <span class="brand"><span class="dot"></span>idemlayer</span>
-    <p style="margin-top:.8rem">Same model. Same tokens. Same output.<br>
-      Contact <span class="tbd" data-sc-tbd="contact email">— to supply —</span></p>
+  <div class="fl">
+    <a class="brand" href="index.html" style="margin-bottom:.4rem"><span class="dot"></span>idemlayer</a>
+    <a href="how.html">How it works</a>
+    <a href="methods.html">Methods</a>
+    <a href="pricing.html">Pricing</a>
   </div>
-  <p>Rates: Opus 5 $5/$25, Sonnet 5 $3/$15, Haiku 4.5 $1/$5 per MTok · cache read 0.1× · cache write 1.25× · batch 50%.<br>
-    Calculator is a model, not a quote — your figure comes from measuring your traffic.<br>
-    ProjectDiscovery figures are theirs, published, and linked above.</p>
+  <small>Same model. Same tokens. Same output.<br>
+    Contact <span class="tbd" data-sc-tbd="contact email">— to supply —</span><br><br>
+    Rates: Opus 5 $5/$25 · Sonnet 5 $3/$15 · Haiku 4.5 $1/$5 per MTok.
+    Cache read 0.1×, write 1.25×, batch 50%.<br>
+    ProjectDiscovery figures are theirs, published, and linked.</small>
 </div></footer>
 
-<script type="module">
-const CEIL=.85;
-const st={spend:5e4,hit:30,ins:70,bat:20,dup:5};
-const $=id=>document.getElementById(id);
-const usd=n=>"$"+Math.round(n).toLocaleString("en-US");
-const tier=s=>s<=1e4?{n:"Starter",f:499}:s<=35e3?{n:"Growth",f:1999}:s<=12e4?{n:"Scale",f:5999}:{n:"Enterprise",f:15000};
-
-function model(){
-  const S=st.spend,h0=st.hit/100;
-  const frac=h0<CEIL?(.9*(CEIL-h0))/(1-.9*h0):0;
-  const cache=S*(st.ins/100)*frac;
-  const a1=S-cache;
-  const batch=a1*(st.bat/100)*.5;
-  const a2=a1-batch;
-  const dedup=a2*(st.dup/100);
-  const fin=a2-dedup;
-  return{S,cache,batch,dedup,saved:S-fin,fin,pct:S>0?(S-fin)/S*100:0};
-}
-function setBar(id,amt,mx){
-  const el=$(id); el.classList.toggle("off",amt<1);
-  el.querySelector(".tr i").style.width=(mx>0?Math.min(100,amt/mx*100):0)+"%";
-  el.querySelector(".amt").textContent=amt<1?"—":usd(amt);
-}
-function render(){
-  $("spend-v").textContent=usd(st.spend);
-  $("hit-v").textContent=st.hit+"%";
-  $("ins-v").textContent=st.ins+"%";
-  $("bat-v").textContent=st.bat+"%";
-  $("dup-v").textContent=st.dup+"%";
-  const r=model(),t=tier(st.spend),net=r.saved-t.f;
-  $("o-save").textContent=usd(r.saved);
-  $("o-pct").textContent=r.pct.toFixed(1)+"% of your bill";
-  $("o-new").textContent=usd(r.fin);
-  $("o-old").textContent=usd(r.S);
-  $("o-fee").textContent=usd(t.f);
-  $("o-tier").textContent=t.n+" · flat/mo";
-  $("o-net").textContent=usd(net);
-  $("o-roi").textContent=(r.saved/t.f).toFixed(1)+"× return";
-  $("o-net").parentElement.className="big "+(net>0?"good":"bad");
-  const mx=Math.max(r.cache,r.batch,r.dedup,1);
-  setBar("b-cache",r.cache,mx); setBar("b-batch",r.batch,mx); setBar("b-dedup",r.dedup,mx);
-  const v=$("vd");
-  if(net<=0){v.className="vd bad";
-    v.innerHTML="<strong>We'd tell you not to buy.</strong> You'd save "+usd(r.saved)+" and pay us "+usd(t.f)+".";}
-  else if(st.hit>=90){v.className="vd warn";
-    v.innerHTML="<strong>Your caching is already working.</strong> At "+st.hit+"% you've captured most of it — what's left is batch and dedup. We'd say so up front.";}
-  else if(r.pct>=40){v.className="vd";
-    v.innerHTML="<strong>This is the common case.</strong> "+r.pct.toFixed(0)+"% off a "+usd(r.S)+" bill, and "+Math.round(r.cache/r.saved*100)+"% of it is caching you're already paying for and not getting.";}
-  else{v.className="vd warn";
-    v.innerHTML="<strong>Real, but modest.</strong> "+r.pct.toFixed(0)+"% — "+usd(r.saved)+"/mo, a "+(r.saved/t.f).toFixed(1)+"× return on the fee.";}
-}
-["spend","hit","ins","bat","dup"].forEach(id=>
-  $(id).addEventListener("input",e=>{st[id]=+e.target.value;render();}));
-render();
-
-const io=new IntersectionObserver(es=>es.forEach(e=>{
-  if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);}
-}),{rootMargin:"200px 0px 100px 0px",threshold:.01});
-document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
-
-window.__ready=true;
-</script>
+<script type="module" src="assets/site.js"></script>
+<script type="module">window.__ready = true;</script>
 </body>
 </html>

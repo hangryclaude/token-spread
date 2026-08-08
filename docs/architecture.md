@@ -20,7 +20,8 @@ src/
 ├── pricing.ts                  costOfEvent() — the one pricing fn; microCentsToCents,
 │                                formatCents                                            [pure]
 ├── metrics.ts                  computeMetrics(): UsageEvent[] → totals/byModel/
-│                                byProject/cacheHitRate; measuredCacheWriteOverheadPct() [pure]
+│                                byProject/byAccount/cacheHitRate;
+│                                measuredCacheWriteOverheadPct()                       [pure]
 ├── simulate.ts                 simulate(): routing curve, cache headroom, and the
 │                                cache/routing/combined savings attribution            [pure]
 ├── report.ts                   buildReport(): assembles the Report object, warnings,

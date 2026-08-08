@@ -88,6 +88,16 @@ Same output, **~42% of the cost** — your dollar stretches **2.37× further**. 
 overlap, so the combined saving ($432.95) is *less* than the naive sum ($523.75); the report
 never shows the inflated sum.
 
+<p align="center">
+  <img src="docs/img/savings-waterfall.png" width="760" alt="Waterfall: $750 baseline, −$283.75 cache, −$240 routing, +$90.80 overlap added back, = $317.05 net; $432.95 recovered (57.7%)"><br>
+  <em>The overlap (amber) is added back on purpose — the levers compound, they don't sum.</em>
+</p>
+
+<p align="center">
+  <img src="docs/img/routing-dial.png" width="760" alt="Routing dial: routing-only savings vs percent routed to Haiku, 0 to $600; the chosen 40% point saves $240/mo"><br>
+  <em>Routing is an operator-set what-if — the report shows the whole dial, not one promised number.</em>
+</p>
+
 Two honesty notes, baked into the tool:
 
 - **Cache savings are measured** from your real `cache_read` data. **Routing is an

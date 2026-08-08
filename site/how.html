@@ -8,7 +8,8 @@
 <meta name="description" content="Why a prompt cache breaks silently, the four ways it happens, and what an audit measures before you change anything.">
 <link rel="stylesheet" href="assets/style.css">
 <style>
-  .page-head{padding-block:clamp(3rem,7vw,4.5rem) 0}
+  .page-head{position:relative;overflow:hidden;padding-block:clamp(3rem,7vw,4.5rem) clamp(1rem,3vw,2rem)}
+  .page-head .hero-art{height:min(52vh,440px)}
   .steps{counter-reset:s;display:flex;flex-direction:column;gap:1rem}
   .step{counter-increment:s;background:var(--bg-2);border-radius:var(--r-20);padding:1.5rem 1.6rem;
     display:grid;grid-template-columns:2.6rem 1fr;gap:1.2rem;align-items:start}
@@ -37,7 +38,11 @@
   </div>
 </div></nav>
 
-<header class="page-head"><div class="wrap"><div class="head">
+<header class="page-head">
+  <div class="hero-art" aria-hidden="true">
+    <img src="assets/img/flow-a.avif" alt="" data-fx-parallax decoding="async">
+  </div>
+  <div class="wrap"><div class="head">
   <p class="eyebrow">How it works</p>
   <h1>Caching is free. Keeping it working isn't.</h1>
   <p class="lede">Anthropic already gives you a 90% discount on repeated context. The hard part is
@@ -128,7 +133,7 @@
     Minimum cacheable prefix and lookback limits are Anthropic's, and current as of August 2026.</small>
 </div></footer>
 
-<script type="module" src="assets/site.js"></script>
+<script type="module" src="assets/fx.js"></script>
 <script type="module">window.__ready = true;</script>
 </body>
 </html>

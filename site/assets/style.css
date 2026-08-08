@@ -219,6 +219,14 @@ footer small{font-size:.82rem;color:var(--ink-3);line-height:1.75;display:block;
 :root:not([data-theme="light"]) .hero-art img{opacity:.34}
 @media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .hero-art img{opacity:.92}}
 
+/* on narrow viewports the copy column spans most of the width, so the
+   left-to-right scrim never reaches it — hold more ground there. */
+@media(max-width:760px){
+  .hero-art::after{background:linear-gradient(to bottom,transparent 16%,var(--bg) 86%),
+    linear-gradient(to right,var(--bg) 0%,var(--bg) 64%,rgba(0,0,0,0) 100%)}
+  .hero-art img{opacity:.7}
+}
+
 /* ── ambient drift on the brand dot — the one piece of autonomous motion ── */
 @keyframes breathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:.72}}
 .brand .dot{animation:breathe 3.6s ease-in-out infinite}

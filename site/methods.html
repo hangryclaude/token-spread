@@ -8,7 +8,8 @@
 <meta name="description" content="Every way to cut a Claude bill, split by whether it can change your output. We ship the ones that can't.">
 <link rel="stylesheet" href="assets/style.css">
 <style>
-  .page-head{padding-block:clamp(3rem,7vw,4.5rem) 0}
+  .page-head{position:relative;overflow:hidden;padding-block:clamp(3rem,7vw,4.5rem) clamp(1rem,3vw,2rem)}
+  .page-head .hero-art{height:min(52vh,440px)}
   .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1.15rem}
   .box{border-radius:var(--r-20);padding:1.5rem 1.6rem;border:1px solid;
     display:flex;flex-direction:column;gap:.6rem}
@@ -35,7 +36,11 @@
   </div>
 </div></nav>
 
-<header class="page-head"><div class="wrap"><div class="head">
+<header class="page-head">
+  <div class="hero-art" aria-hidden="true">
+    <img src="assets/img/flow-a.avif" alt="" data-fx-parallax decoding="async">
+  </div>
+  <div class="wrap"><div class="head">
   <p class="eyebrow">Methods</p>
   <h1>Every lever, and the line we won't cross.</h1>
   <p class="lede">There are plenty of ways to make an AI bill smaller. Most of them change what the
@@ -128,7 +133,7 @@
     Contact <span class="tbd" data-sc-tbd="contact email">— to supply —</span></small>
 </div></footer>
 
-<script type="module" src="assets/site.js"></script>
+<script type="module" src="assets/fx.js"></script>
 <script type="module">window.__ready = true;</script>
 </body>
 </html>

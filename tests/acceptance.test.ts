@@ -20,7 +20,7 @@ test("costOfEvent returns an integer for every rate-card model", () => {
 // §9.11 — importer A never opens a socket
 test("the local importer completes with the network disabled", async () => {
   const realFetch = globalThis.fetch;
-  globalThis.fetch = (() => { throw new Error("network access attempted"); }) as typeof fetch;
+  globalThis.fetch = (() => { throw new Error("network access attempted"); }) as unknown as typeof fetch;
   try {
     const text = await Bun.file(`${import.meta.dir}/../fixtures/mixed.jsonl`).text();
     const r = importClaudeCodeJsonl(text.split("\n").filter((l) => l.trim() !== ""), { projectId: "demo" });

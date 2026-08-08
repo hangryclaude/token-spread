@@ -8,6 +8,28 @@ const STALE_AFTER_DAYS = 30;
 
 export interface Money { microCents: number; cents: number; formatted: string }
 
+/** Token volume the report covers. Counts, not money — nothing here is priced. */
+export interface TokenTotals {
+  total: number;
+  input: number;
+  cacheRead: number;
+  cacheCreation: number;
+  output: number;
+  /** cacheRead / (cacheRead + input), as a percent to one decimal. */
+  cacheHitPct: number;
+}
+
+/**
+ * Each lever's saving as a percent of the baseline **cost**, to one decimal.
+ *
+ * Deliberately not "tokens saved": neither lever removes a single token. Caching
+ * moves input tokens from the full rate to the 0.10x read rate, and routing moves
+ * them to a cheaper model's rate. The token count is identical before and after —
+ * only the price attached to each token changes. A "tokens saved" figure would be
+ * zero, and any non-zero one would be a lie.
+ */
+export interface SavingsPct { cacheOnly: number; routingOnly: number; combined: number }
+
 export interface AssumptionNote {
   name: string;
   value: string;
@@ -23,7 +45,11 @@ export interface Report {
   byModel: Record<string, Money>;
   byProject: Record<string, Money>;
   byAccount: Record<string, Money>;
+  tokens: TokenTotals;
   savings: { cacheOnly: Money; routingOnly: Money; combined: Money };
+  savingsPct: SavingsPct;
+  /** Blended cost per million tokens, before and after both levers. */
+  effectiveRatePerMTok: { before: Money; after: Money };
   routingCurve: Array<{ fractionPct: number; cost: Money; saved: Money }>;
   cacheHeadroom: { targetCacheHitPct: number; cost: Money; saved: Money } | null;
   assumptions: AssumptionNote[];
@@ -36,6 +62,20 @@ const money = (microCents: number): Money => {
   const cents = microCentsToCents(microCents);
   return { microCents, cents, formatted: formatCents(cents) };
 };
+
+/** Thousands separators without Intl — locale must not change the report's bytes. */
+const group = (n: number): string => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+/** One decimal place, half-up. Presentation only — never feeds back into pricing. */
+const pct1 = (numerator: number, denominator: number): number =>
+  denominator === 0 ? 0 : Math.round((numerator / denominator) * 1000) / 10;
+
+/**
+ * Blended µ¢ per million tokens. Integer-first so a huge token count can't lose
+ * precision: multiply before dividing.
+ */
+const ratePerMTok = (microCents: number, tokens: number): number =>
+  tokens === 0 ? 0 : Math.round((microCents * 1_000_000) / tokens);
 
 const mapMoney = (rec: Record<string, { microCents: number }>): Record<string, Money> =>
   Object.fromEntries(
@@ -51,6 +91,10 @@ export function buildReport(input: {
   generatedAt: Date;
 }): Report {
   const { metrics, simulation: sim, assumptions: a, provenance, card, generatedAt } = input;
+
+  const o = metrics.overall;
+  const baseline = o.microCents;
+  const totalTokens = o.inputTokens + o.cacheReadTokens + o.cacheCreationTokens + o.outputTokens;
 
   const warnings: string[] = [];
   const age = cardAgeDays(card, generatedAt);
@@ -91,6 +135,11 @@ export function buildReport(input: {
     // it inline is not decoration: unlabelled, "routing saves $753" reads as a property
     // of the traffic when it is really a property of an assumption nobody agreed to.
     `Savings levers compound and do not add: cache-only ${formatCents(microCentsToCents(sim.attribution.cacheOnlySavedMicroCents))} (raising cache-hit to ${a.targetCacheHitPct ?? 0}%), routing-only ${formatCents(microCentsToCents(sim.attribution.routingOnlySavedMicroCents))} (at ${a.routableFractionsPct.at(-1) ?? 0}% of traffic routed to ${a.targetModel}), both together ${formatCents(microCentsToCents(sim.attribution.combinedSavedMicroCents))}.`,
+    // Percentages are of COST. Neither lever removes a token — they change the price
+    // each token bills at, so a "tokens saved" figure would be zero by construction.
+    `Tokens: ${group(totalTokens)} priced (${group(o.cacheReadTokens)} cache reads, ${group(o.inputTokens)} fresh input, ${group(o.outputTokens)} output).`,
+    `Percent of cost saved: cache-only ${pct1(sim.attribution.cacheOnlySavedMicroCents, baseline)}%, routing-only ${pct1(sim.attribution.routingOnlySavedMicroCents, baseline)}%, both together ${pct1(sim.attribution.combinedSavedMicroCents, baseline)}%.`,
+    `Blended rate: ${formatCents(microCentsToCents(ratePerMTok(baseline, totalTokens)))} per MTok today → ${formatCents(microCentsToCents(ratePerMTok(baseline - sim.attribution.combinedSavedMicroCents, totalTokens)))} per MTok under both levers.`,
     `Rate card captured ${card.capturedAt}. ${card.notes.join(" ")}`,
   ].join("\n");
 
@@ -102,10 +151,27 @@ export function buildReport(input: {
     byModel: mapMoney(metrics.byModel),
     byProject: mapMoney(metrics.byProject),
     byAccount: mapMoney(metrics.byAccount),
+    tokens: {
+      total: totalTokens,
+      input: o.inputTokens,
+      cacheRead: o.cacheReadTokens,
+      cacheCreation: o.cacheCreationTokens,
+      output: o.outputTokens,
+      cacheHitPct: pct1(o.cacheReadTokens, o.cacheReadTokens + o.inputTokens),
+    },
     savings: {
       cacheOnly: money(sim.attribution.cacheOnlySavedMicroCents),
       routingOnly: money(sim.attribution.routingOnlySavedMicroCents),
       combined: money(sim.attribution.combinedSavedMicroCents),
+    },
+    savingsPct: {
+      cacheOnly: pct1(sim.attribution.cacheOnlySavedMicroCents, baseline),
+      routingOnly: pct1(sim.attribution.routingOnlySavedMicroCents, baseline),
+      combined: pct1(sim.attribution.combinedSavedMicroCents, baseline),
+    },
+    effectiveRatePerMTok: {
+      before: money(ratePerMTok(baseline, totalTokens)),
+      after: money(ratePerMTok(baseline - sim.attribution.combinedSavedMicroCents, totalTokens)),
     },
     routingCurve: sim.routingCurve.map((p) => ({
       fractionPct: p.fractionPct, cost: money(p.microCents), saved: money(p.savedMicroCents),

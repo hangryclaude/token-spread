@@ -49,7 +49,7 @@
   --nav-h:72px;                /* INTERFACE_NAV_HEIGHT */
   --gut:clamp(1.15rem,5vw,3rem);
   --max:72rem;
-  --rhythm:clamp(4rem,10vw,7rem);
+  --rhythm:clamp(4.5rem,11vw,8rem);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#131313;            /* surface1 dark */
@@ -144,7 +144,7 @@ section{padding-block:var(--rhythm)}
 /* ── surfaces: FILL CONTRAST, no border, no shadow ── */
 .card{background:var(--bg-2);border-radius:var(--r-20);padding:1.75rem;
   display:flex;flex-direction:column;gap:.65rem}
-.card .num{font-family:var(--mono);font-size:2rem;font-weight:var(--w-med);letter-spacing:-.04em;
+.card .num{font-size:2.2rem;font-weight:var(--w-med);letter-spacing:-.04em;
   color:var(--acc-text);display:block;line-height:1}
 .card p{font-size:.95rem;color:var(--ink-2)}
 .panel{background:var(--bg-2);border-radius:var(--r-24);padding:1.75rem}
@@ -153,7 +153,7 @@ section{padding-block:var(--rhythm)}
 .fig{background:var(--bg-2);border-radius:var(--r-16);padding:1.3rem 1.35rem}
 .fig .k,.fig .v,.fig .n{display:block}
 .fig .k{font-size:.82rem;color:var(--ink-2)}
-.fig .v{font-family:var(--mono);font-size:clamp(1.5rem,3.4vw,2rem);font-weight:var(--w-med);
+.fig .v{font-size:clamp(1.6rem,3.6vw,2.15rem);font-weight:var(--w-med);
   letter-spacing:-.04em;line-height:1.14;margin-top:.3rem;font-variant-numeric:tabular-nums}
 .fig .n{font-size:.8rem;color:var(--ink-3);margin-top:.2rem}
 .fig .v.acc{color:var(--acc-text)} .fig .v.dim{color:var(--ink-2)} .fig .v.bad{color:var(--stop)}
@@ -166,7 +166,7 @@ thead th{font-size:.82rem;color:var(--ink-2);font-weight:var(--w-med)}
 tbody td{color:var(--ink-2)}
 tbody td:first-child{color:var(--ink);font-weight:var(--w-med);white-space:nowrap}
 tbody tr:last-child td{border-bottom:none}
-td.num,th.num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tag{font-size:.74rem;font-weight:var(--w-med);padding:.28em .7em;border-radius:var(--r-8);white-space:nowrap}
 .tag.same{background:var(--tag-same-bg);color:var(--tag-same-ink)}
 .tag.diff{background:var(--tag-diff-bg);color:var(--tag-diff-ink)}
@@ -193,3 +193,13 @@ footer small{font-size:.82rem;color:var(--ink-3);line-height:1.75;display:block;
   .reveal{opacity:1;transform:none;transition:none}
   *{transition:none!important;animation:none!important}
 }
+
+
+/* ── module: Uniswap's stacked-row card (their swap widget's structure) ── */
+.module{background:var(--bg-2);border-radius:var(--r-24);padding:.45rem;
+  display:flex;flex-direction:column;gap:.3rem}
+.module .rowcard{background:var(--bg);border-radius:var(--r-20);padding:1.15rem 1.3rem}
+.module .rowcard.flush{background:transparent;padding:1rem 1.3rem}
+:root[data-theme="dark"] .module .rowcard,
+:root:not([data-theme="light"]) .module .rowcard{background:var(--bg-3)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .module .rowcard{background:var(--bg)}}

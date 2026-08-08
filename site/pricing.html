@@ -13,14 +13,14 @@
   .fld{display:flex;flex-direction:column;gap:.3rem}
   .fld label{font-size:.82rem;color:var(--ink-2);display:flex;justify-content:space-between;
     align-items:baseline;gap:.6rem}
-  .fld .v{font-family:var(--mono);color:var(--ink);font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums}
+  .fld .v{color:var(--ink);font-weight:var(--w-med);font-size:.92rem;font-variant-numeric:tabular-nums}
   input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;
     background:var(--bg-2);border-radius:var(--r-full);cursor:pointer;margin:.45rem 0}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;
     border-radius:50%;background:var(--acc-text);border:3px solid var(--bg-2);cursor:pointer}
   input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--acc-text);
     border:3px solid var(--bg-2);cursor:pointer}
-  .panel .fld + .fld{margin-top:1.05rem}
+  
   .out{display:flex;flex-direction:column;gap:.9rem}
   .bars{display:flex;flex-direction:column;gap:.6rem}
   .bar{display:grid;grid-template-columns:6.5rem 1fr 5.5rem;gap:.8rem;align-items:center;font-size:.86rem}
@@ -28,7 +28,7 @@
   .bar .tr{height:12px;background:var(--bg-2);border-radius:var(--r-full);overflow:hidden}
   .bar .tr i{display:block;height:100%;background:var(--acc-text);border-radius:var(--r-full);
     transition:width .3s cubic-bezier(.4,0,.2,1)}
-  .bar .amt{font-family:var(--mono);text-align:right;color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .bar .amt{text-align:right;color:var(--ink-2);font-variant-numeric:tabular-nums}
   .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1.1rem}
   .tier{background:var(--bg-2);border-radius:var(--r-20);
     padding:1.7rem 1.6rem;display:flex;flex-direction:column;gap:.6rem}
@@ -58,13 +58,13 @@
   </div>
 </div></nav>
 
-<header class="page-head"><div class="wrap head">
+<header class="page-head"><div class="wrap"><div class="head">
   <p class="eyebrow">Pricing</p>
   <h1>Priced under what we save you.</h1>
   <p class="lede">A flat monthly fee metered on spend under management — not on your post-savings
     invoice. Our fee doesn't shrink as we get better at our job, so we're never paid to save you
     less.</p>
-</div></header>
+</div></div></header>
 
 <section id="audit"><div class="wrap stack reveal">
   <div class="head">
@@ -75,17 +75,17 @@
   </div>
 
   <div class="calc">
-    <div class="panel">
-      <div class="fld"><label for="spend">Monthly Claude spend <span class="v" id="spend-v">$50,000</span></label>
-        <input type="range" id="spend" min="5000" max="400000" step="5000" value="50000"></div>
-      <div class="fld"><label for="hit">Cache-hit rate today <span class="v" id="hit-v">30%</span></label>
-        <input type="range" id="hit" min="0" max="100" step="1" value="30"></div>
-      <div class="fld"><label for="ins">Spend that is input <span class="v" id="ins-v">70%</span></label>
-        <input type="range" id="ins" min="30" max="95" step="5" value="70"></div>
-      <div class="fld"><label for="bat">Work that tolerates async <span class="v" id="bat-v">20%</span></label>
-        <input type="range" id="bat" min="0" max="80" step="5" value="20"></div>
-      <div class="fld"><label for="dup">Requests that are exact repeats <span class="v" id="dup-v">5%</span></label>
-        <input type="range" id="dup" min="0" max="40" step="1" value="5"></div>
+    <div class="module">
+      <div class="rowcard"><div class="fld"><label for="spend">Monthly Claude spend <span class="v" id="spend-v">$50,000</span></label>
+        <input type="range" id="spend" min="5000" max="400000" step="5000" value="50000"></div></div>
+      <div class="rowcard"><div class="fld"><label for="hit">Cache-hit rate today <span class="v" id="hit-v">30%</span></label>
+        <input type="range" id="hit" min="0" max="100" step="1" value="30"></div></div>
+      <div class="rowcard"><div class="fld"><label for="ins">Spend that is input <span class="v" id="ins-v">70%</span></label>
+        <input type="range" id="ins" min="30" max="95" step="5" value="70"></div></div>
+      <div class="rowcard"><div class="fld"><label for="bat">Work that tolerates async <span class="v" id="bat-v">20%</span></label>
+        <input type="range" id="bat" min="0" max="80" step="5" value="20"></div></div>
+      <div class="rowcard"><div class="fld"><label for="dup">Requests that are exact repeats <span class="v" id="dup-v">5%</span></label>
+        <input type="range" id="dup" min="0" max="40" step="1" value="5"></div></div>
     </div>
 
     <div class="out">
@@ -95,7 +95,7 @@
         <div class="fig"><span class="k">Our fee</span><span class="v dim" id="o-fee">—</span><span class="n" id="o-tier">—</span></div>
         <div class="fig"><span class="k">Net to you</span><span class="v acc" id="o-net">—</span><span class="n" id="o-roi">—</span></div>
       </div>
-      <div class="panel bars">
+      <div class="module" style="padding:1.3rem;gap:.7rem">
         <div class="bar" id="b-cache"><span class="nm">Caching</span><span class="tr"><i style="width:0"></i></span><span class="amt">—</span></div>
         <div class="bar" id="b-batch"><span class="nm">Batch</span><span class="tr"><i style="width:0"></i></span><span class="amt">—</span></div>
         <div class="bar" id="b-dedup"><span class="nm">Exact-match</span><span class="tr"><i style="width:0"></i></span><span class="amt">—</span></div>

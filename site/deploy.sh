@@ -1,5 +1,5 @@
 #!/bin/bash
-# Deploy the idemlayer site to Cloudflare Pages.
+# Deploy the Tokens Saved site to Cloudflare Pages.
 #
 #   ./deploy.sh <domain> [project-name]
 #
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 DOMAIN="${1:?usage: ./deploy.sh <domain> [project-name]}"
-PROJECT="${2:-idemlayer}"
+PROJECT="${2:-tokenssaved}"
 ORIGIN="https://${DOMAIN}"
 SRC="$(cd "$(dirname "$0")" && pwd)"
 STAGE="$(mktemp -d)/site"

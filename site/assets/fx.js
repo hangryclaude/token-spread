@@ -1,4 +1,4 @@
-/* idemlayer — page effects.
+/* Tokens Saved — page effects.
    Every effect below is decorative: each is wrapped so a failure leaves a flatter
    page rather than a broken one, and each stops itself under prefers-reduced-motion
    (checked live, not once at load).

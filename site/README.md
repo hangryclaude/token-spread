@@ -1,6 +1,6 @@
 # site/
 
-The idemlayer marketing site. Five static pages, **141KB total**, no build step, no
+The Tokens Saved marketing site. Five static pages, **141KB total**, no build step, no
 dependencies, no framework.
 
 ```bash
@@ -62,7 +62,7 @@ Three things are deliberately unset because they aren't known yet:
 - [ ] **Absolute URLs** — `og:image` is relative (crawlers resolve it against the page URL, but
       absolute is safer). Set the real origin in the four `og:image`/`twitter:image` tags,
       `robots.txt`'s sitemap line, and `sitemap.xml`'s `<loc>` paths.
-- [ ] **Domain** — `idemlayer.com` was checked available on 2026-08-09 but is **not registered**.
+- [ ] **Domain** — `Tokens Saved.com` was checked available on 2026-08-09 but is **not registered**.
 - [ ] **Regenerate the OG card** after any hero copy change: serve the site, screenshot
       `assets/og-source.html` at 1200x630, re-encode to `assets/img/og.jpg`. It renders the
       real hero markup and the real orb field, so it cannot drift from the page by accident.

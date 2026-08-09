@@ -1,4 +1,4 @@
-/* idemlayer — shared behaviour. No dependencies, no build step. */
+/* Tokens Saved — shared behaviour. No dependencies, no build step. */
 
 /* Scroll reveals. Pre-triggers 200px early so fast scrolling never outruns the
    transition (that showed up as occlusion warnings in gate 2). */

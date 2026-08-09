@@ -4,3 +4,4 @@ node_modules/
 dist/
 bench/result.json
 site/out/
+bench/.snapshot.json

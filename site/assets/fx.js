@@ -1,38 +1,17 @@
 /* idemlayer — page effects.
    Every effect below is decorative: each is wrapped so a failure leaves a flatter
    page rather than a broken one, and each stops itself under prefers-reduced-motion
-   (checked live, not once at load). */
+   (checked live, not once at load).
+
+   There used to be a count-up here that ticked the three spec cards from 0 up to
+   4 / 20 / 512. It is gone on purpose. Those are Anthropic's published limits, and
+   animating a published limit means the page spends ~1.1s displaying numbers that
+   are not the fact — on a site whose whole argument is that its figures are honest.
+   Gate 3 is what surfaced it: mid-tick the run paints none of its own pixels. */
 
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-/* ── 1. Count-up on figures ───────────────────────────────────────────────
-   Numbers tick to their value when they first scroll into view. Static text
-   stays in the DOM, so a failure here shows the final number, not an empty box. */
-function countUp(el) {
-  const raw = el.dataset.count;
-  const target = parseFloat(raw);
-  if (!Number.isFinite(target)) return;
-  const prefix = el.dataset.prefix || "";
-  const suffix = el.dataset.suffix || "";
-  const decimals = (raw.split(".")[1] || "").length;
-
-  if (reduced.matches) {
-    el.textContent = prefix + target.toFixed(decimals) + suffix;
-    return;
-  }
-  const dur = 1100;
-  let start = null;
-  const step = (t) => {
-    if (start === null) start = t;
-    const p = Math.min(1, (t - start) / dur);
-    const eased = 1 - Math.pow(1 - p, 3);           // easeOutCubic
-    el.textContent = prefix + (target * eased).toFixed(decimals) + suffix;
-    if (p < 1) requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
-}
-
-/* ── 2. Hero parallax ─────────────────────────────────────────────────────
+/* ── Hero parallax ─────────────────────────────────────────────────────────
    The page owns scroll: one listener, one rAF, pushed to every subscriber.
    Two competing scroll sources is the classic way to break a composed page. */
 const subs = [];
@@ -57,21 +36,18 @@ function initParallax() {
   });
 }
 
-/* ── 3. Reveals ───────────────────────────────────────────────────────────
+/* ── Reveals ───────────────────────────────────────────────────────────────
    Pre-triggers 200px early so fast scrolling never outruns the transition. */
 function initReveals() {
   const io = new IntersectionObserver((entries) => {
     entries.forEach((e) => {
       if (!e.isIntersecting) return;
       e.target.classList.add("in");
-      e.target.querySelectorAll?.("[data-count]").forEach(countUp);
-      if (e.target.matches?.("[data-count]")) countUp(e.target);
       io.unobserve(e.target);
     });
   }, { rootMargin: "200px 0px 100px 0px", threshold: 0.01 });
 
   document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
-  document.querySelectorAll("[data-count]").forEach((el) => io.observe(el));
 }
 
 try {

@@ -4,39 +4,57 @@
 <meta charset="utf-8">
 <title>og</title>
 <style>
+  /* Mirrors the live hero: centred, weight 485, letter-spacing -.012em, and the
+     same CSS orb field rather than a bitmap — so a copy change on the page and a
+     regenerated card cannot drift apart in type or colour. Screenshot at 1200x630. */
   *{margin:0;padding:0;box-sizing:border-box}
   body{width:1200px;height:630px;overflow:hidden;position:relative;background:#FFFFFF;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-    color:#131313;display:flex;flex-direction:column;justify-content:center;padding:76px 80px}
-  .art{position:absolute;inset:0;z-index:0}
-  .art img{width:100%;height:100%;object-fit:cover;object-position:70% 45%}
-  .art::after{content:"";position:absolute;inset:0;
-    background:linear-gradient(to right,#FFFFFF 0%,#FFFFFF 46%,rgba(255,255,255,0) 82%)}
-  .c{position:relative;z-index:1;max-width:740px}
-  .brand{display:flex;align-items:center;gap:12px;font-size:26px;font-weight:600;
-    letter-spacing:-.02em;margin-bottom:40px}
-  .dot{width:15px;height:15px;border-radius:50%;background:#0B7A4B}
-  h1{font-size:78px;line-height:1.0;letter-spacing:-.045em;font-weight:700}
-  h1 em{font-style:normal;color:#5A625C}
-  p{font-size:27px;color:#4C544E;margin-top:26px;line-height:1.4;max-width:22ch}
-  .rates{display:flex;gap:14px;margin-top:44px}
-  .r{background:#F4F7F5;border-radius:16px;padding:16px 22px}
-  .r b{display:block;font-size:30px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-  .r span{font-size:15px;color:#4C544E}
-  .r.on b{color:#0B7A4B}
+    color:#131313;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;padding:56px 80px}
+  #orbs{position:absolute;inset:0;overflow:hidden}
+  .orb{position:absolute;border-radius:50%}
+  .c{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;
+    text-align:center}
+  .brand{display:flex;align-items:center;gap:11px;font-size:23px;font-weight:535;
+    letter-spacing:-.022em;margin-bottom:34px}
+  .dot{width:13px;height:13px;border-radius:50%;background:#19BB77}
+  h1{font-size:76px;line-height:1.1875;letter-spacing:-.012em;font-weight:485}
+  .card{margin-top:34px;background:#F9F9F9;border-radius:24px;padding:6px;width:520px;
+    display:flex;flex-direction:column;gap:4px;text-align:left}
+  .row{background:#FFFFFF;border-radius:20px;padding:14px 20px;display:flex;
+    align-items:center;justify-content:space-between}
+  .row .lab{font-size:14px;color:rgba(19,19,19,.63);display:block;margin-bottom:2px}
+  .row .amt{font-size:31px;font-weight:485;letter-spacing:-.028em;
+    font-variant-numeric:tabular-nums;line-height:1.15}
+  .row .amt.out{color:#0B7A4B}
+  .chip{background:#F2F2F2;border-radius:999px;padding:7px 14px;font-size:14px;
+    font-weight:535;white-space:nowrap}
+  p.sub{font-size:19px;color:#131313;margin-top:30px}
 </style>
 </head>
 <body>
-  <div class="art"><img src="img/hero-a.avif" alt=""></div>
+  <div id="orbs"></div>
   <div class="c">
     <div class="brand"><span class="dot"></span>idemlayer</div>
-    <h1>The same output.<br><em>A smaller bill.</em></h1>
-    <p>We measure your Claude cache-hit rate free. Same model, same tokens.</p>
-    <div class="rates">
-      <div class="r"><b>$5.00</b><span>standard</span></div>
-      <div class="r on"><b>$0.50</b><span>cache read</span></div>
-      <div class="r on"><b>none</b><span>quality change</span></div>
+    <h1>The same output.<br>A smaller bill.</h1>
+    <div class="card">
+      <div class="row">
+        <div><span class="lab">You spend now</span><span class="amt">$40,000</span></div>
+        <span class="chip">per month</span>
+      </div>
+      <div class="row">
+        <div><span class="lab">You'd spend</span><span class="amt out">$17,967</span></div>
+        <span class="chip">same output</span>
+      </div>
     </div>
+    <p class="sub">Same model, same tokens. We measure your cache-hit rate free.</p>
   </div>
+<script type="module">
+import { initOrbField } from "./orbfield.js";
+initOrbField(document.getElementById("orbs"),
+  { count: 30, seed: 424242, drift: false, scale: .9,
+    keepOut: { x0: 27, x1: 73, y0: 4, y1: 96 } });
+</script>
 </body>
 </html>

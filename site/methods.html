@@ -22,7 +22,6 @@
 <link rel="stylesheet" href="assets/style.css">
 <style>
   .page-head{position:relative;overflow:hidden;padding-block:clamp(3rem,7vw,4.5rem) clamp(1rem,3vw,2rem)}
-  .page-head .hero-art{height:min(52vh,440px)}
   .split{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1.15rem}
   .box{border-radius:var(--r-20);padding:1.5rem 1.6rem;border:1px solid;
     display:flex;flex-direction:column;gap:.6rem}
@@ -50,9 +49,7 @@
 </div></nav>
 
 <header class="page-head">
-  <div class="hero-art" aria-hidden="true">
-    <img src="assets/img/flow-a.avif" alt="" data-fx-parallax decoding="async">
-  </div>
+  <div class="orbwrap" data-orbs aria-hidden="true"></div>
   <div class="wrap"><div class="head">
   <p class="eyebrow">Methods</p>
   <h1>Every lever, and the line we won't cross.</h1>
@@ -103,6 +100,18 @@
         <tr><td>Batch API</td><td class="num">50%</td><td><span class="tag same">identical</span></td><td>Input <em>and</em> output. Async-tolerant work only — evals, bulk classification, offline runs.</td></tr>
         <tr><td>Exact-match cache</td><td class="num">100%</td><td><span class="tag same">byte-identical</span></td><td>A true repeat returns the stored bytes. The only literal byte-identity guarantee here.</td></tr>
         <tr><td>Request dedup</td><td class="num">varies</td><td><span class="tag same">identical</span></td><td>Concurrent identical calls collapse into one upstream request</td></tr>
+        <tr><td>Batch + caching</td><td class="num">95%</td><td><span class="tag same">identical</span></td>
+          <td>The two stack: a cached token inside a batch is 0.1&times; &times; 0.5. Use the
+            1-hour TTL — a 5-minute entry expires inside a 24h batch window.</td></tr>
+        <tr><td>Container pairing</td><td class="num">100%</td><td><span class="tag same">identical</span></td>
+          <td>Code-execution container hours are waived outright on any request that also uses a
+            current <code>web_search</code>/<code>web_fetch</code> tool version.</td></tr>
+        <tr><td>Output truncation</td><td class="num">varies</td><td><span class="tag same">identical</span></td>
+          <td><code>stop_sequences</code> ends generation at the last token you need. Billing is on
+            tokens actually generated, so trailing prose is real money.</td></tr>
+        <tr><td>Streaming long jobs</td><td class="num">~2&times;</td><td><span class="tag same">identical</span></td>
+          <td>Avoids the idle-connection drop that makes a client blindly retry and pay for the
+            same generation twice.</td></tr>
         <tr><td>Billing path</td><td class="num">~10%</td><td><span class="tag same">identical</span></td><td>Inference geography and commitment terms change the invoice, not the model</td></tr>
         <tr><td>Model routing</td><td class="num">up to 5×</td><td><span class="tag diff">changes</span></td><td>A different model writes different words. Must be proven per workload.</td></tr>
         <tr><td>Image downsampling</td><td class="num">~3×</td><td><span class="tag diff">changes</span></td><td>Fewer pixels reach the model. Small text degrades first.</td></tr>
@@ -114,10 +123,38 @@
     </table>
   </div>
   <p class="note warn"><strong>Two honest limits.</strong> Caching discounts input only; output
-    always bills at full rate, which caps every input-side lever. And because inference isn't
-    bit-deterministic, "identical" here means <em>zero quality change by construction</em> — same
-    model, same input tokens — not identical bytes. Only an exact-match cache hit is literally
-    byte-for-byte, because it returns what was stored.</p>
+    always bills at full rate, which caps every input-side lever. And inference isn't
+    bit-deterministic to begin with: send the same prompt a thousand times at temperature&nbsp;0
+    and you get back around eighty distinct completions, because GPU kernels don't reduce in a
+    fixed order. Nothing on this page causes that and nothing on this page can fix it. So
+    "identical" means <em>zero quality change by construction</em> — same model, same input
+    tokens — not identical bytes. Only an exact-match cache hit is literally byte-for-byte,
+    because it returns what was stored.</p>
+
+  <div class="mt">
+    <h3 style="margin-bottom:.9rem">Things that sound like savings and are not</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Claim</th><th>What's actually true</th></tr></thead>
+      <tbody>
+        <tr><td>Lower <code>max_tokens</code></td><td>Zero price effect in either direction. You are
+          billed on tokens generated, not on the ceiling you set.</td></tr>
+        <tr><td>A cheaper image format</td><td>None. Token cost is
+          <code>ceil(w/28) &times; ceil(h/28)</code> — pixels only. JPEG vs PNG changes upload size
+          and nothing else.</td></tr>
+        <tr><td>Long-context discount tier</td><td>Does not exist on any current model. A
+          900K-token request bills at the same per-token rate as a 9K one.</td></tr>
+        <tr><td>Fast mode</td><td>A 2&times; <em>premium</em> on Opus, not a discount, and it
+          multiplies with everything else.</td></tr>
+        <tr><td>Files API</td><td>No token reduction. An uploaded image bills exactly as inline
+          base64 does. It is a payload and latency win.</td></tr>
+        <tr><td>Tiling a big image</td><td>Costs more, not less — each tile hits the resolution cap
+          independently. It buys fidelity, not savings.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note" style="margin-top:1rem">We publish these because every one of them is
+      something a vendor could quietly bill you for implementing. None of them will appear on
+      your invoice as a saving, so none of them appear in ours.</p>
+  </div>
 </div></section>
 
 <section><div class="wrap stack reveal">
@@ -147,6 +184,11 @@
 </div></footer>
 
 <script type="module" src="assets/fx.js"></script>
-<script type="module">window.__ready = true;</script>
+<script type="module">
+import { initOrbField } from "./assets/orbfield.js";
+try { document.querySelectorAll("[data-orbs]").forEach((el) => initOrbField(el, { count: 14, scale: .82 })); }
+catch (err) { console.info("orb field skipped, page continues flat:", err); }
+window.__ready = true;
+</script>
 </body>
 </html>

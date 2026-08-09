@@ -21,14 +21,7 @@
 <meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="assets/style.css">
 <style>
-  .hero{position:relative;padding-block:clamp(3.5rem,9vw,6rem) clamp(3rem,7vw,4.5rem)}
-  .hero::before{content:"";position:absolute;inset:-30% -25% auto -25%;height:90%;
-    background:radial-gradient(60% 55% at 50% 0%,var(--acc-soft),transparent 70%);pointer-events:none;z-index:-1}
-  .hero h1{max-width:15ch;margin-top:1.2rem}
   .hero h1 em{font-style:normal;color:var(--ink-3)}
-  .hero .lede{margin-top:1.5rem}
-  .hero .row{margin-top:2.2rem}
-  .hero .fine{font-size:.86rem;color:var(--ink-3);margin-top:1.1rem}
   .rates{margin-top:clamp(2.5rem,6vw,4rem)}
   .rates .figs{grid-template-columns:repeat(auto-fit,minmax(10rem,1fr))}
   .ratelab{font-size:.9rem;color:var(--ink-2);margin-bottom:.85rem;display:block}
@@ -58,30 +51,53 @@
   </div>
 </div></nav>
 
-<header class="hero">
-  <div class="hero-art" aria-hidden="true">
-    <img src="assets/img/hero-a.avif" alt="" data-fx-parallax decoding="async" fetchpriority="high">
-  </div>
+<header class="hero mid">
+  <div class="orbwrap" data-orbs aria-hidden="true"></div>
   <div class="wrap">
-  <p class="eyebrow">Idempotent by construction</p>
-  <h1>The same output.<br><em>A smaller bill.</em></h1>
-  <p class="lede">Your agents resend the same context every turn. Anthropic will serve it back at a
-    tenth of the price — but only if your cache is actually working, and it fails silently. We
-    measure yours first, for free.</p>
-  <div class="row">
-    <a class="btn pri" href="pricing.html#audit">Measure my hit rate</a>
-    <a class="btn sec" href="how.html">How it works</a>
-  </div>
-  <p class="fine">No integration. No traffic through us. Read-only.</p>
+  <h1>The same output.<br>A smaller bill.</h1>
 
-  <div class="rates">
-    <span class="ratelab">Opus 5, per 1M input tokens — list rates</span>
-    <div class="figs">
-      <div class="fig"><span class="k">Standard</span><span class="v dim" data-count="5.00" data-prefix="$">$5.00</span><span class="n">what you pay now</span></div>
-      <div class="fig"><span class="k">Cache read</span><span class="v acc" data-count="0.50" data-prefix="$">$0.50</span><span class="n">90% less, same tokens</span></div>
-      <div class="fig"><span class="k">Batch</span><span class="v acc" data-count="2.50" data-prefix="$">$2.50</span><span class="n">50% less, async work</span></div>
-      <div class="fig"><span class="k">Quality change</span><span class="v acc">none</span><span class="n">identical model &amp; input</span></div>
+  <!-- The widget IS the hero, the way uniswap.org puts a live swap card under the
+       headline rather than a picture of one. Everything below is a model, labelled
+       as one, and it runs with JS off at its default values. -->
+  <div class="meter" data-meter>
+    <div class="module">
+      <div class="rows">
+        <div class="rowcard">
+          <span class="lab">You spend now</span>
+          <div class="big">
+            <input class="amt" type="text" inputmode="numeric" autocomplete="off"
+                   value="$40,000" aria-label="Your monthly Anthropic spend, US dollars"
+                   data-in>
+            <span class="chip"><span class="cd"></span>per month</span>
+          </div>
+          <span class="sub">Anthropic API, all models</span>
+        </div>
+
+        <div class="seam" aria-hidden="true">↓</div>
+
+        <div class="rowcard">
+          <span class="lab">You'd spend</span>
+          <div class="big">
+            <span class="amt out" data-out>$17,967</span>
+            <span class="chip">same output</span>
+          </div>
+          <span class="sub"><strong data-pct>55%</strong> less &middot; <span data-save>$22,033</span>
+            a month &middot; assumes a <span data-hit>30%</span> hit rate today</span>
+        </div>
+      </div>
+
+      <a class="btn pri" href="pricing.html#audit">Measure my real hit rate</a>
     </div>
+  </div>
+
+  <p class="subline">Your agents resend the same context every turn. Anthropic serves it back at a
+    tenth of the price — but only if your cache is working, and it fails silently.</p>
+  <p class="fine">A model, not a quote. No integration, no traffic through us, read-only.</p>
+
+  <div class="cue" aria-hidden="true">
+    <span>How it works</span>
+    <svg width="18" height="10" viewBox="0 0 18 10" fill="none"><path d="M1 1l8 8 8-8"
+      stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
 </div></header>
 
@@ -109,14 +125,33 @@
   </div>
 
   <div class="grid g3 mt">
-    <div class="card"><span class="num" data-count="4">4</span><h3>breakpoints, max</h3>
+    <div class="card"><span class="num">4</span><h3>breakpoints, max</h3>
       <p>Anthropic allows four <code>cache_control</code> markers per request. Place them wrong and
         you pay to write a cache nothing reads.</p></div>
-    <div class="card"><span class="num" data-count="20">20</span><h3>block lookback</h3>
+    <div class="card"><span class="num">20</span><h3>block lookback</h3>
       <p>A breakpoint searches back only twenty content blocks. Eight parallel tool calls can
         overshoot that in one turn.</p></div>
-    <div class="card"><span class="num" data-count="512">512</span><h3>token minimum</h3>
+    <div class="card"><span class="num">512</span><h3>token minimum</h3>
       <p>Below the model's minimum cacheable prefix, caching silently does nothing at all.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap reveal">
+  <div class="split">
+    <div class="media">
+      <img src="assets/img/prefix.avif" alt="Three stacked translucent panes; the two beneath glow, the one on top is clear."
+           loading="lazy" decoding="async" width="1104" height="616">
+    </div>
+    <div class="copy">
+      <p class="eyebrow">The mechanism</p>
+      <h2>Pay once for the part that never changes.</h2>
+      <p>Your system prompt, your tool definitions, your reference documents — identical on
+        every call. A cache breakpoint marks where that stable prefix ends. Anthropic keeps
+        the computed state and charges <strong>0.1&times;</strong> to reuse it.</p>
+      <p>The model still runs a full forward pass on everything after the breakpoint. That is
+        why the output cannot change: it is the same model reading the same tokens.</p>
+      <a class="btn sec" href="how.html">See where it breaks &rarr;</a>
+    </div>
   </div>
 </div></section>
 
@@ -183,7 +218,7 @@
 
 <section><div class="wrap reveal">
   <div class="band">
-    <div class="art" aria-hidden="true"><img src="assets/img/dark-a.avif" alt="" loading="lazy" decoding="async"></div>
+    <div class="art" aria-hidden="true"><img src="assets/img/band.avif" alt="" loading="lazy" decoding="async"></div>
     <p class="eyebrow">Start with the number</p>
     <h2>Find out what you're leaving on the table.</h2>
     <p class="lede" style="max-width:46ch">Free, read-only, no integration. If it's under 20% we'll
@@ -207,6 +242,62 @@
 </div></footer>
 
 <script type="module" src="assets/fx.js"></script>
-<script type="module">window.__ready = true;</script>
+<script type="module">
+import { initOrbField } from "./assets/orbfield.js";
+import { modelSavings, usd } from "./assets/site.js";
+
+/* The hero widget runs the SAME model as pricing.html, off the same defaults, so the
+   two pages cannot quote different numbers for the same spend. Only `spend` is live
+   here; the other four assumptions are stated in the widget and adjustable there. */
+const ASSUMED = { hit: 30, inputShare: 70, batchable: 20, dupRate: 5 };
+
+function initMeter(root) {
+  const inp  = root.querySelector("[data-in]");
+  const out  = root.querySelector("[data-out]");
+  const pct  = root.querySelector("[data-pct]");
+  const save = root.querySelector("[data-save]");
+  root.querySelector("[data-hit]").textContent = ASSUMED.hit + "%";
+
+  /* A `type=number` box shows a bare `40000` next to a formatted `$17,967`, which
+     makes the two halves of the widget look like different things. So it is a text
+     box that formats as you type. Caret is restored by counting digits to its left,
+     not by character offset — inserting a comma shifts every offset to its right. */
+  const digitsLeft = (s, pos) => (s.slice(0, pos).match(/\d/g) || []).length;
+  const posAfter = (s, n) => {
+    if (n <= 0) return s.search(/\d/) < 0 ? s.length : s.search(/\d/);
+    let seen = 0;
+    for (let i = 0; i < s.length; i++) {
+      if (/\d/.test(s[i])) { seen++; if (seen === n) return i + 1; }
+    }
+    return s.length;
+  };
+
+  const draw = () => {
+    const spend = Math.max(0, Number(inp.value.replace(/[^\d]/g, "")) || 0);
+    const r = modelSavings({ spend, ...ASSUMED });
+    out.textContent  = usd(r.final);
+    pct.textContent  = r.pct.toFixed(0) + "%";
+    save.textContent = usd(r.saved);
+    return spend;
+  };
+
+  inp.addEventListener("input", () => {
+    const n = digitsLeft(inp.value, inp.selectionStart ?? inp.value.length);
+    const spend = draw();
+    inp.value = usd(spend);
+    const p = posAfter(inp.value, n);
+    inp.setSelectionRange(p, p);
+  });
+  draw();
+}
+
+try {
+  document.querySelectorAll("[data-orbs]").forEach((el) => initOrbField(el));
+  document.querySelectorAll("[data-meter]").forEach(initMeter);
+} catch (err) {
+  console.info("hero enhancements skipped, page continues flat:", err);
+}
+window.__ready = true;
+</script>
 </body>
 </html>

@@ -12,7 +12,6 @@
 <style>
   .lost{position:relative;overflow:hidden;min-height:64vh;display:flex;align-items:center;
     padding-block:clamp(3rem,8vw,5rem)}
-  .lost .hero-art{height:100%}
   .code{font-family:var(--mono);font-size:.9rem;color:var(--ink-2);
     background:var(--bg-2);border-radius:var(--r-12);padding:.4rem .75rem;display:inline-block}
 </style>
@@ -30,9 +29,7 @@
 </div></nav>
 
 <main class="lost">
-  <div class="hero-art" aria-hidden="true">
-    <img src="assets/img/flow-a.avif" alt="" decoding="async">
-  </div>
+  <div class="orbwrap" data-orbs aria-hidden="true"></div>
   <div class="wrap">
     <div class="head">
       <span class="code">404</span>
@@ -59,6 +56,11 @@
 </div></footer>
 
 <script type="module" src="assets/fx.js"></script>
-<script type="module">window.__ready = true;</script>
+<script type="module">
+import { initOrbField } from "./assets/orbfield.js";
+try { document.querySelectorAll("[data-orbs]").forEach((el) => initOrbField(el, { count: 14, scale: .82 })); }
+catch (err) { console.info("orb field skipped, page continues flat:", err); }
+window.__ready = true;
+</script>
 </body>
 </html>

@@ -106,12 +106,19 @@ nav .links a:hover,nav .links a[aria-current]{color:var(--ink)}
 nav .links a[aria-current]{font-weight:var(--w-med)}
 @media(max-width:680px){nav .links a.hide-sm{display:none}nav .inner{gap:1.1rem}}
 
-/* ── type ── */
+/* ── type ──
+   Re-measured off uniswap.org 2026-08-09, and the numbers were not what this file
+   assumed. Their h1 is 64px / weight 485 / line-height 76px (1.1875) / letter-spacing
+   NORMAL. Not a tight heavy display face — a light one with air in it. The earlier
+   values here (weight 535, -.042em, 1.02) were the generic SaaS display setting, and
+   they are the single biggest reason the page did not read as Uniswap. The only
+   departure kept is -.012em, because Inter/SF run wider than Basel at display size and
+   true `normal` opens the line past the reference. */
 .eyebrow{font-size:.8rem;letter-spacing:.01em;color:var(--acc-text);font-weight:var(--w-med)}
-h1{font-size:clamp(2.4rem,6.8vw,4.6rem);line-height:1.02;letter-spacing:-.042em;
-  font-weight:var(--w-med);text-wrap:balance}
-h2{font-size:clamp(1.7rem,4vw,2.7rem);line-height:1.08;letter-spacing:-.034em;
-  font-weight:var(--w-med);text-wrap:balance}
+h1{font-size:clamp(2.5rem,6.4vw,4rem);line-height:1.1875;letter-spacing:-.012em;
+  font-weight:var(--w-book);text-wrap:balance}
+h2{font-size:clamp(1.7rem,4vw,2.6rem);line-height:1.16;letter-spacing:-.014em;
+  font-weight:var(--w-book);text-wrap:balance}
 h3{font-size:1.06rem;font-weight:var(--w-med);letter-spacing:-.014em}
 p{max-width:62ch}
 .lede{font-size:clamp(1.05rem,2vw,1.24rem);color:var(--ink-2);max-width:54ch;line-height:1.55}
@@ -255,4 +262,111 @@ footer small{font-size:.82rem;color:var(--ink-3);line-height:1.75;display:block;
   .card:hover,.fig:hover{transform:none}
   .btn.pri::after{display:none}
   .hero-art img{transform:none!important}
+}
+
+
+/* ══ orb field ═══════════════════════════════════════════════════════════
+   Replaces the photographic hero art. Measured off uniswap.org: flat-colour
+   discs, blur 5→45px, opacity tracking the blur. Two things this buys beyond
+   resemblance — it is ~0 bytes, and it retired every scrim this file used to
+   need to keep hero text legible over a bitmap. Text now sits on plain ground. */
+.orbwrap{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  contain:strict}
+.orb{position:absolute;border-radius:50%;transform:translate3d(0,0,0)}
+/* the field sits behind everything in the hero, including the card */
+.hero > .wrap{position:relative;z-index:1}
+
+/* ══ centered hero — the reference's actual composition ══════════════════
+   uniswap.org centres a 64px headline, puts the PRODUCT directly underneath as
+   a live widget, then a 16px full-ink line, then a scroll cue. The widget is
+   the hero; there is no hero image and no button pair floating in space. */
+.hero.mid{text-align:center;padding-block:clamp(3rem,7vw,5.5rem) clamp(2.5rem,6vw,4rem);
+  display:flex;flex-direction:column;align-items:center}
+.hero.mid .wrap{display:flex;flex-direction:column;align-items:center;width:100%}
+.hero.mid h1{max-width:17ch}
+.hero.mid .subline{font-size:1rem;line-height:1.5;color:var(--ink);max-width:46ch;
+  margin-top:1.4rem}                     /* full ink at 16px — their choice, not muted */
+.hero.mid .subline a{text-decoration:none;font-weight:var(--w-med)}
+.hero.mid .subline a:hover{text-decoration:underline}
+.hero.mid .fine{font-size:.84rem;color:var(--ink-3);margin-top:.7rem}
+
+/* the widget */
+.meter{width:100%;max-width:463px;margin-top:2.4rem;text-align:left;position:relative}
+.meter .module{background:var(--bg-2);padding:.4rem;gap:.25rem}
+.meter .rowcard{padding:1.15rem 1.25rem;position:relative}
+.meter .lab{font-size:.85rem;color:var(--ink-2);display:block;margin-bottom:.35rem}
+.meter .big{display:flex;align-items:center;gap:.6rem;justify-content:space-between}
+.meter .amt{font-size:2rem;line-height:1.15;font-weight:var(--w-book);letter-spacing:-.028em;
+  font-variant-numeric:tabular-nums;color:var(--ink);border:none;background:none;
+  width:100%;min-width:0;padding:0;font-family:inherit}
+.meter .amt:focus{outline:none}
+.meter .amt::-webkit-outer-spin-button,.meter .amt::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0}
+.meter .amt[type=number]{-moz-appearance:textfield}
+.meter .out{color:var(--acc-text)}
+.meter .sub{font-size:.85rem;color:var(--ink-3);margin-top:.3rem;display:block}
+.meter .chip{background:var(--bg-3);border-radius:var(--r-full);padding:.42rem .85rem;
+  font-size:.86rem;font-weight:var(--w-med);white-space:nowrap;display:flex;
+  align-items:center;gap:.4rem;color:var(--ink)}
+.meter .chip .cd{width:8px;height:8px;border-radius:50%;background:var(--acc-fill)}
+/* the button that straddles the seam between the two rows, exactly as theirs does.
+   It anchors to .rows, NOT to .meter — anchoring to .meter puts 50% below the CTA
+   button and drops the marker into the middle of the second card. */
+.meter .rows{position:relative;display:flex;flex-direction:column;gap:.25rem}
+.meter .seam{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:38px;height:38px;border-radius:var(--r-12);background:var(--bg);
+  display:grid;place-items:center;z-index:2;border:4px solid var(--bg-2);
+  color:var(--ink-2);font-size:1rem;line-height:1}
+.meter .btn{width:100%;text-align:center;margin-top:.25rem;padding:1.05rem 1.6rem;
+  border-radius:var(--r-20)}
+:root[data-theme="dark"] .meter .seam,
+:root:not([data-theme="light"]) .meter .seam{background:var(--bg-3);border-color:var(--bg-2)}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]) .meter .seam{background:var(--bg);border-color:var(--bg-2)}}
+
+/* scroll cue */
+.cue{margin-top:clamp(2.5rem,6vw,3.75rem);display:flex;flex-direction:column;
+  align-items:center;gap:.35rem;font-size:.85rem;color:var(--ink-3)}
+.cue svg{display:block}
+@keyframes nudge{0%,100%{transform:translateY(0);opacity:.55}50%{transform:translateY(4px);opacity:1}}
+.cue svg{animation:nudge 2.1s ease-in-out infinite}
+
+/* inner-page heroes get the same field, quieter */
+.hero.slim{position:relative;padding-block:clamp(2.5rem,6vw,4rem) clamp(1.5rem,4vw,2.5rem)}
+.hero.slim .orbwrap{opacity:.62}
+
+/* inner-page + 404 heroes host the same field, quieter and behind the copy */
+.page-head>.wrap,.lost>.wrap{position:relative;z-index:1}
+.page-head .orbwrap,.lost .orbwrap{opacity:.66}
+
+/* On a narrow viewport the copy column spans the full width, so there is no margin
+   for the field to live in and a disc always ends up under text. --acc-text has only
+   0.89 of headroom over the 4.5:1 floor on white, and a lightly tinted backdrop eats
+   all of it — measured at 3.42:1 under an eyebrow before this rule. Fade the field
+   rather than move it; the depth read survives, the contrast comes back. */
+@media(max-width:760px){
+  .orbwrap{opacity:.30}
+  .page-head .orbwrap,.lost .orbwrap{opacity:.22}
+}
+
+/* ══ media panel — a section that is mostly picture ═══════════════════════
+   Uniswap breaks its long text runs with wide illustrative panels; without
+   them the 256px inter-section gaps here read as an unfinished page. */
+.split{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(1.5rem,4vw,3rem);
+  align-items:center}
+@media(max-width:860px){.split{grid-template-columns:1fr}}
+.media{border-radius:var(--r-32);overflow:hidden;background:var(--bg-2);
+  aspect-ratio:16/9;display:block}
+.media img{width:100%;height:100%;object-fit:cover;display:block}
+.split .copy{display:flex;flex-direction:column;gap:1rem}
+.split .copy p{max-width:38ch}
+
+/* band.avif runs brighter than the ribbon art it replaced, and the 72%-white lede
+   dropped to 3.42:1 over its light ribbons. Scrim the ART, not the section: the
+   ground stays #0E1512 so the copy column sits on a known colour, and the picture
+   keeps its full brightness at the right edge where nothing is written. */
+.band .art::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(to right,#0E1512 0%,rgba(14,21,18,.90) 46%,rgba(14,21,18,.30) 100%)}
+@media(max-width:860px){
+  .band .art::after{background:linear-gradient(to right,#0E1512 0%,rgba(14,21,18,.93) 72%,rgba(14,21,18,.55) 100%)}
 }

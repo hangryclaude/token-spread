@@ -173,6 +173,9 @@ export function buildReport(input: {
     // Percentages are of COST. Neither lever removes a token — they change the price
     // each token bills at, so a "tokens saved" figure would be zero by construction.
     `Tokens: ${group(totalTokens)} priced (${group(o.cacheReadTokens)} cache reads, ${group(o.inputTokens)} fresh input, ${group(o.outputTokens)} output).`,
+    ...(!ttl.computable && ttl.exposedTokens > 0 ? [
+      `Cache-write TTL: ${ttl.exposedTokens.toLocaleString("en-US")} tokens were written at the 1-hour TTL (2x base input vs 1.25x at 5 minutes). Whether 5 minutes would have served cannot be answered from an aggregate usage report — it needs the gap between consecutive turns in a session. Exposure, not a saving.`,
+    ] : []),
     ...(ttl.recoverableMicroCents > 0 ? [
       `Cache-write TTL right-sizing: ${formatCents(microCentsToCents(ttl.recoverableMicroCents))} — ${pct1(ttl.recoverableMicroCents, baseline)}% of the bill. ${ttl.overBoughtTokens.toLocaleString("en-US")} tokens bought a 1-hour TTL at 2x base input and were re-read inside 5 minutes, where 1.25x would have served. ttl is metadata the model never reads: same prompt, same model, same output.`,
     ] : []),

@@ -21,7 +21,7 @@ export interface Metrics {
   byAccount: Record<string, Totals>;
   /** cacheRead / (cacheRead + freshInput). Cache *writes* are excluded from the denominator. */
   cacheHitRate: number;
-  skipped: { unknown_model: number; malformed: number };
+  skipped: { unknown_model: number; malformed: number; unknown_tier: number };
   /** Sorted, deduped model ids absent from the rate card — a count alone is not actionable. */
   unknownModels: string[];
 }
@@ -48,7 +48,7 @@ export function computeMetrics(events: UsageEvent[], card: RateCard): Metrics {
   const byModel: Record<string, Totals> = {};
   const byProject: Record<string, Totals> = {};
   const byAccount: Record<string, Totals> = {};
-  const skipped = { unknown_model: 0, malformed: 0 };
+  const skipped = { unknown_model: 0, malformed: 0, unknown_tier: 0 };
   const unknown = new Set<string>();
 
   for (const e of events) {

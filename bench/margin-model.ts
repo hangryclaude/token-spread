@@ -19,7 +19,7 @@ import type { UsageEvent } from "../src/types";
 /** A heavy-Opus month with nothing cached — the worst case the lever can improve. */
 const MONTH: UsageEvent[] = [{
   idempotencyKey: "worked-example", accountId: "example", projectId: "example",
-  ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", model: "claude-opus-5",
+  ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", serviceTier: null, model: "claude-opus-5",
   inputTokens: 100_000_000, cacheReadTokens: 0, cacheCreationTokens: 0,
   cacheCreation5mTokens: 0, cacheCreation1hTokens: 0,
   outputTokens: 10_000_000,

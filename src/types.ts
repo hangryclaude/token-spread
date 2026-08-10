@@ -1,3 +1,7 @@
+/** Billing tiers the usage report can report. */
+export type ServiceTier =
+  | "standard" | "batch" | "flex" | "flex_discount" | "priority" | "priority_on_demand";
+
 /** A single metered API interaction. Carries no prompt or response content, by design. */
 export interface UsageEvent {
   /** Dedup key in slice 1; ledger primary key in slice 2. */
@@ -17,6 +21,12 @@ export interface UsageEvent {
    */
   sessionId: string | null;
   source: "claude_code" | "admin_usage_report";
+  /**
+   * The billing tier the request actually ran on. Batch bills at half; the other tiers
+   * have no published multiplier, so `costOfEvent` refuses them rather than guessing.
+   * `null` where the source does not report it — transcripts do, aggregates always do.
+   */
+  serviceTier: ServiceTier | null;
   model: string;
 
   /**
@@ -53,7 +63,7 @@ export interface UsageEvent {
 }
 
 export const USAGE_EVENT_KEYS = [
-  "idempotencyKey", "accountId", "projectId", "ts", "sessionId", "source", "model",
+  "idempotencyKey", "accountId", "projectId", "ts", "sessionId", "source", "serviceTier", "model",
   "inputTokens", "cacheReadTokens", "cacheCreationTokens", "outputTokens",
   "cacheCreation5mTokens", "cacheCreation1hTokens",
   "compactionInputTokens", "compactionOutputTokens",

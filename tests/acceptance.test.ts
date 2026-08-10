@@ -9,7 +9,7 @@ test("costOfEvent returns an integer for every rate-card model", () => {
   for (const model of Object.keys(CARD.rates)) {
     const r = costOfEvent({
       idempotencyKey: "k", accountId: "a", projectId: "p", ts: "2026-08-01T00:00:00Z",
-      sessionId: null, source: "claude_code", model,
+      sessionId: null, source: "claude_code", serviceTier: null, model,
       inputTokens: 12_345, cacheReadTokens: 6_789, cacheCreationTokens: 101, outputTokens: 2_345,
       cacheCreation5mTokens: 101, cacheCreation1hTokens: 0,
       compactionInputTokens: 0, compactionOutputTokens: 0,

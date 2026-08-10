@@ -8,7 +8,7 @@ import type { UsageEvent } from "../src/types";
 // 100 MTok fresh input, 10 MTok output, all Opus, no cache -> $750.00 baseline
 const BASELINE: UsageEvent[] = [{
   idempotencyKey: "k1", accountId: "local", projectId: "p",
-  ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", model: "claude-opus-5",
+  ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", serviceTier: null, model: "claude-opus-5",
   inputTokens: 100_000_000, cacheReadTokens: 0, cacheCreationTokens: 0,
   outputTokens: 10_000_000,
   cacheCreation5mTokens: 0, cacheCreation1hTokens: 0,
@@ -41,7 +41,7 @@ test("cache headroom below the observed rate is rejected", () => {
 test("cache headroom below a nonzero observed rate is rejected (in-range value)", () => {
   const halfCache: UsageEvent[] = [{
     idempotencyKey: "k2", accountId: "local", projectId: "p",
-    ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", model: "claude-opus-5",
+    ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", serviceTier: null, model: "claude-opus-5",
     inputTokens: 50_000_000, cacheReadTokens: 50_000_000, cacheCreationTokens: 0,
     outputTokens: 10_000_000,
     cacheCreation5mTokens: 0, cacheCreation1hTokens: 0,
@@ -67,7 +67,7 @@ test("cache headroom target equal to the observed rate saves exactly $0", () => 
 test("cache headroom target equal to a nonzero observed rate also saves exactly $0", () => {
   const halfCache: UsageEvent[] = [{
     idempotencyKey: "k3", accountId: "local", projectId: "p",
-    ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", model: "claude-opus-5",
+    ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", serviceTier: null, model: "claude-opus-5",
     inputTokens: 50_000_000, cacheReadTokens: 50_000_000, cacheCreationTokens: 0,
     outputTokens: 10_000_000,
     cacheCreation5mTokens: 0, cacheCreation1hTokens: 0,
@@ -131,7 +131,7 @@ test("a cache target equal to the observed rate saves $0 even when writes exist"
   // calling the difference a saving. That is a phantom: nothing about the traffic changed.
   const withWrites: UsageEvent[] = [{
     idempotencyKey: "k-ttl", accountId: "local", projectId: "p",
-    ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", model: "claude-opus-5",
+    ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", serviceTier: null, model: "claude-opus-5",
     inputTokens: 0, cacheReadTokens: 50_000_000,
     cacheCreationTokens: 20_000_000,
     cacheCreation5mTokens: 0, cacheCreation1hTokens: 20_000_000,

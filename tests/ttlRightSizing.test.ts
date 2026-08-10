@@ -8,7 +8,7 @@ function ev(over: Partial<UsageEvent> & { ts: string }): UsageEvent {
   const total = (over.cacheCreation1hTokens ?? 0) + (over.cacheCreation5mTokens ?? 0);
   return {
     idempotencyKey: `k${n++}`, accountId: "local", projectId: "p", sessionId: "s1",
-    source: "claude_code" as const, model: "claude-opus-5",
+    source: "claude_code" as const, serviceTier: null, model: "claude-opus-5",
     inputTokens: 0, cacheReadTokens: 0, outputTokens: 0,
     cacheCreation5mTokens: 0, cacheCreation1hTokens: 0,
     compactionInputTokens: 0, compactionOutputTokens: 0,
@@ -87,4 +87,26 @@ test("the finding declares what backs it", () => {
   const f = detectTtlRightSizing([], CARD);
   // TTL is a field the model never reads: same prompt, same model, same output.
   expect(f.evidence).toBe("PASS_METADATA");
+});
+
+test("aggregate data cannot support this detector, and it says so", () => {
+  // Admin usage-report buckets have no session and no per-request timestamp, so the gap
+  // that decides whether five minutes would have sufficed is unknowable. Returning 0
+  // would read as "measured, nothing to find" — the most expensive kind of wrong.
+  const f = detectTtlRightSizing([{
+    ...ev({ ts: at(0), cacheCreation1hTokens: 5_000_000 }),
+    source: "admin_usage_report",
+    sessionId: null,
+  }], CARD);
+  expect(f.computable).toBe(false);
+  expect(f.recoverableMicroCents).toBe(0);
+  expect(f.exposedTokens).toBe(5_000_000);
+});
+
+test("transcript data is computable", () => {
+  const f = detectTtlRightSizing([
+    ev({ ts: at(0), cacheCreation1hTokens: 1_000_000 }),
+    ev({ ts: at(2) }),
+  ], CARD);
+  expect(f.computable).toBe(true);
 });

@@ -1,6 +1,7 @@
 import { basename, join } from "node:path";
 import { readdirSync, statSync } from "node:fs";
 import { importClaudeCodeJsonl, type ImportProvenance } from "./importers/claudeCode";
+import { importAdminUsageReport } from "./importers/adminUsageReport";
 import { findTranscripts } from "./walk";
 import { computeMetrics, measuredCacheWriteOverheadPct } from "./metrics";
 import { buildReport } from "./report";
@@ -17,14 +18,35 @@ const flag = (name: string) => process.argv.includes(`--${name}`);
 
 const dir = arg("dir", join(process.env.HOME ?? "", ".claude", "projects"))!;
 const only = arg("only");
+/**
+ * `--admin <file.json>` audits an organisation from Anthropic's usage report instead of
+ * local transcripts — the path for a company that does not run Claude Code.
+ *
+ * The file is produced on the customer's own machine and never leaves it:
+ *
+ *   curl https://api.anthropic.com/v1/organizations/usage_report/messages \
+ *     -H "anthropic-version: 2023-06-01" \
+ *     -H "x-api-key: $ANTHROPIC_ADMIN_KEY" \
+ *     -G --data-urlencode "starting_at=2026-07-01T00:00:00Z" \
+ *        --data-urlencode "bucket_width=1d" \
+ *        --data-urlencode "group_by[]=model" \
+ *        --data-urlencode "group_by[]=workspace_id" \
+ *        --data-urlencode "group_by[]=service_tier" > usage.json
+ *
+ * One file per page; pass a comma-separated list to cover a paginated pull. No admin key
+ * is read here, and nothing is sent anywhere: the report is counts and dimensions only.
+ */
+const adminFiles = arg("admin");
 const cacheTargetRaw = arg("cache-target");
 const writeOverheadRaw = arg("write-overhead");
 
-try {
-  statSync(dir);
-} catch {
-  console.error(`cannot read transcript directory: ${dir}`);
-  process.exit(1);
+if (adminFiles === undefined) {
+  try {
+    statSync(dir);
+  } catch {
+    console.error(`cannot read transcript directory: ${dir}`);
+    process.exit(1);
+  }
 }
 
 /** Walk one level of project directories, or a flat directory of .jsonl files. */
@@ -35,10 +57,29 @@ const provenance: ImportProvenance = {
   compactionEvents: 0, hiddenInputTokens: 0, hiddenOutputTokens: 0, unknownTtlWrites: 0,
 };
 
-// One dedup set for the whole run: the same requestId can appear in two files.
+// One dedup set for the whole run: the same requestId can appear in two files, and the
+// same admin bucket can appear in two exports of overlapping windows.
 const seen = new Set<string>();
 
-for (const { path, projectId } of findTranscripts(dir)) {
+if (adminFiles !== undefined) {
+  const pages = [];
+  for (const f of adminFiles.split(",").map((s) => s.trim()).filter(Boolean)) {
+    try {
+      pages.push(JSON.parse(await Bun.file(f).text()));
+    } catch (err) {
+      console.error(`cannot read admin usage report: ${f} — ${(err as Error).message}`);
+      process.exit(1);
+    }
+  }
+  const r = importAdminUsageReport(pages, { seen });
+  events.push(...r.events);
+  provenance.linesSeen += r.provenance.results;
+  provenance.imported += r.provenance.imported;
+  provenance.malformed += r.provenance.malformed;
+  provenance.deduped += r.provenance.deduped;
+}
+
+for (const { path, projectId } of adminFiles === undefined ? findTranscripts(dir) : []) {
   if (only && basename(path) !== only) continue;
   const text = await Bun.file(path).text();
   const r = importClaudeCodeJsonl(text.split("\n").filter((l) => l.trim() !== ""), { projectId, seen });

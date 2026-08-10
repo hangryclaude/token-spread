@@ -102,7 +102,7 @@ function priceBundle(
   // counts into the one pricing function and is never emitted or stored.
   const priced = costOfEvent({
     idempotencyKey: "", accountId: "", projectId: "",
-    ts: "", sessionId: null, source: "claude_code", model,
+    ts: "", sessionId: null, source: "claude_code", serviceTier: null, model,
     inputTokens: fresh, cacheReadTokens: read,
     cacheCreationTokens: written,
     cacheCreation5mTokens: written5m, cacheCreation1hTokens: written1h,

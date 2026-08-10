@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto";
-import type { UsageEvent } from "../types";
+import type { ServiceTier, UsageEvent } from "../types";
+
+const TIERS: readonly string[] = [
+  "standard", "batch", "flex", "flex_discount", "priority", "priority_on_demand",
+];
 
 export interface ImportProvenance {
   linesSeen: number;
@@ -208,7 +212,10 @@ export function importClaudeCodeJsonl(
     events.push({
       idempotencyKey, accountId, projectId: opts.projectId,
       ts, sessionId: typeof rec.sessionId === "string" ? rec.sessionId : null,
-      source: "claude_code", model,
+      source: "claude_code",
+      // Transcripts report the tier on usage; it decides the price multiplier.
+      serviceTier: TIERS.includes(u?.service_tier) ? u.service_tier : null,
+      model,
       inputTokens, cacheReadTokens, cacheCreationTokens, outputTokens,
       cacheCreation5mTokens, cacheCreation1hTokens,
       compactionInputTokens, compactionOutputTokens,

@@ -14,7 +14,7 @@ let evCounter = 0;
 function ev(over: Partial<UsageEvent>): UsageEvent {
   return {
     idempotencyKey: `k${evCounter++}`, accountId: "local", projectId: "p",
-    ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", model: "claude-opus-5",
+    ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", serviceTier: null, model: "claude-opus-5",
     inputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, outputTokens: 0,
     cacheCreation5mTokens: 0, cacheCreation1hTokens: 0,
     compactionInputTokens: 0, compactionOutputTokens: 0,

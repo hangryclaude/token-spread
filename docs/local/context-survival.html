@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Context Survival — what the image trick actually buys</title>
+<style>
+  /* minimal reset — the artifact host used to provide this */
+  *,*::before,*::after{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body,h1,h2,h3,p,ul,figure{margin:0}
+  ul{padding:0}
+  img{max-width:100%;display:block}
+  table{border-collapse:collapse}
+</style>
+<title>Context Survival — what the image trick actually buys</title>
+<style>
+  /* Light palette — cool paper with a cyan bias, instrument-panel neutrals */
+  :root{
+    --ground:#F1F4F4; --surface:#FFFFFF; --surface-2:#E9EEEF;
+    --ink:#0F1619; --ink-2:#33454B; --muted:#61747A; --rule:#D3DCDE;
+    --accent:#0E6E86; --accent-soft:#DCEAEE;
+    --good:#1D6B48; --good-soft:#DEECE4;
+    --warn:#87610F; --warn-soft:#F1E7CF;
+    --bad:#A5352A; --bad-soft:#F4DFDC;
+    --patch:rgba(14,110,134,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#0D1215; --surface:#151C20; --surface-2:#1D262A;
+      --ink:#E7EDEF; --ink-2:#B6C4C8; --muted:#86979D; --rule:#2A363B;
+      --accent:#56B8CF; --accent-soft:#123039;
+      --good:#57B98A; --good-soft:#12291F;
+      --warn:#D6A544; --warn-soft:#2C2314;
+      --bad:#E57866; --bad-soft:#2E1A17;
+      --patch:rgba(86,184,207,.07);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0D1215; --surface:#151C20; --surface-2:#1D262A;
+    --ink:#E7EDEF; --ink-2:#B6C4C8; --muted:#86979D; --rule:#2A363B;
+    --accent:#56B8CF; --accent-soft:#123039;
+    --good:#57B98A; --good-soft:#12291F;
+    --warn:#D6A544; --warn-soft:#2C2314;
+    --bad:#E57866; --bad-soft:#2E1A17;
+    --patch:rgba(86,184,207,.07);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground); color:var(--ink);
+    font:400 17px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    margin:0; padding:0 24px 96px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1000px;margin:0 auto}
+  .prose{max-width:64ch}
+  code,.num,.mono{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+  /* ── masthead: the 28px patch grid is the subject's own unit ── */
+  header{
+    position:relative; margin:0 -24px 56px; padding:72px 24px 44px;
+    border-bottom:1px solid var(--rule); overflow:hidden;
+  }
+  header::before{
+    content:""; position:absolute; inset:0;
+    background:
+      repeating-linear-gradient(to right,var(--patch) 0 1px,transparent 1px 28px),
+      repeating-linear-gradient(to bottom,var(--patch) 0 1px,transparent 1px 28px);
+    mask-image:linear-gradient(to bottom,#000,transparent 88%);
+    -webkit-mask-image:linear-gradient(to bottom,#000,transparent 88%);
+    pointer-events:none;
+  }
+  header .wrap{position:relative}
+  .eyebrow{
+    font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:12px;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--accent);
+    margin:0 0 18px;
+  }
+  h1{
+    font-size:clamp(34px,5.4vw,56px); line-height:1.06; letter-spacing:-.028em;
+    font-weight:700; margin:0 0 20px; text-wrap:balance; max-width:17ch;
+  }
+  .standfirst{font-size:19px;line-height:1.65;color:var(--ink-2);margin:0;max-width:58ch}
+  .standfirst strong{color:var(--ink);font-weight:600}
+
+  h2{
+    font-size:13px; font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--muted);
+    font-weight:600; margin:0 0 22px; padding-bottom:10px;
+    border-bottom:1px solid var(--rule);
+  }
+  h3{font-size:22px;line-height:1.3;letter-spacing:-.015em;font-weight:650;margin:0 0 12px;text-wrap:balance}
+  section{margin-bottom:64px}
+  p{margin:0 0 18px}
+  .lede{font-size:18px;color:var(--ink-2)}
+
+  /* ── the measurement ── */
+  .runs{display:flex;flex-direction:column;gap:14px;margin:0 0 28px}
+  .run{
+    background:var(--surface); border:1px solid var(--rule); border-radius:4px;
+    padding:20px 22px; display:grid; gap:16px 26px;
+    grid-template-columns:minmax(190px,1.3fr) 92px 92px minmax(200px,1.6fr);
+    align-items:center;
+  }
+  .run.hero{border-color:var(--good);box-shadow:inset 3px 0 0 var(--good)}
+  .run.dead{box-shadow:inset 3px 0 0 var(--bad)}
+  .cond{font-size:15px;line-height:1.45;color:var(--ink-2)}
+  .cond b{display:block;color:var(--ink);font-weight:650;font-size:16px;margin-bottom:2px}
+  .cell{display:flex;flex-direction:column;gap:3px}
+  .cell .k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  .cell .v{font-size:21px;font-weight:600;letter-spacing:-.02em}
+  .recall{display:flex;flex-direction:column;gap:7px}
+  .recall .top{display:flex;align-items:baseline;gap:9px}
+  .recall .pct{font-size:32px;font-weight:700;letter-spacing:-.03em;line-height:1}
+  .recall .frac{font-size:13px;color:var(--muted)}
+  .bar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:4px}
+  .g .pct,.g .bar i{color:var(--good)} .g .bar i{background:var(--good)}
+  .w .pct{color:var(--warn)} .w .bar i{background:var(--warn)}
+  .b .pct{color:var(--bad)}  .b .bar i{background:var(--bad)}
+
+  .pull{
+    margin:0 0 8px; padding:22px 24px; border-radius:4px;
+    background:var(--accent-soft); border:1px solid var(--rule);
+    font-size:19px; line-height:1.55; color:var(--ink);
+  }
+  .pull b{font-weight:700}
+
+  /* ── tables ── */
+  .scroll{overflow-x:auto;margin:0 0 20px;border:1px solid var(--rule);border-radius:4px;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;font-size:15px}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--rule);vertical-align:top}
+  thead th{
+    font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11px;font-weight:600;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    background:var(--surface-2);border-bottom:1px solid var(--rule);white-space:nowrap;
+  }
+  tbody tr:last-child td{border-bottom:none}
+  td.n,th.n{text-align:right;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.was{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+
+  .chip{
+    display:inline-block;font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 8px;border-radius:3px;white-space:nowrap;
+  }
+  .chip.ship{background:var(--good-soft);color:var(--good)}
+  .chip.optin{background:var(--warn-soft);color:var(--warn)}
+  .chip.rej{background:var(--bad-soft);color:var(--bad)}
+
+  .misreads{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 20px}
+  .mis{
+    font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:15px;
+    background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:9px 13px;
+  }
+  .mis s{color:var(--muted);text-decoration-thickness:1px}
+  .mis em{font-style:normal;color:var(--bad);font-weight:700}
+  .mis .arw{color:var(--muted);padding:0 6px}
+
+  ul{margin:0 0 18px;padding-left:20px}
+  li{margin-bottom:9px}
+  footer{border-top:1px solid var(--rule);padding-top:24px;color:var(--muted);font-size:14px}
+  a{color:var(--accent)}
+  a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+  @media (max-width:760px){
+    .run{grid-template-columns:1fr 1fr;gap:14px}
+    .cond{grid-column:1/-1}
+    .recall{grid-column:1/-1}
+    h1{font-size:34px}
+  }
+</style>
+
+<header>
+  <div class="wrap">
+    <p class="eyebrow">Token-spread · research · 11 Aug 2026</p>
+    <h1>The image trick works. It just doesn't win.</h1>
+    <p class="standfirst">
+      Rendering text as an image to survive <code>/compact</code> buys <strong>2.07× at 93.9% recall</strong> —
+      measured blind, not cited. Delegating the same job to a subagent buys <strong>20–100×</strong> and corrupts nothing.
+      Here is the measurement, the cliff nobody mentions, the result that a blind re-run
+      <em>overturned</em>, and nine corrections to the register we already published.
+    </p>
+  </div>
+</header>
+
+<div class="wrap">
+
+<section>
+  <h2>The measurement</h2>
+  <p class="lede prose">
+    Two corpora — dense code, and real English prose — each packed to fill the page, with hex
+    probe codes embedded at a fixed interval. Scored by exact string match after reading the PNG
+    back through Claude Code on Opus 5, a different instrument from the one that drew it.
+  </p>
+
+  <div class="runs">
+    <div class="run hero">
+      <div class="cond"><b>Code, 2000&nbsp;px sent native</b>12&nbsp;px type · arrives at 12.0&nbsp;px · blind</div>
+      <div class="cell"><span class="k">Ratio</span><span class="v num">2.07×</span></div>
+      <div class="cell"><span class="k">Visual tok</span><span class="v num">2,952</span></div>
+      <div class="recall g">
+        <div class="top"><span class="pct num">93.9%</span><span class="frac num">31 / 33 · CI 80–98</span></div>
+        <div class="bar"><i style="width:94%"></i></div>
+      </div>
+    </div>
+    <div class="run dead">
+      <div class="cond"><b>Code, 2576&nbsp;px downscaled in transit</b>12&nbsp;px type · arrives at 9.3&nbsp;px</div>
+      <div class="cell"><span class="k">Ratio</span><span class="v num">2.12×</span></div>
+      <div class="cell"><span class="k">Visual tok</span><span class="v num">4,784</span></div>
+      <div class="recall b">
+        <div class="top"><span class="pct num">30.3%</span><span class="frac num">10 / 33 · CI 17–47</span></div>
+        <div class="bar"><i style="width:30%"></i></div>
+      </div>
+    </div>
+    <div class="run dead">
+      <div class="cond"><b>Prose, 2576&nbsp;px downscaled in transit</b>12&nbsp;px type · arrives at 9.3&nbsp;px · blind ×2</div>
+      <div class="cell"><span class="k">Ratio</span><span class="v num">1.91×</span></div>
+      <div class="cell"><span class="k">Visual tok</span><span class="v num">4,784</span></div>
+      <div class="recall b">
+        <div class="top"><span class="pct num">32&ndash;43%</span><span class="frac num">two blind passes</span></div>
+        <div class="bar"><i style="width:38%"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="pull">
+    Read row&nbsp;1 against row&nbsp;2. Same font, same ratio, recall goes <b>94% → 30%</b>.
+    The variable isn't Claude's eyesight and isn't the compression — it's whether the image
+    got <b>resized in transit</b>.
+  </p>
+  <p class="prose">
+    Claude Code downscales anything over 2000&nbsp;px. Send the API's 2576&nbsp;px maximum "for quality"
+    and every glyph is multiplied by 0.776 before Claude sees it. You pay for 4,784 visual tokens
+    and get the legibility of 2,952. Oversizing loses on both axes at once.
+  </p>
+  <p class="prose">
+    Row&nbsp;3 is the one I got wrong first. Prose at the same 9.3&nbsp;px scored <strong>97%</strong>
+    on the first run, which looked like proof that English redundancy rescues identifiers. It
+    wasn't. That page shared a random seed with a page I'd already graded, so I was recalling the
+    answers, not reading them. Re-run blind on fresh seeds: <strong>32% and 43%</strong> —
+    indistinguishable from code.
+  </p>
+</section>
+
+<section>
+  <h2>The cliff — and the failure nobody checks for</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Page</th><th>Corpus</th><th class="n">Delivered</th><th>Grading</th><th class="n">Exact recall</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">codeB</td><td>code</td><td class="n">12.0 px</td><td><span class="chip ship">Blind</span></td><td class="n">93.9%</td></tr>
+        <tr><td class="mono">prose-native</td><td>prose</td><td class="n">12.0 px</td><td>clean</td><td class="n">97.2%</td></tr>
+        <tr><td class="mono">page-14px</td><td>code</td><td class="n">10.9 px</td><td>partial</td><td class="n">91.4%</td></tr>
+        <tr><td class="mono">proseC</td><td>prose</td><td class="n">9.3 px</td><td><span class="chip ship">Blind</span></td><td class="n">42.9%</td></tr>
+        <tr><td class="mono">proseB</td><td>prose</td><td class="n">9.3 px</td><td><span class="chip ship">Blind</span></td><td class="n">32.1%</td></tr>
+        <tr><td class="mono">page-12px</td><td>code</td><td class="n">9.3 px</td><td>clean</td><td class="n">30.3%</td></tr>
+        <tr><td class="mono">n12px</td><td>code</td><td class="n">12.0 px</td><td><span class="chip rej">Contaminated</span></td><td class="n was">97.0%</td></tr>
+        <tr><td class="mono">prose-over</td><td>prose</td><td class="n">9.3 px</td><td><span class="chip rej">Contaminated</span></td><td class="n was">97.2%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose">
+    Two rows are struck through rather than deleted. A retraction that removes its own evidence
+    isn't a retraction.
+  </p>
+
+  <h3>Failure one: single-glyph errors</h3>
+  <p class="prose">
+    Between a quarter and three-fifths of wrong probes are wrong by exactly one character. Not
+    garbled — plausible:
+  </p>
+  <div class="misreads">
+    <div class="mis"><s>95798d</s><span class="arw">&rarr;</span><em>0</em>5798d</div>
+    <div class="mis"><s>f60f3b</s><span class="arw">&rarr;</span>f6<em>8</em>f3b</div>
+    <div class="mis"><s>b3d0cb</s><span class="arw">&rarr;</span>b3d<em>8</em>cb</div>
+    <div class="mis"><s>f1751b</s><span class="arw">&rarr;</span><em>b</em>1751b</div>
+  </div>
+
+  <h3>Failure two: association drift — the worse one</h3>
+  <p class="prose">
+    The most damaging error isn't a misread glyph at all. It's reading a value <em>correctly</em>
+    and filing it under the wrong key. Probe <code>0104</code>'s code <code>943c2b</code> was
+    transcribed perfectly — and attached to probe <code>0096</code>. Two probes scored wrong, zero
+    characters misread.
+  </p>
+  <p class="pull">
+    A one-character error in a hash, key, SHA, port or version <b>passes every human review and
+    every LLM review.</b> A correctly-read value filed under the wrong key passes character-level
+    checks too. Truncated-summary loss is loud. Optical loss is silent.
+  </p>
+  <p class="prose">
+    It also means per-character accuracy is the wrong metric: at 9.3&nbsp;px it reads 67–79% while
+    exact probe recall is 30–43%. <strong>Report probe recall</strong> — character accuracy is the
+    number that makes this technique look survivable.
+  </p>
+  <p class="prose">
+    <strong>The rule stands, and the blind re-run strengthened it: gist through images, never
+    identifiers.</strong> Diagrams, UI screenshots, chart shapes, "does this look right" — fine.
+    Anything you intend to run, paste, or compare — never.
+  </p>
+</section>
+
+<section>
+  <h2>Which failure mode actually breaks it</h2>
+  <p class="lede prose">
+    Every wrong probe, classified by whether the code it transcribed appears anywhere in ground
+    truth. If it does, the glyphs were read correctly and only the key binding failed.
+  </p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Page</th><th class="n">Delivered</th><th class="n">Exact</th><th class="n">Drift</th><th class="n">Glyph</th><th class="n">Read-anywhere</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">codeB</td><td class="n">12.0 px</td><td class="n">93.9%</td><td class="n">0</td><td class="n">2</td><td class="n">93.9%</td></tr>
+        <tr><td class="mono">prose-native</td><td class="n">12.0 px</td><td class="n">97.2%</td><td class="n">0</td><td class="n">1</td><td class="n">97.2%</td></tr>
+        <tr><td class="mono">page-14px</td><td class="n">10.9 px</td><td class="n">91.4%</td><td class="n">0</td><td class="n">3</td><td class="n">91.4%</td></tr>
+        <tr><td class="mono">proseC</td><td class="n">9.3 px</td><td class="n">42.9%</td><td class="n">1</td><td class="n">11</td><td class="n">47.6%</td></tr>
+        <tr><td class="mono">proseB</td><td class="n">9.3 px</td><td class="n">32.1%</td><td class="n">3</td><td class="n">16</td><td class="n">42.9%</td></tr>
+        <tr><td class="mono">page-12px</td><td class="n">9.3 px</td><td class="n">30.3%</td><td class="n">0</td><td class="n">22</td><td class="n">30.3%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="pull">
+    I called drift the dominant failure. <b>It isn't</b> — 4 errors of 60. Glyph error is 56.
+    Read-anywhere is the ceiling if keying were free: at 9.3&nbsp;px it's still only
+    <b>30&ndash;48%</b>. Delivered pixel size is the whole game.
+  </p>
+  <p class="prose">
+    Drift still earns its place for one reason unrelated to frequency: it is the only error class
+    <strong>no character-level check can catch</strong>. A checksum over the transcription passes.
+    Only the key&rarr;value binding is broken. It appeared solely on prose pages, where probes sit
+    40 words apart — suggestive of visual distance as the cause, but untested.
+  </p>
+</section>
+
+<section>
+  <h2>The bill nobody sees</h2>
+  <p class="lede prose">
+    Server-side compaction runs an extra sampling step, and Anthropic's own worked example shows
+    where the cost hides.
+  </p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Iteration</th><th class="n">Input</th><th class="n">Output</th></tr></thead>
+      <tbody>
+        <tr><td>compaction</td><td class="n">180,000</td><td class="n">3,500</td></tr>
+        <tr><td>message</td><td class="n">23,000</td><td class="n">1,000</td></tr>
+        <tr><td><code>usage.input_tokens</code> reports</td><td class="n">23,000</td><td class="n">1,000</td></tr>
+        <tr><td><strong>Actually billed</strong></td><td class="n"><strong>203,000</strong></td><td class="n"><strong>4,500</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="pull">
+    24,000 reported. <b>207,500 billed.</b> An 8.6× under-report on any dashboard reading the
+    top-level fields — including ours.
+  </p>
+  <p class="prose">
+    This is the most valuable line in the research: a detectable, quantifiable, content-blind
+    billing defect. Exactly the shape of audit the Savings Report already performs.
+  </p>
+</section>
+
+<section>
+  <h2>Nine corrections to the 176</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>The register says</th><th>Primary doc, 11 Aug 2026</th></tr></thead>
+      <tbody>
+        <tr><td class="was">image tokens ≈ (w×h)/750</td><td><code>⌈w/28⌉ × ⌈h/28⌉</code> — caps at 1,568 / 4,784 visual tokens by tier</td></tr>
+        <tr><td class="was">1M context carries a price premium</td><td>Claude 4.6+ include the full 1M window <strong>at standard pricing</strong>. No beta header.</td></tr>
+        <tr><td class="was">manual breakpoints, cap of 4, 20-block lookback</td><td><strong>Automatic caching now exists</strong> — one top-level <code>cache_control</code>. Manual placement is now the fine-grained option, not the baseline.</td></tr>
+        <tr><td class="was">tokenizer swings "1×–1.35×"</td><td>Verbatim: 4.7+ "produces approximately <strong>30% more tokens for the same text</strong>." Opus 4.6→4.7 at an unchanged $5/MTok is a ~30% rise on identical text.</td></tr>
+        <tr><td class="was">— not covered —</td><td><strong>Fast mode doubles the bill</strong>: $10/$50 vs $5/$25 on Opus 5 / 4.8, across the whole window, and not available with Batch.</td></tr>
+        <tr><td class="was">cross-region ≈10% on Bedrock</td><td>First-party equivalent <code>inference_geo:"us"</code> = <strong>1.1×</strong> on input, output, cache writes <em>and</em> cache reads.</td></tr>
+        <tr><td class="was">Sonnet 5 intro pricing noted</td><td><strong>Expires 31 Aug 2026 — 20 days out.</strong> $2/$10 → $3/$15, a 50% rise.</td></tr>
+        <tr><td class="was">— not covered —</td><td>Code execution: <strong>1,550 free container-hours</strong> per org per month; free entirely alongside web search or fetch; files in the request bill time even if the tool is never called.</td></tr>
+        <tr><td class="was">— not covered —</td><td>Thinking blocks are now <strong>kept by default</strong> on Opus 4.5+ / Sonnet 4.6+ and count as input forever. Earlier models strip them. Silent context regression on upgrade.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>A defect the audit turned up in our own code</h2>
+  <p class="lede prose">
+    Checking the site against the nine corrections found something worse than a stale doc.
+  </p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Where</th><th>Said</th><th>Actual, to 31 Aug 2026</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">src/rates.ts</td><td class="was">Sonnet 5 $3/$15</td><td class="mono">$2/$10</td></tr>
+        <tr><td class="mono">site/index.html</td><td class="was">Sonnet 5 $3/$15</td><td class="mono">$2/$10</td></tr>
+        <tr><td class="mono">rates.ts notes</td><td colspan="2">already said intro pricing was in force — the note and the number disagreed</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="pull">
+    A rate card is a <b>snapshot</b>. Pricing tomorrow's rate today over-states Sonnet 5 cost by
+    50% — and over-states every saving measured against it by the same margin. That is the exact
+    overclaim this whole project exists to prevent, shipped in our own core.
+  </p>
+  <p class="prose">
+    On your traffic it's ~$1, because Sonnet is 0.25% of your spend. On a Sonnet-heavy customer it
+    is a 50% inflated baseline. Fixed, plus a new <code>lapses</code> field so a card that is two
+    days old but already wrong says so out loud:
+  </p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Report warning, today</th></tr></thead>
+      <tbody><tr><td class="mono">! in 21 days, on 2026-09-01: claude-sonnet-5 rises from $2/$10 to $3/$15 per MTok (a 50% increase)</td></tr></tbody>
+    </table>
+  </div>
+  <p class="prose">
+    No test caught it because none asserted a dollar value — only that rates were integers and that
+    the cache multipliers divided exactly. Five tests added, including one that fails if any rate
+    in a card post-dates the card's own capture date.
+  </p>
+</section>
+
+<section>
+  <h2>What to ship</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Lever</th><th>Verdict</th><th>Basis</th></tr></thead>
+      <tbody>
+        <tr><td>Subagent delegation</td><td><span class="chip ship">Default on</span></td><td class="mono">420 tok returned for an unbounded read</td></tr>
+        <tr><td><code>/clear</code> between tasks</td><td><span class="chip ship">Default on</span></td><td>No sampling step, no summary, no loss</td></tr>
+        <tr><td>Deferred MCP schemas</td><td><span class="chip ship">Default on</span></td><td class="mono">120 tok vs thousands, every turn</td></tr>
+        <tr><td><code>max_content_tokens</code> on fetches</td><td><span class="chip ship">Default on</span></td><td class="mono">One 500 kB PDF = 125,000 tok</td></tr>
+        <tr><td>Microcompact</td><td><span class="chip ship">Ship</span></td><td>Clears stale tool results with no model call</td></tr>
+        <tr><td>Server-side compaction</td><td><span class="chip optin">Opt-in, priced</span></td><td>Works — bills a hidden second sampling step</td></tr>
+        <tr><td><code>clear_tool_uses</code></td><td><span class="chip optin">Opt-in</span></td><td>Pair with <code>clear_at_least</code> or it loses more cache than it frees</td></tr>
+        <tr><td>Images where content is <em>already</em> pixels</td><td><span class="chip ship">Ship</span></td><td>The image is the cheap representation</td></tr>
+        <tr><td>Text→image, ≥12 px delivered, gist only</td><td><span class="chip optin">Opt-in, measured</span></td><td class="mono">2.07× at 93.9% blind</td></tr>
+        <tr><td>Text→image for identifiers</td><td><span class="chip rej">Reject</span></td><td>~1-in-16 corrupted at the best setting; single-char or mis-keyed, survives review</td></tr>
+        <tr><td>Images &gt;2000 px into Claude Code</td><td><span class="chip rej">Reject</span></td><td class="mono">30–43% blind, both corpora</td></tr>
+        <tr><td>Optical compression pre-4.7</td><td><span class="chip rej">Reject</span></td><td>Forced downscale puts every legible font under the floor</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Still open</h2>
+  <ul class="prose">
+    <li><strong>How much of the 9.3&nbsp;px failure is drift rather than glyph error?</strong> Drift appeared in two of three blind passes and is the more dangerous mode, because the value read is correct. Scoring position-independent recall against keyed recall isolates it.</li>
+    <li><strong>What is actually billed on a client downscale?</strong> 2576 px in, 2000 px delivered — 4,784 visual tokens or 2,952? <code>count_tokens</code> settles it.</li>
+    <li><strong>Does compaction's sampling step get the cache discount?</strong> 180,000 input tokens at full price versus 0.1× is the difference between compaction being cheap and being the largest line on the bill. The docs are silent.</li>
+    <li><strong>Where on the page do errors concentrate?</strong> The rig scores recall but not position. If they cluster at the edges, the fix is layout, not font size.</li>
+  </ul>
+</section>
+
+<footer class="prose">
+  <p>
+    Rig: <code>bench/optical/</code> — headless Chrome, seeded corpus, page packed by construction,
+    exact-match probe scoring. Graded on Claude Opus 5 through Claude Code's <code>Read</code>.
+    One grader, one pass per page, so intervals are wide — treat the boundaries, not the point
+    estimates, as the result. Grader variance is itself large: a rushed pass and a careful pass
+    on comparable pages gave 32.1% and 42.9%.
+  </p>
+  <p>
+    <strong>Retracted:</strong> the two 97% figures above. Both pages shared a random seed with
+    a page already graded, so both were recall rather than reading. The rig now documents a
+    one-seed-one-graded-page rule, because that mistake produced a confident, wrong, and very
+    quotable headline.
+  </p>
+  <p>
+    DeepSeek-OCR's 10× / 97% and Glyph's 3–4× are cited as what those papers measured
+    <em>on their own models</em>, never as Claude figures. The measured Claude ceiling is 2.07×.
+  </p>
+</footer>
+
+</div>
+
+</body>
+</html>

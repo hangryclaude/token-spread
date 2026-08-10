@@ -1,0 +1,62 @@
+[
+  {
+    "fontPx": 7,
+    "lineHeightPx": 8,
+    "charWidthPx": 4.21,
+    "cols": 609,
+    "rows": 181,
+    "chars": 110229,
+    "textTokensApprox": 30619,
+    "visualTokens": 4784,
+    "ratio": 6.4,
+    "probesOnPage": 164
+  },
+  {
+    "fontPx": 8,
+    "lineHeightPx": 9,
+    "charWidthPx": 4.82,
+    "cols": 533,
+    "rows": 160,
+    "chars": 85280,
+    "textTokensApprox": 23689,
+    "visualTokens": 4784,
+    "ratio": 4.95,
+    "probesOnPage": 126
+  },
+  {
+    "fontPx": 10,
+    "lineHeightPx": 12,
+    "charWidthPx": 6.02,
+    "cols": 426,
+    "rows": 120,
+    "chars": 51120,
+    "textTokensApprox": 14200,
+    "visualTokens": 4784,
+    "ratio": 2.97,
+    "probesOnPage": 74
+  },
+  {
+    "fontPx": 12,
+    "lineHeightPx": 14,
+    "charWidthPx": 7.22,
+    "cols": 355,
+    "rows": 103,
+    "chars": 36565,
+    "textTokensApprox": 10157,
+    "visualTokens": 4784,
+    "ratio": 2.12,
+    "probesOnPage": 52
+  },
+  {
+    "fontPx": 14,
+    "lineHeightPx": 17,
+    "charWidthPx": 8.43,
+    "cols": 304,
+    "rows": 85,
+    "chars": 25840,
+    "textTokensApprox": 7178,
+    "visualTokens": 4784,
+    "ratio": 1.5,
+    "probesOnPage": 38
+  }
+]

@@ -4,6 +4,12 @@
 
 Date: 2026-08-10 · 176 candidate techniques adjudicated · 66 pass · 50 rejected · 36 unresolved
 
+> **Errata, 2026-08-11.** A primary-doc re-verification pass found **nine** entries below that are
+> now wrong or incomplete. Each is marked inline with `⚠ CORRECTED 2026-08-11`. Three of them —
+> automatic caching, long-context pricing, and the 4.7 tokenizer — change what this register
+> *recommends*, not merely what it states. Full working:
+> [The Context Survival Register](2026-08-11-context-survival-register.md), Part 4.
+
 ---
 
 ## The bar
@@ -68,14 +74,40 @@ at 5m, **two** reads at 1h.
 | Lever | What it does | Trap |
 |---|---|---|
 | Insert `cache_control` | the whole lever. A team that never added it sits at 0% forever | opt-in per request; naive integrations get nothing |
+| **⚠ CORRECTED 2026-08-11 — automatic caching** | *"Add a single `cache_control` field at the top level of your request. The system automatically manages cache breakpoints as conversations grow."* Now the documented **recommended starting point** | this supersedes manual placement as the baseline. The 4-breakpoint cap and the 20-block lookback below are the *fine-grained* path, not the default one |
 | Breakpoint placement at volatility boundaries | stops a fast-changing layer invalidating a slow-changing one | placement only — **never reorder content** |
 | Canonical 4-breakpoint pattern | system + tools + last-2-user-turns, within the hard cap of 4 | exceeding 4 → HTTP 400 on tool-dense turns |
 | 20-block lookback handling | a breakpoint checks at most 20 positions back | a turn adding >20 blocks misses totally, silently |
 | TTL selection (5m vs 1h) | 1h for agent loops that pause | **1h requested, 5m silently granted** — verify granted vs requested |
+| **⚠ CORRECTED 2026-08-11 — the granted TTL is observable, and it is not free** | `usage.cache_creation.ephemeral_5m_input_tokens` / `ephemeral_1h_input_tokens` reports the split per request. **Measured across 7,454 deduped Claude Code requests: 40.4M cache-write tokens, 100% at the 1h TTL, zero at 5m.** | a 1h write bills at **2x** base input, a 5m write at **1.25x**. Any cost model carrying one unqualified "cache write" rate under-charges 1h traffic by 60% — ours did, understating a $1,632 sample by **$150.69 (9.2%)** until this was fixed |
 | Per-model minimum thresholds | 512 → 4,096 tokens, **non-monotonic** across generations | below minimum = `cache_creation_input_tokens: 0`, HTTP 200, no error |
 | Model-capability gate | don't hard-code a model allowlist | every new model release silently zeroes caching |
 | Bedrock dialect translation | `cache_control` ↔ Converse `cachePoint` | checkpoints chain tools→system→messages; editing early invalidates all later |
 | **Never send `cache_control` to Gemini** | it is actively harmful there | **6–14× cost penalty** — verified verbatim from primary source |
+
+**New lever, measured 2026-08-11 — TTL right-sizing (`PASS_METADATA`).**
+
+Buying the 1h TTL costs 2x base input; the 5m TTL costs 1.25x. The extra 0.75x buys nothing
+unless the prefix is still being read after five minutes — and a 5m entry *refreshes on every
+read*, so an unbroken chain of sub-five-minute turns keeps it alive indefinitely.
+
+Measured on 7,454 deduped Claude Code requests, grouped by session and ordered by timestamp:
+
+| gap to the next request in the same session | 1h write tokens | share |
+|---|---:|---:|
+| **≤ 5 minutes** | 38,453,853 | **95.1%** |
+| never re-read (last request of a session) | 1,147,324 | 2.8% |
+| everything longer | ~835,000 | 2.1% |
+
+**$143.50 of a $1,632 bill — 8.8% — was spent on TTL that was never used.** `ttl` is a field
+the model never reads: same prompt, same model, same output.
+
+Two things this deliberately does not claim. The 2.8% never re-read at all is *waste*, a
+different family, and counting it here would double-count it later. And shortening the TTL
+makes the 2.1% tail miss, paying a fresh write instead of a 0.1x read — about one percent of
+the figure on this traffic shape, but capable of dominating on another.
+
+Detector: `src/detect/ttlRightSizing.ts`.
 
 **Minimum thresholds (Anthropic-operated platforms, verified 2026-08-10):**
 
@@ -187,9 +219,24 @@ output-neutral. Ship them off by default; let the customer switch them on per wo
 | Flex / lower-priority tiers | provider-specific | best-effort latency |
 | Provisioned throughput / PTU + reservations | unit-price cut | **negative EV below ~90% sustained utilisation** |
 | Cross-region / global inference profiles | ~10% on Bedrock global vs geo | changes serving geography |
+| **⚠ CORRECTED 2026-08-11 — `inference_geo:"us"`** | the first-party equivalent: **1.1×** on input, output, cache writes *and* cache reads, on 4.6+ | a cost **increase**, not a lever. The lever is not setting it. Earlier models 400 on the parameter |
 
 **Not universal:** caching and batch stack on Anthropic/OpenAI/Azure. On **Bedrock, prompt
 caching is explicitly unsupported with batch inference.**
+
+### ⚠ CORRECTED 2026-08-11 — five entries this family got wrong or missed
+
+| # | What changed | Primary doc, verified 2026-08-11 |
+|---|---|---|
+| 1 | **Long-context premium: gone.** This register priced a 1M-token window as carrying a premium | *"Claude 4.6 and later models … include the full 1M token context window at standard pricing. (A 900k-token request is billed at the same per-token rate as a 9k-token request.)"* No beta header either |
+| 2 | **The 4.7 tokenizer is a ~30% cost rise on identical text** — previously carried as an unsourced "1×–1.35×" range | *"Claude 4.7 and later models … use a newer tokenizer … approximately 30% more tokens for the same text."* Boundary is exact: Sonnet 4.6 and earlier use the previous one. Opus 4.6 → 4.7 at an unchanged $5/MTok costs ~30% more |
+| 3 | **Fast mode doubles the bill** — absent entirely | Opus 5 / 4.8 at `speed:"fast"` bill **$10/$50 vs $5/$25**, *"across the full context window"*, and are **not available with the Batch API**. Errors on 4.7; silently runs standard on 4.6 |
+| 4 | **Sonnet 5 intro pricing expires 2026-08-31** — noted but not dated as urgent | $2/$10 → $3/$15, a 50% rise, 20 days from this errata. The most time-boxed item in the register |
+| 5 | **Code execution has a free tier** — absent entirely | **1,550 free container-hours per org per month**, then $0.05/hour; **free entirely** alongside web search or web fetch. Files in the request bill execution time *even if the tool is never called* |
+
+Entries 1 and 2 move in opposite directions and both were being priced wrong. A customer who
+"just upgraded to 4.7" saw a ~30% bill rise from the tokenizer alone — which will be misread as
+waste and mis-attributed to whatever else changed that month.
 
 ---
 
@@ -209,6 +256,7 @@ These are what the rest of the market sells.
 | Tool-schema trimming, minification | changes what the model reads |
 | MCP `cache_tools_list` | caches the tool list *sent to the model*; docs: "does not automatically detect changes" |
 | Image transport swaps (base64 ↔ URL ↔ file_id) | lossy recompression changes pixels |
+| **⚠ CORRECTED 2026-08-11** — image token cost is **not** `(w×h)/750` | primary doc: *"An image costs `⌈width / 28⌉ × ⌈height / 28⌉` visual tokens."* Caps: 1,568 (standard tier) / 4,784 (high-res, 4.7+). The `/750` rule is still what most token calculators use |
 
 ---
 

@@ -1,0 +1,18 @@
+[
+  {
+    "fontPx": 12,
+    "lineHeightPx": 14,
+    "charWidthPx": 7.22,
+    "cols": 275,
+    "rows": 80,
+    "corpus": "code",
+    "charsPerToken": 3.6,
+    "pageW": 2000,
+    "pageH": 1130,
+    "chars": 22000,
+    "textTokensApprox": 6111,
+    "visualTokens": 2952,
+    "ratio": 2.07,
+    "probesOnPage": 31
+  }
+]

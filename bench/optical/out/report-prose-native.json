@@ -1,0 +1,18 @@
+[
+  {
+    "fontPx": 12,
+    "lineHeightPx": 14,
+    "charWidthPx": 7.22,
+    "cols": 275,
+    "rows": 80,
+    "corpus": "prose",
+    "charsPerToken": 4,
+    "pageW": 2000,
+    "pageH": 1130,
+    "chars": 22000,
+    "textTokensApprox": 5500,
+    "visualTokens": 2952,
+    "ratio": 1.86,
+    "probesOnPage": 82
+  }
+]

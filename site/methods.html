@@ -70,6 +70,7 @@
         <li>Exact-match response cache</li>
         <li>In-flight request dedup</li>
         <li>Billing-path selection</li>
+        <li>Cache-write TTL right-sizing</li>
       </ul>
     </div>
     <div class="box hold">
@@ -82,6 +83,7 @@
         <li>OCR instead of vision</li>
         <li>Semantic / fuzzy caching</li>
         <li>Trimming conversation history</li>
+        <li>Output truncation via <code>stop_sequences</code></li>
       </ul>
     </div>
   </div>
@@ -103,13 +105,22 @@
         <tr><td>Request dedup</td><td class="num">varies</td><td><span class="tag same">identical</span></td><td>Concurrent identical calls collapse into one upstream request</td></tr>
         <tr><td>Batch + caching</td><td class="num">95%</td><td><span class="tag same">identical</span></td>
           <td>The two stack: a cached token inside a batch is 0.1&times; &times; 0.5. Use the
-            1-hour TTL — a 5-minute entry expires inside a 24h batch window.</td></tr>
+            1-hour TTL <em>here specifically</em> — a 5-minute entry expires inside a 24h batch
+            window. On interactive traffic the opposite holds; see TTL right-sizing below.</td></tr>
+        <tr><td>Cache-write TTL right-sizing</td><td class="num">up to 37%</td><td><span class="tag same">identical</span></td>
+          <td>A 1-hour cache write bills at 2&times; base input; a 5-minute write at 1.25&times;. A 5-minute
+            entry refreshes on every read, so an unbroken chain of sub-5-minute turns keeps it alive
+            for free. <strong>Measured on 7,454 real requests: 95% of 1-hour writes were re-read
+            inside five minutes</strong> — 8.8% of that bill was TTL nobody used. <code>ttl</code> is
+            a field the model never reads.</td></tr>
         <tr><td>Container pairing</td><td class="num">100%</td><td><span class="tag same">identical</span></td>
           <td>Code-execution container hours are waived outright on any request that also uses a
             current <code>web_search</code>/<code>web_fetch</code> tool version.</td></tr>
-        <tr><td>Output truncation</td><td class="num">varies</td><td><span class="tag same">identical</span></td>
-          <td><code>stop_sequences</code> ends generation at the last token you need. Billing is on
-            tokens actually generated, so trailing prose is real money.</td></tr>
+        <tr><td>Output truncation</td><td class="num">varies</td><td><span class="tag diff">changes</span></td>
+          <td><code>stop_sequences</code> ends generation at the last token you need, and billing is on
+            tokens actually generated — but it also changes <code>stop_reason</code> and can cut a
+            response short. That is a different answer, so it moved to the opt-in list on
+            2026-08-11.</td></tr>
         <tr><td>Streaming long jobs</td><td class="num">~2&times;</td><td><span class="tag same">identical</span></td>
           <td>Avoids the idle-connection drop that makes a client blindly retry and pay for the
             same generation twice.</td></tr>

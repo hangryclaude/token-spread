@@ -63,6 +63,8 @@ export interface Report {
   }>;
   assumptions: AssumptionNote[];
   provenance: ImportProvenance & { skipped: Metrics["skipped"] };
+  /** Kept on the report so a rendered document can state exposure it cannot price. */
+  ttlRightSizing: TtlRightSizingFinding;
   warnings: string[];
   humanSummary: string;
 }
@@ -248,6 +250,7 @@ export function buildReport(input: {
         note: "list prices, refreshed by hand" },
     ],
     provenance: { ...provenance, skipped: metrics.skipped },
+    ttlRightSizing: ttl,
     warnings,
     humanSummary,
   };

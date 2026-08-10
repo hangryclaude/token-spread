@@ -111,3 +111,13 @@ test("a TTL split that disagrees with the total is malformed, not silently trust
   expect(r.ok).toBe(false);
   if (!r.ok) expect(r.reason).toBe("malformed");
 });
+
+test("money is grouped in thousands", () => {
+  // The audit document goes to a finance team. $8426.00 is a number you have to count
+  // digits on; $8,426.00 is a number you read.
+  expect(formatCents(842_600)).toBe("$8,426.00");
+  expect(formatCents(100_000_000)).toBe("$1,000,000.00");
+  expect(formatCents(-842_600)).toBe("-$8,426.00");
+  expect(formatCents(75_000)).toBe("$750.00");   // unchanged below a thousand
+  expect(formatCents(5)).toBe("$0.05");
+});

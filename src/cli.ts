@@ -7,6 +7,7 @@ import { computeMetrics, measuredCacheWriteOverheadPct } from "./metrics";
 import { buildReport } from "./report";
 import { RATE_CARD_2026_08_08 as CARD } from "./rates";
 import { detectTtlRightSizing } from "./detect/ttlRightSizing";
+import { renderAuditHtml } from "./render/auditHtml";
 import { simulate } from "./simulate";
 import type { UsageEvent } from "./types";
 
@@ -39,6 +40,8 @@ const only = arg("only");
 const adminFiles = arg("admin");
 const cacheTargetRaw = arg("cache-target");
 const writeOverheadRaw = arg("write-overhead");
+/** `--html <path>` writes the audit as a standalone document — the thing a buyer forwards. */
+const htmlOut = arg("html");
 
 if (adminFiles === undefined) {
   try {
@@ -110,6 +113,11 @@ const report = buildReport({
   card: CARD,
   generatedAt: new Date(),
 });
+
+if (htmlOut !== undefined) {
+  await Bun.write(htmlOut, renderAuditHtml(report));
+  console.error(`wrote ${htmlOut}`);
+}
 
 if (flag("json")) {
   console.log(JSON.stringify(report, null, 2));

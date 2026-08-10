@@ -126,6 +126,65 @@
 
 <section><div class="wrap stack reveal">
   <div class="head">
+    <p class="eyebrow">Don't take our word for it</p>
+    <h2>The calculator is a model.<br>This is the measurement.</h2>
+    <p class="lede">Anthropic will tell you your own numbers. One command, on your machine, and
+      you have the same file our audit reads &mdash; before you've spoken to us.</p>
+  </div>
+
+  <div class="term">
+    <div class="term-bar"><i></i><i></i><i></i><b>your machine &middot; nothing leaves it</b></div>
+<pre><span class="d"># 1. Pull your own usage. The admin key never goes anywhere but Anthropic.</span>
+curl https://api.anthropic.com/v1/organizations/usage_report/messages \
+  -H <span class="g">"anthropic-version: 2023-06-01"</span> \
+  -H <span class="g">"x-api-key: $ANTHROPIC_ADMIN_KEY"</span> \
+  -G --data-urlencode <span class="g">"starting_at=2026-07-01T00:00:00Z"</span> \
+     --data-urlencode <span class="g">"bucket_width=1d"</span> \
+     --data-urlencode <span class="g">"group_by[]=model"</span> \
+     --data-urlencode <span class="g">"group_by[]=workspace_id"</span> \
+     --data-urlencode <span class="g">"group_by[]=service_tier"</span> &gt; usage.json
+
+<span class="d"># 2. Read it before you send it. Counts and dimensions. No prompts, no completions.</span>
+jq <span class="g">'.data[0].results[0]'</span> usage.json
+{
+  <span class="g">"model"</span>: <span class="g">"claude-opus-5"</span>,
+  <span class="g">"uncached_input_tokens"</span>: 4000000,
+  <span class="g">"cache_read_input_tokens"</span>: 180000000,
+  <span class="g">"cache_creation"</span>: { <span class="g">"ephemeral_1h_input_tokens"</span>: 26000000, <span class="g">"ephemeral_5m_input_tokens"</span>: 0 },
+  <span class="g">"output_tokens"</span>: 9000000,
+  <span class="g">"service_tier"</span>: <span class="g">"standard"</span>
+}
+</pre>
+  </div>
+
+  <div class="grid g3 mt">
+    <div class="card"><h3>There is no prompt text in it</h3>
+      <p>The usage report is token counts, model names, workspaces and tiers. That is the whole
+        payload. You can read every byte of the file before you decide to share it &mdash; and
+        you should.</p></div>
+    <div class="card"><h3>It is your data, from your vendor</h3>
+      <p>We do not sit in your request path, hold your key, or ask you to trust our numbers over
+        Anthropic's. The file comes from Anthropic's API to your disk.</p></div>
+    <div class="card"><h3>What comes back</h3>
+      <p>Your real cache-hit rate, your real cache-write TTL split, per-workspace attribution,
+        and a dollar figure for each lever &mdash; computed from that file, with the arithmetic
+        shown. Where a lever cannot be measured from an aggregate, we say so instead of
+        estimating it.</p></div>
+  </div>
+
+  <p class="note"><strong>One caveat we'd rather say first.</strong> An aggregate report has no
+    per-request timing, so any lever that depends on the gap between consecutive turns &mdash;
+    cache-write TTL right-sizing, above all &mdash; can be sized as <em>exposure</em> but not as a
+    saving. Measuring that one needs request-level data. We will tell you which of your numbers is
+    which.</p>
+
+  <p style="margin-top:2rem"><a class="btn pri" href="mailto:angus@angusbuilds.com?subject=Audit%20-%20usage.json%20attached&amp;body=usage.json%20attached.%20Pulled%20from%20the%20Anthropic%20usage%20report%3B%20counts%20and%20dimensions%20only.">Send the file, get the audit</a>
+    <span class="fine" style="display:block;margin-top:.9rem">No call required first. If the audit
+    finds under 20% on the table, we'll say so and leave.</span></p>
+</div></section>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
     <p class="eyebrow">Plans</p>
     <h2>Start free. Stay only if it pays.</h2>
   </div>

@@ -112,7 +112,11 @@
     <div class="card"><h3>Three breakpoints, deliberately placed</h3>
       <p>Static system prompt on a 1-hour TTL. Tool definitions sorted alphabetically, dynamic
         subagents last, also 1-hour. A sliding 5-minute breakpoint on the newest tool result, so
-        only the new turn is ever recharged.</p></div>
+        only the new turn is ever recharged.</p>
+      <p class="fine">Copy the shape, not the numbers. A 1-hour write costs 2&times; base input;
+        five minutes costs 1.25&times; and refreshes on every read. Measure your own gap between
+        turns &mdash; on traffic we measured, 95% of 1-hour writes were re-read inside five
+        minutes.</p></div>
     <div class="card"><h3>The relocation trick</h3>
       <p>Working memory, skills and runtime context moved out of the prefix and into a single
         message at the tail. That one change took them from <strong>7% to 74%</strong>.</p></div>

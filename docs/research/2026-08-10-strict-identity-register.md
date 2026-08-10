@@ -123,6 +123,55 @@ silently never caches on Haiku 4.5.
 
 ---
 
+## Family A2 — Cache diagnosis (the instrument, not a lever)
+
+*`PASS_METADATA`. Verified from primary docs 2026-08-11. Saves nothing by itself; it tells
+you which of the Family A levers is broken and by how much — which is the thing nobody
+could previously see.*
+
+Beta header **`cache-diagnosis-2026-04-07`**. Send it every turn, pass the previous
+response `id` as `diagnostics.previous_message_id`, and the response carries a
+`diagnostics` object naming the **first** point at which the prefix diverged.
+
+| `cache_miss_reason.type` | Cause | Fix named by the doc |
+|---|---|---|
+| `model_changed` | a router, A/B test or fallback picked a different model | hold the model constant inside a cached conversation |
+| `system_changed` | a timestamp or request id interpolated into the system prompt | make system byte-stable; move dynamic data after the breakpoint |
+| `tools_changed` | tools added, removed, reordered, or schemas serialised non-deterministically | fixed order, deterministic serialisation |
+| `messages_changed` | history truncated or edited rather than appended | treat history as append-only; echo assistant content verbatim |
+| `previous_message_not_found` | no stored fingerprint | **not evidence your request changed** — header missing, wrong workspace, or too much time passed |
+| `unavailable` | another prompt-affecting param differed (`tool_choice`, `thinking`, `context_management`, `output_config`, `output_format`, the active beta set), or divergence beyond the comparison horizon | keep those params constant for the life of a cached conversation |
+
+The four `*_changed` types carry **`cache_missed_input_tokens`** — how much cacheable
+prefix fell after the divergence. The doc is explicit about its status: *"derived from byte
+lengths before tokenization, so treat it as a magnitude indicator rather than a billing
+number. It can differ from (and occasionally exceed) `usage.input_tokens`."* **Never price
+a saving off it.**
+
+**Why it qualifies.** `diagnostics` is a request field the model never reads, and the doc
+states diagnostics *"never blocks or fails your request."* ZDR eligible: the stored
+fingerprint is *"only cryptographic hashes and token-count estimates"*, never raw prompt
+text — the same content-blind footing the rest of this register stands on.
+
+**The four-state response is a trap.** `diagnostics` absent means the header was missing.
+`null` means either first turn **or** no divergence found — two very different facts sharing
+one value. `{"cache_miss_reason": null}` means the comparison had not finished when the
+response serialised: inconclusive, check the next turn. Only the fourth state is a finding.
+Code that treats `null` as "healthy" will report a clean bill of health on a request that
+was never compared.
+
+**What it does not cover:** Claude API only — *"not available on Claude Platform on AWS,
+Amazon Bedrock, Google Cloud, Microsoft Foundry."* Fingerprints expire quickly, so
+comparisons must be between closely spaced turns, and both must come from the same
+organisation and workspace.
+
+**Consequence for anyone selling cache observability:** "a broken cache is invisible" was
+true and is now only conditionally true. The signal exists. What remains is that it is
+opt-in, beta, first-party only, requires threading an id through every turn, and reports one
+divergence at a time.
+
+---
+
 ## Family B — Cache routing hints
 
 *`PASS_METADATA` / `PASS_SCHEDULING`. Raises the hit rate on caching you already have.*

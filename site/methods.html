@@ -113,6 +113,13 @@
             for free. <strong>Measured on 7,454 real requests: 95% of 1-hour writes were re-read
             inside five minutes</strong> — 8.8% of that bill was TTL nobody used. <code>ttl</code> is
             a field the model never reads.</td></tr>
+        <tr><td>Cache diagnosis <span class="tag">beta</span></td><td class="num">&mdash;</td><td><span class="tag same">identical</span></td>
+          <td>Not a saving &mdash; the instrument. Beta <code>cache-diagnosis-2026-04-07</code> compares
+            consecutive requests and names the first divergence: <code>system_changed</code>,
+            <code>tools_changed</code>, <code>messages_changed</code>, <code>model_changed</code>. Hashes
+            and token counts only, never prompt text. Claude API only, not Bedrock or Vertex.
+            <code>cache_missed_input_tokens</code> is a magnitude indicator, not a billing number
+            &mdash; we never price a saving off it.</td></tr>
         <tr><td>Container pairing</td><td class="num">100%</td><td><span class="tag same">identical</span></td>
           <td>Code-execution container hours are waived outright on any request that also uses a
             current <code>web_search</code>/<code>web_fetch</code> tool version.</td></tr>

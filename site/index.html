@@ -108,6 +108,11 @@
     <h2>A broken cache throws no error.</h2>
     <p class="lede">It doesn't crash. It doesn't warn. <code>cache_read_input_tokens</code> quietly
       goes to zero and your bill goes up. One dynamic field in the wrong place is enough.</p>
+    <p class="fine">Anthropic now ships a beta that names the cause &mdash;
+      <code>cache-diagnosis-2026-04-07</code> returns <code>system_changed</code>,
+      <code>tools_changed</code>, <code>messages_changed</code> or <code>model_changed</code>.
+      It is opt-in, first-party only, and needs the previous response id threaded through every
+      turn. The signal exists now. Nobody is watching it.</p>
   </div>
 
   <div class="term">

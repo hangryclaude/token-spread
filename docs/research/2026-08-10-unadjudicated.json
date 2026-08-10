@@ -1,0 +1,314 @@
+[
+ {
+  "id": 3,
+  "name": "kwargs-order-dependent string-concat cache key (LiteLLM exact cache)",
+  "sweepTier": "unknown",
+  "mechanism": "Cache.get_cache_key() (litellm/caching/caching.py:328-378) iterates `for param in kwargs:` (Python dict = insertion-order-preserving, NOT alphabetically sorted) and does `cache_key += f\"{param}: {param_value}\"` \u2014 i.e. it is a raw string concatenation over dict iteration order, not a canonical/sorted serialization. The result is SHA-256 hashed via hashlib (_get_hashed_cache_key, line 458-474) and optionally namespaced. There is a 'preset_cache_key' fast-path (lines 341-344, 431-455) that memoizes the computed key onto litellm_params so repeated internal calls in one request lifecycle don't recompute it \u2014 that part is a legitimate Tier-A optimization (pure compute reuse, same key either way).",
+  "providers": [
+   "BerriAI/litellm"
+  ],
+  "savings": "UNQUANTIFIED",
+  "provenance": "primary-doc",
+  "effort": "low to reproduce, but the lack of canonicalization (contrast with Bifrost's MarshalDeeplySorted, explicitly built because Go map iteration order is randomized) is a design gap unless kwargs order is provably deterministic everywhere it's constructed.",
+  "trap": "No sort/canonicalization step at all, unlike every other exact-cache implementation reviewed (Cloudflare hashes the raw wire body \u2014 deterministic because it's the literal JSON string, not a reconstructed dict; Portkey similarly hashes JSON.stringify(requestBody), the wire body; Bifrost explicitly built MarshalDeeplySorted BECAUSE it doesn't trust map order). LiteLLM is the one reviewed implementation building its hash input from a re-serialized kwargs dict without sorting, which is the riskiest pattern of the group even though a concrete collision was not proven.",
+  "stillCurrent": "",
+  "sources": [
+   "github.com/BerriAI/litellm litellm/caching/caching.py (lines 328-378, 457-474) \u2014 fetched via gh api 2026-08-10"
+  ],
+  "foundBy": "gh-gateways"
+ },
+ {
+  "id": 14,
+  "name": "prompt-cache-warmer / prompt-cache-warmer-rs \u2014 synthetic priming request",
+  "sweepTier": "A",
+  "mechanism": "Fires a request through the same static prefix (with a cache_control breakpoint) ahead of real user traffic, so the 5m/1h TTL clock is already running when the first real request arrives, converting what would be the first request's cache-write into a cache-read. Pairs with cachebench for hit-rate verification.",
+  "providers": [
+   "Anthropic"
+  ],
+  "savings": "UNQUANTIFIED",
+  "provenance": "primary-doc",
+  "effort": "low-medium \u2014 requires a scheduler to re-fire the warmer inside the TTL window (every <5min for ephemeral default, <1h for the 1h beta)",
+  "trap": "Warming costs a full cache-write (1.25x or 2x) every TTL interval even during idle periods with zero real traffic \u2014 can net-negative on low-QPS services if the warm interval is shorter than real request cadence.",
+  "stillCurrent": "",
+  "sources": [
+   "https://raw.githubusercontent.com/MukundaKatta/bedrockcache/main/README.md (pairing reference)",
+   "gh repo view MukundaKatta/prompt-cache-warmer"
+  ],
+  "foundBy": "gh-caching-helpers"
+ },
+ {
+  "id": 25,
+  "name": "Model-capability gate instead of hard-coded model-ID allowlist for enabling cache_control",
+  "sweepTier": "A",
+  "mechanism": "PROPOSED fix (not confirmed merged), Zoo-Code-Org/Zoo-Code#717: cache_control was attached only inside two hard-coded switch(modelId) allowlists; any cacheable Claude model whose exact literal ID wasn't enumerated fell to a default branch sending zero cache_control, silently disabling caching (cache_creation/read both 0, no error) for every new model release until someone manually added it to both switches. Proposed fix: replace both switches with a single `if (info.supportsPromptCache)` capability check against the existing ModelInfo flag already maintained for every model.",
+  "providers": [
+   "Anthropic (via any router that maintains its own model catalog)"
+  ],
+  "savings": "UNQUANTIFIED \u2014 recovers 100% of caching for any newly-released model until the codebase is manually updated",
+  "provenance": "practitioner-data",
+  "effort": "low \u2014 swap allowlist checks for one capability-flag check",
+  "trap": "This is a maintenance-debt trap that recurs on every new model release: the router works perfectly for models known at the time the allowlist was written, then silently degrades to zero caching (with no error, just $0 in the console.anthropic.com cache columns) for every model shipped afterward, until a human notices the bill and files an issue.",
+  "stillCurrent": "",
+  "sources": [
+   "https://github.com/Zoo-Code-Org/Zoo-Code/issues/717"
+  ],
+  "foundBy": "gh-caching-helpers"
+ },
+ {
+  "id": 36,
+  "name": "AWS Bedrock CreateModelInvocationJob clientRequestToken \u2014 provider-native idempotent job creation",
+  "sweepTier": "A",
+  "mechanism": "Bedrock's batch job creation API accepts an optional clientRequestToken parameter (the standard AWS idempotency-token pattern, same family as EC2's). Retrying the create call with the same token returns the existing job instead of creating a second one \u2014 this is enforced server-side by AWS, not something the caller has to build.",
+  "providers": [
+   "AWS Bedrock batch inference"
+  ],
+  "savings": "UNQUANTIFIED \u2014 prevents double-billing of an entire batch job on a client-side retry-after-ambiguous-failure, but the frequency of that event (and thus the dollar value) isn't published anywhere.",
+  "provenance": "primary-doc",
+  "effort": "trivial: pass one extra string parameter you already generate (e.g. a UUID derived from your own job's content hash).",
+  "trap": "This is the ONLY one of the four providers with native, documented idempotent batch-job creation. Anthropic's Batches.create has no metadata/idempotency parameter at all (confirmed both in platform.claude.com's request-body reference and in a third-party SDK adapter's design notes); OpenAI's Batch API docs make no mention of idempotency keys; and Google's Gemini Batch Mode docs say outright: 'The creation of a batch job is not idempotent. If you send the same creation request twice, two separate batch jobs will be created.' Anyone porting a Bedrock-shaped retry pattern to the other three providers without adding a client-side dedup layer will double-submit and double-pay on every ambiguous network failure during job creation.",
+  "stillCurrent": "",
+  "sources": [
+   "https://docs.aws.amazon.com/bedrock/latest/userguide/batch-inference-create.html",
+   "https://ai.google.dev/gemini-api/docs/batch-mode",
+   "https://platform.claude.com/docs/en/api/creating-message-batches"
+  ],
+  "foundBy": "gh-batch-async"
+ },
+ {
+  "id": 47,
+  "name": "Hydragen",
+  "sweepTier": "A",
+  "mechanism": "Hardware-aware exact attention decomposition: splits attention computation into a shared-prefix component (batched across all sequences as matrix-matrix ops) and a unique-suffix component, replacing memory-bound matrix-vector products with compute-efficient matrix-matrix products. Exact, not approximate.",
+  "providers": [
+   "Research prototype (Stanford Scaling Intelligence lab); no confirmed commercial hosted deployment"
+  ],
+  "savings": "3x CodeLlama-13B throughput at 1K shared prefix, 30x+ at 16K prefix, batch size 1K on 8xA100 (ICML 2024).",
+  "provenance": "peer-reviewed",
+  "effort": "high \u2014 requires custom kernel integration, self-hosted only",
+  "trap": "Category (iii) only \u2014 no evidence this shipped in any hosted API as of this search. Good citation for 'the literature has solved this,' bad citation for 'you can turn this on today.'",
+  "stillCurrent": "Mechanism still valid; production adoption unconfirmed.",
+  "sources": [
+   "https://arxiv.org/abs/2402.05099",
+   "https://github.com/ScalingIntelligence/hydragen"
+  ],
+  "foundBy": "papers"
+ },
+ {
+  "id": 58,
+  "name": "Exact-match / byte-identical request-response caching (generic application-level pattern, no single canonical paper)",
+  "sweepTier": "B",
+  "mechanism": "Hash the full request (model, params, exact prompt bytes) and store the complete response; on an exact repeat request within a TTL, replay the stored response instead of calling the API at all. This is the 'B' tier as defined in the brief: safe only because the request is a true duplicate.",
+  "providers": [
+   "Not a vendor product \u2014 implemented ad hoc by API consumers, or via gateway products (e.g., LLM proxy/gateway tools that offer 'response caching' as distinct from provider-side 'prompt caching')"
+  ],
+  "savings": "100% of the request cost avoided on a hit (no model call at all) \u2014 the ceiling case, but only for genuinely repeated requests, which in practice is a small fraction of real traffic outside of test suites, demos, and idempotent tool calls.",
+  "provenance": "inferred",
+  "effort": "medium \u2014 build/operate a keyed cache layer (e.g., Redis) in front of the API call",
+  "trap": "AT TEMPERATURE > 0, THIS FREEZES ONE HISTORICAL SAMPLE INSTEAD OF DRAWING A FRESH INDEPENDENT ONE \u2014 this is a behavioral change, not output-neutral, exactly as the brief specified must be tagged. It silently converts a stochastic-sampling product into a deterministic-lookup product for cached paths, which can matter for anything relying on response diversity (e.g., re-rolling for creative variance, self-consistency voting, or A/B-style sampling). At T=0 it is closer to safe in intent, but per the empirical findings above (152334H blog: 11.67/30 unique GPT-4 completions at T=0; ACM TOSEM peer-reviewed study confirming non-determinism persists at T=0 for GPT-3.5/4 code generation), even T=0 hosted output is NOT itself guaranteed reproducible run-to-run \u2014 so a cached T=0 response is not provably 'what you'd get right now' either, it's just 'what you got once.'",
+  "stillCurrent": "Yes, this is an evergreen engineering pattern, not tied to any specific model generation.",
+  "sources": [
+   "https://152334h.github.io/blog/non-determinism-in-gpt-4/",
+   "https://arxiv.org/pdf/2308.02828",
+   "https://dl.acm.org/doi/10.1145/3697010"
+  ],
+  "foundBy": "papers"
+ },
+ {
+  "id": 69,
+  "name": "OpenAI / Anthropic / Google Batch APIs",
+  "sweepTier": "A",
+  "mechanism": "Submit requests as an async batch job instead of a synchronous call; provider fills idle/off-peak GPU capacity and returns results within a 24h window.",
+  "providers": [
+   "OpenAI (Batch API)",
+   "Anthropic (Message Batches API)",
+   "Google (Gemini Batch Mode)"
+  ],
+  "savings": "50% off standard synchronous pricing \u2014 confirmed identically across all three providers' current primary docs (Aug 2026 fetch)",
+  "provenance": "primary-doc",
+  "effort": "medium \u2014 requires async job submission/polling instead of request/response, and tolerance for non-realtime latency",
+  "trap": "HN's original 2024 batch-API launch thread (92 pts/65 comments) spent most of its energy debating why OpenAI chose polling-over-HTTP instead of a message-queue protocol \u2014 i.e., the batch API is operationally awkward (no native 'list my open jobs' endpoint at launch per commenter barbazoo) and only fits workloads that genuinely tolerate latency. OpenAI's Flex Processing (same ballpark discount, stacked with caching) trades the batch window for occasional uncharged 429 'resource unavailable' errors instead \u2014 a different but still real reliability tax.",
+  "stillCurrent": "",
+  "sources": [
+   "https://developers.openai.com/api/docs/guides/batch",
+   "https://platform.claude.com/docs/en/build-with-claude/batch-processing",
+   "https://ai.google.dev/gemini-api/docs/batch-mode",
+   "https://news.ycombinator.com/item?id=40043845"
+  ],
+  "foundBy": "reddit-hn"
+ },
+ {
+  "id": 80,
+  "name": "Managed Agents billing: token rates, session runtime, session/deployment budgets",
+  "sweepTier": "unknown",
+  "mechanism": "Managed Agents (CMA) sessions bill on TWO independent dimensions: (1) all consumed tokens at standard per-model Messages-API rates (prompt-caching multipliers apply identically; web search still $10/1,000; fast mode premium applies if the agent's model.speed='fast'; data-residency 1.1x applies if model.inference_geo='us'), and (2) SESSION RUNTIME at a flat $0.08 per session-hour, metered to the millisecond, accruing ONLY while session.status='running' (idle/rescheduling/terminated time is free). Session runtime billing REPLACES standalone code-execution container-hour billing within CMA \u2014 no separate container charge on top. Optional SESSION BUDGETS are a hard dollar cap (`budget:{type:limit, max_list_cost:{amount, currency:USD}}`, amount in cents as an integer string) enforced as a pre-request gate before each model call \u2014 the session pauses (`stop_reason:budget_reached`, status goes idle, NOT terminated) once consumed list-cost reaches the cap; can be raised, lowered, or removed post-creation but NEVER newly added to a session created without one, and removal is one-way. DEPLOYMENT BUDGETS (scheduled/cron agents) differ: can be added on update where none existed, and cleared-then-re-added, unlike session budgets.",
+  "providers": [
+   "Claude API (1P) only for Managed Agents per platform-availability.md \u2014 beta on Claude Platform on AWS, explicitly \u274c on Bedrock, Vertex, and (inferred) Foundry"
+  ],
+  "savings": "N/A \u2014 this is billing mechanics, not a savings technique. One EXPLICIT non-stacking finding: 'The Batch API discount does NOT apply to Managed Agents sessions' \u2014 quoted verbatim: 'Sessions are stateful and interactive. There is no batch mode.' Cloud-platform (Bedrock/Vertex) pricing also explicitly does not apply since CMA isn't available there.",
+  "provenance": "primary-doc",
+  "effort": "budget config is one object at session/deployment creation; no code beyond that to get the cost visibility (usage.list_cost reported on session object and in session.usage stream events)",
+  "trap": "List-cost enforcement is a PRE-request gate, not exact \u2014 'the request that crosses the cap completes, so the final figure can exceed the cap by at most one model request per running thread' \u2014 a budget is a soft ceiling with one-request overshoot risk, not a hard stop. Reported list_cost is rounded to the nearest cent while the actual enforcement compares exact (unrounded) amounts, meaning a session showing list_cost exactly equal to its cap may not yet be paused \u2014 you must key off `stop_reason:budget_reached`, never the displayed dollar figure, to know the session actually stopped. In multiagent sessions there is ONE shared budget across all threads (no per-thread caps), and models without a published list price can't be budgeted at all (budgeted session referencing an unpriced model returns 400). Tier tagged 'unknown' rather than A because CMA sessions run an agentic harness with server-side extended thinking ON BY DEFAULT and automatic context compaction \u2014 both of which are themselves Tier-C-affecting mechanisms bundled invisibly inside the billing wrapper; the billing layer itself is Tier A (pure metering) but the harness it meters is not behavior-neutral.",
+  "stillCurrent": "",
+  "sources": [
+   "https://platform.claude.com/docs/en/about-claude/pricing.md (WebFetch, this session \u2014 'Claude Managed Agents pricing' section including the worked $0.705/$0.525 example, quoted verbatim)",
+   "cached claude-api skill, shared/managed-agents-core.md \u00a7 Session budgets \u2014 not independently re-fetched live this session, treated as the skill's own authoritative cached source per its instructions"
+  ],
+  "foundBy": "anthropic-docs"
+ },
+ {
+  "id": 91,
+  "name": "Structured Outputs schema compilation cache (latency, not cost)",
+  "sweepTier": "A",
+  "mechanism": "First request using a novel JSON schema has extra latency while OpenAI compiles/validates it; primary doc: 'subsequent requests with the same schema will not have additional latency.' This is a separate internal cache from prompt caching (which separately treats the schema as a system-message prefix and can token-cache it under the ordinary prompt-cache mechanism).",
+  "providers": [
+   "openai"
+  ],
+  "savings": "UNQUANTIFIED / effectively none as a token-cost lever \u2014 docs describe only a latency benefit, not a price difference. Any token-cost saving from a stable schema comes from ordinary prompt caching (schema-as-prefix), not from this compilation cache specifically \u2014 don't double-count the two.",
+  "provenance": "primary-doc",
+  "effort": "none \u2014 automatic on schema reuse",
+  "trap": "Easy to conflate with prompt caching and claim a cost benefit that the primary docs don't actually state. Keep the two mechanisms separate in the product's savings math: schema-compilation cache = latency only; schema-as-cached-prefix = the real (model-dependent 50-90%) token discount, gated on the same \u22651,024-token/TTL/exact-match rules as any other prompt cache hit.",
+  "stillCurrent": "",
+  "sources": [
+   "https://developers.openai.com/api/docs/guides/structured-outputs",
+   "https://developers.openai.com/api/docs/guides/prompt-caching"
+  ],
+  "foundBy": "openai-docs"
+ },
+ {
+  "id": 102,
+  "name": "AWS Bedrock Marketplace private offers / enterprise custom pricing",
+  "sweepTier": "unknown",
+  "mechanism": "AWS Marketplace sellers (including some model providers) can issue private offers \u2014 custom pricing/EULA/payment terms visible only to one customer account. Separately, and more relevant to flagship Claude/Titan/Nova pricing specifically, enterprise-wide volume discounts are typically negotiated via AWS's standard Enterprise Discount Program (EDP) / Private Pricing Agreements at the account level, not via the Bedrock Marketplace private-offer mechanism.",
+  "providers": [
+   "AWS Bedrock Marketplace (third-party/specialized models)",
+   "AWS account-level EDP/Private Pricing Agreement (covers all Bedrock spend including first-party models)"
+  ],
+  "savings": "UNQUANTIFIED \u2014 negotiated case-by-case, not published. No primary-doc percentage found.",
+  "provenance": "practitioner-data",
+  "effort": "high \u2014 requires an AWS account team relationship and typically a committed annual spend threshold to be worth negotiating",
+  "trap": "Easy to conflate 'Bedrock Marketplace private offers' (a mechanism for buying specific third-party/niche models with custom terms) with 'we can get a discount on Claude via Bedrock' \u2014 the flagship Anthropic models on Bedrock are NOT typically sold through the Marketplace private-offer mechanism; enterprise discounting on those goes through the account-level EDP instead. Don't pitch 'Marketplace private offer' language to a customer asking about discounted Claude access on Bedrock \u2014 it's the wrong mechanism name and may confuse their procurement team.",
+  "stillCurrent": "",
+  "sources": [
+   "https://docs.aws.amazon.com/bedrock/latest/userguide/managed-entitlements-subscribing.html",
+   "https://docs.aws.amazon.com/marketplace/latest/userguide/private-offers.html"
+  ],
+  "foundBy": "google-bedrock-azure"
+ },
+ {
+  "id": 113,
+  "name": "Amazon Bedrock Provisioned Throughput (model units, 1-month/6-month commit)",
+  "sweepTier": "A",
+  "mechanism": "Purchase dedicated 'model units' at an hourly rate guaranteeing tokens/minute throughput instead of pay-per-request; commitment terms are no-commitment, 1-month, or 6-month.",
+  "providers": [
+   "AWS Bedrock (hosts Anthropic Claude, Meta Llama, Cohere, others)"
+  ],
+  "savings": "Confirmed for Meta Llama 2 on aws.amazon.com/bedrock/pricing: 1-month $21.18/hr vs 6-month $13.08/hr per model unit (~38% reduction). Claude-specific PT pricing is explicitly NOT published \u2014 'reach out to your account team.'",
+  "provenance": "primary-doc",
+  "effort": "Medium: requires demand forecasting; fixed hourly cost regardless of actual utilization",
+  "trap": "Because Claude PT pricing is unpublished, there is no way to comparison-shop or sanity-check the account team's quote before committing \u2014 asymmetric information favors AWS/Anthropic in this specific negotiation.",
+  "stillCurrent": "",
+  "sources": [
+   "https://aws.amazon.com/bedrock/pricing/"
+  ],
+  "foundBy": "billing-procurement"
+ },
+ {
+  "id": 124,
+  "name": "Waste pattern: forgotten nightly evals/cron jobs on paid API keys",
+  "sweepTier": "A",
+  "mechanism": "Eval suites or scheduled agent jobs set up during a project and never decommissioned keep billing against production API keys indefinitely. The fix (killing the job or capping its key's budget) doesn't touch any model's behavior, it just stops paying for unread output.",
+  "providers": [
+   "generic, all providers"
+  ],
+  "savings": "UNQUANTIFIED \u2014 no specific case study found this session; pattern-matched from general FinOps-for-AI commentary rather than a named incident.",
+  "provenance": "inferred",
+  "effort": "Low once found, but discovery is the hard part without per-key cost attribution already in place",
+  "trap": "Invisible in a total-spend dashboard until someone manually audits API keys against active projects \u2014 this is precisely why tagging/attribution (next item) is a prerequisite, not optional.",
+  "stillCurrent": "",
+  "sources": [
+   "https://www.finops.org/wg/token-economics-saas/"
+  ],
+  "foundBy": "billing-procurement"
+ },
+ {
+  "id": 135,
+  "name": "Pinned/dated model-ID immutability (foundation for any Tier-A claim)",
+  "sweepTier": "A",
+  "mechanism": "Anthropic, OpenAI, and Google all commit that a specific model ID (e.g. a dated snapshot) maps to fixed weights for its lifetime; Anthropic additionally commits to preserving weights of every publicly released model 'for, at minimum, the lifetime of Anthropic as a company.' This is what makes it meaningful to say 'the forward pass is the same' at all \u2014 without ID pinning, tier A is undefined.",
+  "providers": [
+   "Anthropic",
+   "OpenAI",
+   "Google"
+  ],
+  "savings": "UNQUANTIFIED (not a cost lever itself; it's the precondition that makes every other Tier-A claim provable)",
+  "provenance": "primary-doc",
+  "effort": "low \u2014 just pin dated/canonical model IDs and log them per request; refuse floating/alias IDs",
+  "trap": "Weight immutability says nothing about the SERVING harness around the weights. Anthropic's own Mar\u2013Apr 2026 incident (reasoning-effort default silently dropped high\u2192medium, a caching bug that wiped thinking-history every turn instead of hourly, a system-prompt verbosity cap) produced a measured ~3% quality drop for six weeks with zero weight changes \u2014 proving 'same model ID' is necessary but not sufficient for 'same output distribution.' Any routing layer that touches prompt construction, tool schemas, or provider beta flags moves the claim to Tier C regardless of model ID.",
+  "stillCurrent": "",
+  "sources": [
+   "https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions",
+   "https://www.anthropic.com/research/deprecation-commitments",
+   "https://www.infoq.com/news/2026/05/anthropic-claude-code-postmortem/"
+  ],
+  "foundBy": "identity-proof"
+ },
+ {
+  "id": 146,
+  "name": "Trimming tool or function schema description verbosity for token savings",
+  "sweepTier": "unknown",
+  "mechanism": "Shorter descriptions are mechanically, certainly fewer tokens. Whether they change tool-selection accuracy or parameter-fill correctness is the open, unresolved question - this is exactly the A-vs-C boundary the brief asked me to nail down, and it does not resolve cleanly to either side from available evidence.",
+  "providers": [
+   "Anthropic",
+   "OpenAI"
+  ],
+  "savings": "Measured 3.58x more tokens for a realistic verbose 3-parameter weather-tool schema vs a terse version of the same schema (258 vs 72 tokens, o200k_base), so the mechanical token savings from trimming are real and substantial.",
+  "provenance": "inferred",
+  "effort": "trivial to trim; risk is unquantified",
+  "trap": "The critical finding: both providers' own primary docs argue the opposite direction from token-trimming. Anthropic's tool-definition guide states verbose, detailed descriptions are by far the most important factor in tool performance, explicitly recommending at least 3-4 sentences per tool description, and shows a side-by-side good versus poor example where the one-line poor version is called out as leaving the model with many open questions. OpenAI's guidance says to write clear and detailed function names, parameter descriptions, and instructions. I searched for and could not find any controlled ablation study, peer-reviewed or vendor-published, that isolates description length or detail as the sole independent variable and measures tool-selection or parameter accuracy directly. I specifically fetched Anthropic's own Writing Tools for Agents engineering blog and confirmed it contains no such isolated experiment: its before-and-after graphs bundle description changes together with implementation and response-shape changes, and its one concrete token-count comparison measures tool response verbosity, not description verbosity. Conclusion: presumed-C by vendor guidance and by the letter of the tier definition since the model sees different input, but genuinely unproven either way. The experiment that would settle it: fix a tool library of 5 to 20 tools, some near-duplicate in purpose, construct 3 description tiers per tool (terse, vendor-recommended length, verbose) holding tool count, names, and parameter schemas fixed, run each tier against an ambiguous-selection eval set where the right tool is not obvious from the name alone, across 2 or more model generations, and measure selection accuracy and parameter-fill correctness, not just token cost. I did not find evidence anyone has run this.",
+  "stillCurrent": "",
+  "sources": [
+   "https://platform.claude.com/docs/en/agents-and-tools/tool-use/define-tools",
+   "https://developers.openai.com/api/docs/guides/function-calling",
+   "https://www.anthropic.com/engineering/writing-tools-for-agents"
+  ],
+  "foundBy": "serialization-tokenizer"
+ },
+ {
+  "id": 157,
+  "name": "Zombie context in scheduled/cron agents (unused tool schemas + memory loaded on every run)",
+  "sweepTier": "A",
+  "mechanism": "A real, measured GitHub issue (openclaw): isolated cron-triggered agent jobs defaulted to inheriting the FULL parent-agent toolbox (~28 tool schemas) and complete project context (memory files, skill definitions) on every single run, regardless of whether the scheduled task used any of it \u2014 one job needing only exec was still paying to load the entire manifest every time. The reporter audited 5 production cron jobs, measured token counts before/after restricting to toolsAllow: [\"exec\"] + lightContext: true, and got an 88-93% token reduction with IDENTICAL task output \u2014 a clean Tier A elimination since the unused tool manuals and memory files were never referenced by the model's actual response. Across 19 jobs firing 50-144x/day, the reporter estimated $40-80/day of unjustified spend at that org alone.",
+  "providers": [
+   "provider-agnostic \u2014 this is an application/orchestration-layer waste pattern, not provider-specific"
+  ],
+  "savings": "88-93% token reduction on affected cron runs, measured; ~$40-80/day estimated for one org's 19-job cron fleet.",
+  "provenance": "practitioner-data",
+  "effort": "Low to detect from telemetry (flat, unusually large input_tokens on every run of a given scheduled job, regardless of task complexity, is the signature); low-to-medium to fix (scope tools/context per job).",
+  "trap": "Over-provisioning tools isn't just token waste \u2014 the same issue notes it caused secondary harm: the agent misused available-but-irrelevant tools (calling memory_search for credentials, using web_search instead of direct execution), creating retry loops that consumed additional billed turns. Zombie context doesn't just cost tokens directly; it invites the model into wasteful tool-call detours.",
+  "stillCurrent": "",
+  "sources": [
+   "https://github.com/openclaw/openclaw/issues/97317"
+  ],
+  "foundBy": "waste-elimination"
+ },
+ {
+  "id": 168,
+  "name": "Automatic caching (single trailing breakpoint managed by the provider)",
+  "sweepTier": "A",
+  "mechanism": "Set one top-level cache_control flag; the API places the breakpoint on the last cacheable block for you and moves it forward automatically each turn.",
+  "providers": [
+   "Anthropic",
+   "OpenAI"
+  ],
+  "savings": "Same 0.1x-read / 1.25-2x-write economics as manual breakpoints when it works.",
+  "provenance": "primary-doc",
+  "effort": "trivial",
+  "trap": "If the 'last cacheable block' happens to be one that varies per request (a common accident, e.g. it lands on a freshly-appended user message with a timestamp or a nonce), the automatic placement produces silent, permanent 0% cache hit rate \u2014 same failure mode as manual misplacement, but harder to notice because you didn't choose where the breakpoint went.",
+  "stillCurrent": "",
+  "sources": [
+   "https://platform.claude.com/docs/en/build-with-claude/prompt-caching",
+   "https://developers.openai.com/api/docs/guides/prompt-caching"
+  ],
+  "foundBy": "agent-loop-specific"
+ }
+]

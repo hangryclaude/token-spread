@@ -1,8 +1,9 @@
 import type { ImportProvenance } from "./importers/claudeCode";
 import { measuredCacheWriteOverheadPct, type Metrics } from "./metrics";
 import { formatCents, microCentsToCents } from "./pricing";
-import { cardAgeDays, type RateCard } from "./rates";
-import { DEFAULT_CACHE_WRITE_OVERHEAD_PCT, type Assumptions, type Simulation } from "./simulate";
+import { cardAgeDays, lapsesDue, type RateCard } from "./rates";
+import type { TtlRightSizingFinding } from "./detect/ttlRightSizing";
+import { DEFAULT_CACHE_WRITE_OVERHEAD_PCT, type Assumptions, type Simulation, type Unquantified } from "./simulate";
 
 const STALE_AFTER_DAYS = 30;
 
@@ -22,13 +23,15 @@ export interface TokenTotals {
 /**
  * Each lever's saving as a percent of the baseline **cost**, to one decimal.
  *
- * Deliberately not "tokens saved": neither lever removes a single token. Caching
- * moves input tokens from the full rate to the 0.10x read rate, and routing moves
- * them to a cheaper model's rate. The token count is identical before and after —
- * only the price attached to each token changes. A "tokens saved" figure would be
- * zero, and any non-zero one would be a lie.
+ * Deliberately not "tokens saved": the lever removes no tokens. Caching moves input
+ * tokens from the full rate to the 0.10x read rate. The token count is identical
+ * before and after — only the price attached to each token changes. A "tokens saved"
+ * figure would be zero, and any non-zero one would be a lie.
+ *
+ * There is no routing entry here, and there must not be. Routing sends a different
+ * model, so a different model answers; that is a changed result sold as a saving.
  */
-export interface SavingsPct { cacheOnly: number; routingOnly: number; combined: number }
+export interface SavingsPct { cacheOnly: number; combined: number }
 
 export interface AssumptionNote {
   name: string;
@@ -46,12 +49,18 @@ export interface Report {
   byProject: Record<string, Money>;
   byAccount: Record<string, Money>;
   tokens: TokenTotals;
-  savings: { cacheOnly: Money; routingOnly: Money; combined: Money };
+  savings: { cacheOnly: Money; wasteOnly: Unquantified; combined: Money };
   savingsPct: SavingsPct;
-  /** Blended cost per million tokens, before and after both levers. */
+  /** Blended cost per million tokens, before and after the measured levers. */
   effectiveRatePerMTok: { before: Money; after: Money };
-  routingCurve: Array<{ fractionPct: number; cost: Money; saved: Money }>;
   cacheHeadroom: { targetCacheHitPct: number; cost: Money; saved: Money } | null;
+  /** Measured levers that are not cache-hit headroom. */
+  findings: Array<{
+    lever: string;
+    evidence: string;
+    saved: Money;
+    detail: string;
+  }>;
   assumptions: AssumptionNote[];
   provenance: ImportProvenance & { skipped: Metrics["skipped"] };
   warnings: string[];
@@ -87,10 +96,12 @@ export function buildReport(input: {
   simulation: Simulation;
   assumptions: Assumptions;
   provenance: ImportProvenance;
+  ttlRightSizing: TtlRightSizingFinding;
   card: RateCard;
   generatedAt: Date;
 }): Report {
   const { metrics, simulation: sim, assumptions: a, provenance, card, generatedAt } = input;
+  const ttl = input.ttlRightSizing;
 
   const o = metrics.overall;
   const baseline = o.microCents;
@@ -101,8 +112,33 @@ export function buildReport(input: {
   if (age > STALE_AFTER_DAYS) {
     warnings.push(`rate card is ${age} days old (captured ${card.capturedAt}) — every figure may be wrong`);
   }
+  for (const l of lapsesDue(card, generatedAt)) {
+    warnings.push(
+      l.daysAway < 0
+        ? `this card is WRONG as of ${l.on}: ${l.what} — re-capture before quoting any figure`
+        : `in ${l.daysAway} days, on ${l.on}: ${l.what}`,
+    );
+  }
   if (provenance.synthesizedKeys > 0) {
     warnings.push(`${provenance.synthesizedKeys} events had no requestId; dedup for those is best-effort`);
+  }
+  if (provenance.unknownTtlWrites > 0) {
+    // 5m writes bill at 1.25x base input, 1h at 2x. A source that omits the split is
+    // billed here at the cheaper rate, so the reported cost is a floor, not a fact.
+    warnings.push(
+      `${provenance.unknownTtlWrites.toLocaleString("en-US")} cache-write tokens came with no TTL — ` +
+      `billed here at the 5-minute rate (1.25x); if they were 1-hour writes (2x) the real cost is higher`,
+    );
+  }
+  if (provenance.compactionEvents > 0) {
+    // Not a caveat about our numbers — a finding about theirs. Anything reading the
+    // top-level usage fields is short by exactly this much on this traffic.
+    const hidden = provenance.hiddenInputTokens + provenance.hiddenOutputTokens;
+    warnings.push(
+      `${provenance.compactionEvents} requests ran a compaction sampling step billing ` +
+      `${hidden.toLocaleString("en-US")} tokens that the top-level usage fields do not report — ` +
+      `this report counts them, a dashboard reading usage.input_tokens does not`,
+    );
   }
   if (metrics.skipped.unknown_model > 0) {
     warnings.push(
@@ -131,15 +167,17 @@ export function buildReport(input: {
   const humanSummary = [
     `Current cost: ${formatCents(microCentsToCents(metrics.overall.microCents))} across ${metrics.overall.events} priced events.`,
     `Observed cache-hit rate: ${observedPct}% — defined as cache reads over (cache reads + fresh input); cache writes are excluded from the denominator.`,
-    // The routing figures are attributed at ONE fraction — the last curve point. Naming
-    // it inline is not decoration: unlabelled, "routing saves $753" reads as a property
-    // of the traffic when it is really a property of an assumption nobody agreed to.
-    `Savings levers compound and do not add: cache-only ${formatCents(microCentsToCents(sim.attribution.cacheOnlySavedMicroCents))} (raising cache-hit to ${a.targetCacheHitPct ?? 0}%), routing-only ${formatCents(microCentsToCents(sim.attribution.routingOnlySavedMicroCents))} (at ${a.routableFractionsPct.at(-1) ?? 0}% of traffic routed to ${a.targetModel}), both together ${formatCents(microCentsToCents(sim.attribution.combinedSavedMicroCents))}.`,
+    // One measured lever, named with the assumption that produces it. Waste is stated
+    // as unmeasured rather than as $0, which would read as "we looked and found none".
+    `Savings: cache-only ${formatCents(microCentsToCents(sim.attribution.cacheOnlySavedMicroCents))} (raising cache-hit to ${a.targetCacheHitPct ?? 0}%). Waste elimination: not measured in this slice. Levers compound and do not add.`,
     // Percentages are of COST. Neither lever removes a token — they change the price
     // each token bills at, so a "tokens saved" figure would be zero by construction.
     `Tokens: ${group(totalTokens)} priced (${group(o.cacheReadTokens)} cache reads, ${group(o.inputTokens)} fresh input, ${group(o.outputTokens)} output).`,
-    `Percent of cost saved: cache-only ${pct1(sim.attribution.cacheOnlySavedMicroCents, baseline)}%, routing-only ${pct1(sim.attribution.routingOnlySavedMicroCents, baseline)}%, both together ${pct1(sim.attribution.combinedSavedMicroCents, baseline)}%.`,
-    `Blended rate: ${formatCents(microCentsToCents(ratePerMTok(baseline, totalTokens)))} per MTok today → ${formatCents(microCentsToCents(ratePerMTok(baseline - sim.attribution.combinedSavedMicroCents, totalTokens)))} per MTok under both levers.`,
+    ...(ttl.recoverableMicroCents > 0 ? [
+      `Cache-write TTL right-sizing: ${formatCents(microCentsToCents(ttl.recoverableMicroCents))} — ${pct1(ttl.recoverableMicroCents, baseline)}% of the bill. ${ttl.overBoughtTokens.toLocaleString("en-US")} tokens bought a 1-hour TTL at 2x base input and were re-read inside 5 minutes, where 1.25x would have served. ttl is metadata the model never reads: same prompt, same model, same output.`,
+    ] : []),
+    `Percent of cost saved: cache-only ${pct1(sim.attribution.cacheOnlySavedMicroCents, baseline)}%, all measured levers ${pct1(sim.attribution.combinedSavedMicroCents, baseline)}%.`,
+    `Blended rate: ${formatCents(microCentsToCents(ratePerMTok(baseline, totalTokens)))} per MTok today → ${formatCents(microCentsToCents(ratePerMTok(baseline - sim.attribution.combinedSavedMicroCents, totalTokens)))} per MTok under the measured levers.`,
     `Rate card captured ${card.capturedAt}. ${card.notes.join(" ")}`,
   ].join("\n");
 
@@ -161,26 +199,34 @@ export function buildReport(input: {
     },
     savings: {
       cacheOnly: money(sim.attribution.cacheOnlySavedMicroCents),
-      routingOnly: money(sim.attribution.routingOnlySavedMicroCents),
+      wasteOnly: sim.attribution.wasteOnly,
       combined: money(sim.attribution.combinedSavedMicroCents),
     },
     savingsPct: {
       cacheOnly: pct1(sim.attribution.cacheOnlySavedMicroCents, baseline),
-      routingOnly: pct1(sim.attribution.routingOnlySavedMicroCents, baseline),
       combined: pct1(sim.attribution.combinedSavedMicroCents, baseline),
     },
     effectiveRatePerMTok: {
       before: money(ratePerMTok(baseline, totalTokens)),
       after: money(ratePerMTok(baseline - sim.attribution.combinedSavedMicroCents, totalTokens)),
     },
-    routingCurve: sim.routingCurve.map((p) => ({
-      fractionPct: p.fractionPct, cost: money(p.microCents), saved: money(p.savedMicroCents),
-    })),
     cacheHeadroom: sim.cacheHeadroom && {
       targetCacheHitPct: sim.cacheHeadroom.targetCacheHitPct,
       cost: money(sim.cacheHeadroom.microCents),
       saved: money(sim.cacheHeadroom.savedMicroCents),
     },
+    findings: ttl.recoverableMicroCents > 0 ? [{
+      lever: "cache-write TTL right-sizing",
+      evidence: ttl.evidence,
+      saved: money(ttl.recoverableMicroCents),
+      detail:
+        `${ttl.overBoughtTokens.toLocaleString("en-US")} tokens were written at the 1-hour TTL (2x base input) ` +
+        `and re-read within 5 minutes, where the 5-minute TTL (1.25x) would have served. ` +
+        `ttl is metadata the model never reads: same prompt, same model, same output.` +
+        (ttl.neverReReadTokens > 0
+          ? ` A further ${ttl.neverReReadTokens.toLocaleString("en-US")} 1-hour tokens were never re-read at all — that is waste, a separate lever, and is not counted here.`
+          : ""),
+    }] : [],
     assumptions: [
       { name: "cacheHitRate", value: `${observedPct}%`, kind: "measured",
         note: "computed from real cache_read vs input tokens" },
@@ -193,8 +239,6 @@ export function buildReport(input: {
         note: "observed per-model split" },
       { name: "projectSplit", value: Object.keys(metrics.byProject).sort().join(", "), kind: "measured",
         note: "observed per-project split" },
-      { name: "routableFraction", value: `${a.routableFractionsPct.join("/")}%`, kind: "operator_set",
-        note: "no per-request difficulty label exists yet — reported as a curve, never a point" },
       { name: "cacheWriteOverhead", value: `${writeOverheadPct}%`, kind: "operator_set",
         note: "writes needed to sustain the simulated hit rate, as a share of cache-eligible input; the observed write volume describes the old regime and cannot be carried over" },
       { name: "rateCard", value: card.capturedAt, kind: "operator_set",

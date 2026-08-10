@@ -6,9 +6,18 @@ import type { UsageEvent } from "../src/types";
 function ev(over: Partial<UsageEvent> = {}): UsageEvent {
   return {
     idempotencyKey: "k", accountId: "local", projectId: "p",
-    ts: "2026-08-01T00:00:00Z", source: "claude_code", model: "claude-opus-5",
+    ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", model: "claude-opus-5",
     inputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, outputTokens: 0,
+    cacheCreation5mTokens: 0, cacheCreation1hTokens: 0,
+    compactionInputTokens: 0, compactionOutputTokens: 0,
     ...over,
+    // A caller that sets only the total means "whatever TTL"; bill it at the cheaper
+    // 5m rate so the fixture balances, exactly as the importer does for such sources.
+    ...(over.cacheCreationTokens !== undefined
+        && over.cacheCreation5mTokens === undefined
+        && over.cacheCreation1hTokens === undefined
+        ? { cacheCreation5mTokens: over.cacheCreationTokens }
+        : {}),
   };
 }
 
@@ -66,4 +75,39 @@ test("formats cents with two decimal places", () => {
   expect(formatCents(0)).toBe("$0.00");
   expect(formatCents(5)).toBe("$0.05");
   expect(formatCents(317_05)).toBe("$317.05");
+});
+
+// ── cache-write TTL ────────────────────────────────────────────────────────────
+// A 5-minute cache write bills at 1.25x base input; a one-hour write bills at 2x.
+// The card carried only the 1.25x rate, so every 1h write was under-charged by 60%.
+// Measured 2026-08-11 on real transcripts: 100% of writes were 1h, understating
+// ~$366 of a ~$1,449 bill. A report that under-states cost cannot reconcile.
+
+test("a one-hour cache write bills at 2x base input", () => {
+  const e = ev({ cacheCreationTokens: 1_000_000, cacheCreation1hTokens: 1_000_000, cacheCreation5mTokens: 0 });
+  const r = costOfEvent(e, CARD);
+  expect(r.ok).toBe(true);
+  // opus-5 base input is 500 micro-cents/token, so 1e6 tokens at 2x = 1e9.
+  if (r.ok) expect(r.microCents).toBe(1_000_000_000);
+});
+
+test("a five-minute cache write bills at 1.25x base input", () => {
+  const e = ev({ cacheCreationTokens: 1_000_000, cacheCreation5mTokens: 1_000_000, cacheCreation1hTokens: 0 });
+  const r = costOfEvent(e, CARD);
+  expect(r.ok).toBe(true);
+  if (r.ok) expect(r.microCents).toBe(625_000_000);
+});
+
+test("a mixed-TTL write charges each share at its own rate", () => {
+  const e = ev({ cacheCreationTokens: 1_000_000, cacheCreation5mTokens: 400_000, cacheCreation1hTokens: 600_000 });
+  const r = costOfEvent(e, CARD);
+  expect(r.ok).toBe(true);
+  if (r.ok) expect(r.microCents).toBe(400_000 * 625 + 600_000 * 1000);
+});
+
+test("a TTL split that disagrees with the total is malformed, not silently trusted", () => {
+  const e = ev({ cacheCreationTokens: 1_000_000, cacheCreation5mTokens: 1, cacheCreation1hTokens: 1 });
+  const r = costOfEvent(e, CARD);
+  expect(r.ok).toBe(false);
+  if (!r.ok) expect(r.reason).toBe("malformed");
 });

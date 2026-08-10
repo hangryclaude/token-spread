@@ -3,9 +3,6 @@ import { costOfEvent } from "./pricing";
 import type { RateCard } from "./rates";
 
 export interface Assumptions {
-  /** Integer percents, 0-100. A curve, never a single point. */
-  routableFractionsPct: readonly number[];
-  targetModel: string;
   /** Integer percent, or null to skip the headroom simulation. */
   targetCacheHitPct: number | null;
   /**
@@ -19,19 +16,23 @@ export interface Assumptions {
 
 export const DEFAULT_CACHE_WRITE_OVERHEAD_PCT = 5;
 
-export interface RoutingPoint {
-  fractionPct: number;
-  microCents: number;
-  savedMicroCents: number;
-}
+/**
+ * A lever with no signal in the data yet. Reporting 0 would read as "we looked and
+ * found none"; this reads as what it is. Never render it as money.
+ */
+export const UNQUANTIFIED = "UNQUANTIFIED" as const;
+export type Unquantified = typeof UNQUANTIFIED;
 
 export interface Simulation {
   baselineMicroCents: number;
-  routingCurve: RoutingPoint[];
   cacheHeadroom: { targetCacheHitPct: number; microCents: number; savedMicroCents: number } | null;
   attribution: {
     cacheOnlySavedMicroCents: number;
-    routingOnlySavedMicroCents: number;
+    /**
+     * Family E of the register. Detecting it needs retry/duplicate/zombie signals the
+     * slice-1 importer does not carry, so it is honestly unmeasured rather than zero.
+     */
+    wasteOnly: Unquantified;
     combinedSavedMicroCents: number;
   };
 }
@@ -41,18 +42,31 @@ interface Bundle {
   inputTokens: number;
   cacheReadTokens: number;
   cacheCreationTokens: number;
+  /**
+   * Carried, not re-derived. Without it the simulation reprices observed one-hour
+   * writes (2x) at the five-minute rate (1.25x) and reports the difference as a saving
+   * the customer never made — a phantom that survived until a fixture with real writes
+   * finally had something to mis-price.
+   */
+  cacheCreation5mTokens: number;
+  cacheCreation1hTokens: number;
   outputTokens: number;
 }
 
 const bundleOf = (t: Totals): Bundle => ({
   inputTokens: t.inputTokens, cacheReadTokens: t.cacheReadTokens,
-  cacheCreationTokens: t.cacheCreationTokens, outputTokens: t.outputTokens,
+  cacheCreationTokens: t.cacheCreationTokens,
+  cacheCreation5mTokens: t.cacheCreation5mTokens,
+  cacheCreation1hTokens: t.cacheCreation1hTokens,
+  outputTokens: t.outputTokens,
 });
 
 const scale = (b: Bundle, pct: number): Bundle => ({
   inputTokens: Math.round(b.inputTokens * pct / 100),
   cacheReadTokens: Math.round(b.cacheReadTokens * pct / 100),
   cacheCreationTokens: Math.round(b.cacheCreationTokens * pct / 100),
+  cacheCreation5mTokens: Math.round(b.cacheCreation5mTokens * pct / 100),
+  cacheCreation1hTokens: Math.round(b.cacheCreation1hTokens * pct / 100),
   outputTokens: Math.round(b.outputTokens * pct / 100),
 });
 
@@ -68,12 +82,19 @@ function priceBundle(
   let fresh = b.inputTokens;
   let read = b.cacheReadTokens;
   let written = b.cacheCreationTokens;
+  // Observed writes keep the TTL they were actually billed at. Only a *simulated* write
+  // volume has no TTL of its own, and that one is priced at the cheaper 5m rate so a
+  // simulated saving is never flattered by assuming the dearer regime was in force.
+  let written5m = b.cacheCreation5mTokens;
+  let written1h = b.cacheCreation1hTokens;
 
   if (cacheTargetPct !== null) {
     const eligible = b.inputTokens + b.cacheReadTokens;
     read = Math.floor(eligible * cacheTargetPct / 100);
     fresh = eligible - read;
     written = Math.floor(eligible * writeOverheadPct / 100);
+    written5m = written;
+    written1h = 0;
   }
 
   // Priced through costOfEvent, never by a second copy of the formula: the simulation
@@ -81,39 +102,35 @@ function priceBundle(
   // counts into the one pricing function and is never emitted or stored.
   const priced = costOfEvent({
     idempotencyKey: "", accountId: "", projectId: "",
-    ts: "", source: "claude_code", model,
+    ts: "", sessionId: null, source: "claude_code", model,
     inputTokens: fresh, cacheReadTokens: read,
-    cacheCreationTokens: written, outputTokens: b.outputTokens,
+    cacheCreationTokens: written,
+    cacheCreation5mTokens: written5m, cacheCreation1hTokens: written1h,
+    outputTokens: b.outputTokens,
+    compactionInputTokens: 0, compactionOutputTokens: 0,
   }, card);
 
   if (!priced.ok) throw new Error(`cannot price simulated bundle on ${model}: ${priced.reason}`);
   return priced.microCents;
 }
 
-/** Total cost across all models, optionally routing `routePct` of every bundle to the target. */
+/**
+ * Total cost across all models. Every bundle stays on the model that produced it —
+ * there is no path here that reprices traffic onto a different model, and there must
+ * not be: a different model answering is a different answer.
+ */
 function totalCost(
-  metrics: Metrics, card: RateCard,
-  routePct: number, targetModel: string, cacheTargetPct: number | null, writeOverheadPct: number,
+  metrics: Metrics, card: RateCard, cacheTargetPct: number | null, writeOverheadPct: number,
 ): number {
-  if (!card.rates[targetModel]) throw new Error(`target model not in rate card: ${targetModel}`);
-
   let sum = 0;
   for (const [model, totals] of Object.entries(metrics.byModel)) {
     if (!card.rates[model]) continue; // already bucketed as unknown_model by computeMetrics
-    const whole = bundleOf(totals);
-    sum += priceBundle(scale(whole, 100 - routePct), model, card, cacheTargetPct, writeOverheadPct);
-    sum += priceBundle(scale(whole, routePct), targetModel, card, cacheTargetPct, writeOverheadPct);
+    sum += priceBundle(bundleOf(totals), model, card, cacheTargetPct, writeOverheadPct);
   }
   return sum;
 }
 
 export function simulate(metrics: Metrics, card: RateCard, a: Assumptions): Simulation {
-  for (const p of a.routableFractionsPct) {
-    if (!Number.isInteger(p) || p < 0 || p > 100) {
-      throw new Error(`routable fraction must be an integer percent 0-100, got ${p}`);
-    }
-  }
-
   const writeOverheadPct = a.cacheWriteOverheadPct ?? DEFAULT_CACHE_WRITE_OVERHEAD_PCT;
   if (!Number.isInteger(writeOverheadPct) || writeOverheadPct < 0 || writeOverheadPct > 100) {
     throw new Error(`cache write overhead must be an integer percent 0-100, got ${writeOverheadPct}`);
@@ -140,13 +157,8 @@ export function simulate(metrics: Metrics, card: RateCard, a: Assumptions): Simu
 
   const baseline = metrics.overall.microCents;
 
-  const routingCurve = a.routableFractionsPct.map((fractionPct) => {
-    const microCents = totalCost(metrics, card, fractionPct, a.targetModel, null, writeOverheadPct);
-    return { fractionPct, microCents, savedMicroCents: baseline - microCents };
-  });
-
   const cacheHeadroom = a.targetCacheHitPct === null ? null : (() => {
-    const microCents = totalCost(metrics, card, 0, a.targetModel, cacheTargetPct, writeOverheadPct);
+    const microCents = totalCost(metrics, card, cacheTargetPct, writeOverheadPct);
     return {
       targetCacheHitPct: a.targetCacheHitPct,
       microCents,
@@ -154,22 +166,18 @@ export function simulate(metrics: Metrics, card: RateCard, a: Assumptions): Simu
     };
   })();
 
-  // Attribution uses the LAST curve point as "the" routing scenario, so a caller that
-  // passes a single fraction gets that fraction attributed.
-  const routePct = a.routableFractionsPct.at(-1) ?? 0;
+  const cacheOnly = totalCost(metrics, card, cacheTargetPct, writeOverheadPct);
 
-  const cacheOnly   = totalCost(metrics, card, 0,        a.targetModel, cacheTargetPct, writeOverheadPct);
-  const routingOnly = totalCost(metrics, card, routePct, a.targetModel, null,           writeOverheadPct);
-  const combined    = totalCost(metrics, card, routePct, a.targetModel, cacheTargetPct, writeOverheadPct);
-
+  // Combined is the product of the levers, never their sum. With waste unquantified the
+  // product has one term, so combined equals cache-only — and it must, or we would be
+  // inventing a saving out of a lever we did not measure.
   return {
     baselineMicroCents: baseline,
-    routingCurve,
     cacheHeadroom,
     attribution: {
       cacheOnlySavedMicroCents: baseline - cacheOnly,
-      routingOnlySavedMicroCents: baseline - routingOnly,
-      combinedSavedMicroCents: baseline - combined,
+      wasteOnly: UNQUANTIFIED,
+      combinedSavedMicroCents: baseline - cacheOnly,
     },
   };
 }

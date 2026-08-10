@@ -1,18 +1,20 @@
 import { expect, test } from "bun:test";
+import { detectTtlRightSizing } from "../src/detect/ttlRightSizing";
 import { buildReport } from "../src/report";
 import { computeMetrics } from "../src/metrics";
 import { simulate } from "../src/simulate";
 import { importClaudeCodeJsonl } from "../src/importers/claudeCode";
 import { RATE_CARD_2026_08_08 as CARD } from "../src/rates";
 
-const A = { routableFractionsPct: [0, 25, 50, 75, 100], targetModel: "claude-haiku-4-5", targetCacheHitPct: 90 };
+const A = { targetCacheHitPct: 90 };
 
 async function build(generatedAt = new Date("2026-08-08T00:00:00Z")) {
   const text = await Bun.file(`${import.meta.dir}/../fixtures/mixed.jsonl`).text();
   const imported = importClaudeCodeJsonl(text.split("\n").filter((l) => l.trim() !== ""), { projectId: "demo" });
   const metrics = computeMetrics(imported.events, CARD);
   const simulation = simulate(metrics, CARD, A);
-  return buildReport({ metrics, simulation, assumptions: A, provenance: imported.provenance, card: CARD, generatedAt });
+  return buildReport({ metrics, simulation, assumptions: A, provenance: imported.provenance,
+    ttlRightSizing: detectTtlRightSizing([], CARD), card: CARD, generatedAt });
 }
 
 test("states the current cost in dollars", async () => {
@@ -23,7 +25,6 @@ test("tags every assumption as measured or operator-set", async () => {
   const r = await build();
   const tags = Object.fromEntries(r.assumptions.map((a) => [a.name, a.kind]));
   expect(tags["cacheHitRate"]).toBe("measured");
-  expect(tags["routableFraction"]).toBe("operator_set");
 });
 
 test("carries the rate card it actually used", async () => {
@@ -66,6 +67,7 @@ test("warns when the assumed write overhead diverges from the measured one", asy
   const agrees = buildReport({
     metrics, simulation: simulate(metrics, CARD, { ...A, cacheWriteOverheadPct: 5 }),
     assumptions: { ...A, cacheWriteOverheadPct: 5 }, provenance: imported.provenance,
+    ttlRightSizing: detectTtlRightSizing([], CARD),
     card: CARD, generatedAt: new Date("2026-08-08T00:00:00Z"),
   });
   expect(agrees.warnings.some((w) => w.includes("write overhead"))).toBe(false);
@@ -73,6 +75,7 @@ test("warns when the assumed write overhead diverges from the measured one", asy
   const diverges = buildReport({
     metrics, simulation: simulate(metrics, CARD, { ...A, cacheWriteOverheadPct: 40 }),
     assumptions: { ...A, cacheWriteOverheadPct: 40 }, provenance: imported.provenance,
+    ttlRightSizing: detectTtlRightSizing([], CARD),
     card: CARD, generatedAt: new Date("2026-08-08T00:00:00Z"),
   });
   expect(diverges.warnings.some((w) => w.includes("assumed at 40% but measures 5%"))).toBe(true);
@@ -87,7 +90,8 @@ test("warns rather than reporting a silent negative when there is no cache headr
   const a = { ...A, targetCacheHitPct: 90, cacheWriteOverheadPct: 90 };
   const r = buildReport({
     metrics, simulation: simulate(metrics, CARD, a), assumptions: a,
-    provenance: imported.provenance, card: CARD, generatedAt: new Date("2026-08-08T00:00:00Z"),
+    provenance: imported.provenance,
+    ttlRightSizing: detectTtlRightSizing([], CARD), card: CARD, generatedAt: new Date("2026-08-08T00:00:00Z"),
   });
   expect(r.cacheHeadroom!.saved.microCents).toBeLessThan(0);
   expect(r.warnings.some((w) => w.includes("no cache lever left"))).toBe(true);

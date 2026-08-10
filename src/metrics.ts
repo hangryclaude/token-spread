@@ -8,6 +8,8 @@ export interface Totals {
   inputTokens: number;
   cacheReadTokens: number;
   cacheCreationTokens: number;
+  cacheCreation5mTokens: number;
+  cacheCreation1hTokens: number;
   outputTokens: number;
 }
 
@@ -27,6 +29,7 @@ export interface Metrics {
 const empty = (): Totals => ({
   events: 0, microCents: 0, inputTokens: 0,
   cacheReadTokens: 0, cacheCreationTokens: 0, outputTokens: 0,
+  cacheCreation5mTokens: 0, cacheCreation1hTokens: 0,
 });
 
 function add(t: Totals, e: UsageEvent, microCents: number): void {
@@ -35,6 +38,8 @@ function add(t: Totals, e: UsageEvent, microCents: number): void {
   t.inputTokens += e.inputTokens;
   t.cacheReadTokens += e.cacheReadTokens;
   t.cacheCreationTokens += e.cacheCreationTokens;
+  t.cacheCreation5mTokens += e.cacheCreation5mTokens;
+  t.cacheCreation1hTokens += e.cacheCreation1hTokens;
   t.outputTokens += e.outputTokens;
 }
 

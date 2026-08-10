@@ -13,8 +13,18 @@ export function costOfEvent(e: UsageEvent, card: RateCard): PriceResult {
   const rate = card.rates[e.model];
   if (!rate) return { ok: false, reason: "unknown_model" };
 
-  const counts = [e.inputTokens, e.cacheReadTokens, e.cacheCreationTokens, e.outputTokens];
+  const counts = [
+    e.inputTokens, e.cacheReadTokens, e.cacheCreationTokens, e.outputTokens,
+    e.cacheCreation5mTokens, e.cacheCreation1hTokens,
+  ];
   if (counts.some((t) => !Number.isInteger(t) || t < 0)) {
+    return { ok: false, reason: "malformed" };
+  }
+
+  // The TTL split is the price, not a detail: 1.25x for five minutes, 2x for an hour.
+  // If it disagrees with the total, one of the two is wrong and there is no honest way
+  // to pick — refuse rather than quietly charge the cheaper reading.
+  if (e.cacheCreation5mTokens + e.cacheCreation1hTokens !== e.cacheCreationTokens) {
     return { ok: false, reason: "malformed" };
   }
 
@@ -23,7 +33,8 @@ export function costOfEvent(e: UsageEvent, card: RateCard): PriceResult {
     microCents:
       e.inputTokens * rate.input +
       e.cacheReadTokens * rate.cacheRead +
-      e.cacheCreationTokens * rate.cacheWrite +
+      e.cacheCreation5mTokens * rate.cacheWrite +
+      e.cacheCreation1hTokens * rate.cacheWrite1h +
       e.outputTokens * rate.output,
   };
 }

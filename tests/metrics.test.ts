@@ -14,9 +14,18 @@ let evCounter = 0;
 function ev(over: Partial<UsageEvent>): UsageEvent {
   return {
     idempotencyKey: `k${evCounter++}`, accountId: "local", projectId: "p",
-    ts: "2026-08-01T00:00:00Z", source: "claude_code", model: "claude-opus-5",
+    ts: "2026-08-01T00:00:00Z", sessionId: null, source: "claude_code", model: "claude-opus-5",
     inputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, outputTokens: 0,
+    cacheCreation5mTokens: 0, cacheCreation1hTokens: 0,
+    compactionInputTokens: 0, compactionOutputTokens: 0,
     ...over,
+    // A caller that sets only the total means "whatever TTL"; bill it at the cheaper
+    // 5m rate so the fixture balances, exactly as the importer does for such sources.
+    ...(over.cacheCreationTokens !== undefined
+        && over.cacheCreation5mTokens === undefined
+        && over.cacheCreation1hTokens === undefined
+        ? { cacheCreation5mTokens: over.cacheCreationTokens }
+        : {}),
   };
 }
 

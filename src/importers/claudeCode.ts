@@ -8,6 +8,16 @@ export interface ImportProvenance {
   deduped: number;
   synthesizedKeys: number;
   skippedNonAssistant: number;
+  /** Requests that carried a compaction sampling step. */
+  compactionEvents: number;
+  /**
+   * Cache-write tokens whose TTL the source did not report. Billed here at the cheaper
+   * 5-minute rate, so the reported cost for those is a floor, not a fact.
+   */
+  unknownTtlWrites: number;
+  /** Tokens a reader of the top-level `usage` fields alone would have missed. */
+  hiddenInputTokens: number;
+  hiddenOutputTokens: number;
 }
 
 export interface ImportResult {
@@ -16,6 +26,106 @@ export interface ImportResult {
 }
 
 const isCount = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0;
+
+/** The token counts read off a `usage` object or one `usage.iterations` entry. */
+interface Counts {
+  inputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+  outputTokens: number;
+  cacheCreation5mTokens: number;
+  cacheCreation1hTokens: number;
+}
+
+const ZERO: Counts = {
+  inputTokens: 0, cacheReadTokens: 0, cacheCreationTokens: 0, outputTokens: 0,
+  cacheCreation5mTokens: 0, cacheCreation1hTokens: 0,
+};
+
+/**
+ * `usage.cache_creation` carries the TTL split — and it is the difference between
+ * 1.25x and 2x base input on every written token. Measured 2026-08-11 across real
+ * transcripts: 100% of cache writes were 1h, so treating the total as 5m under-charged
+ * the sample by ~25% of its whole bill.
+ *
+ * When the split is absent, everything lands in the 5-minute bucket. That is the cheaper
+ * reading, so it can only under-state; `provenance.unknownTtlWrites` records how much
+ * rests on that assumption.
+ */
+const readCounts = (u: any): Counts => {
+  const total = u?.cache_creation_input_tokens ?? 0;
+  const cc = u?.cache_creation;
+  const has5m = typeof cc?.ephemeral_5m_input_tokens === "number";
+  const has1h = typeof cc?.ephemeral_1h_input_tokens === "number";
+  return {
+    inputTokens:         u?.input_tokens,
+    cacheReadTokens:     u?.cache_read_input_tokens ?? 0,
+    cacheCreationTokens: total,
+    outputTokens:        u?.output_tokens,
+    cacheCreation5mTokens: has5m || has1h ? (cc.ephemeral_5m_input_tokens ?? 0) : total,
+    cacheCreation1hTokens: has5m || has1h ? (cc.ephemeral_1h_input_tokens ?? 0) : 0,
+  };
+};
+
+/** True when the source reported no TTL split for a non-zero write. */
+const ttlUnknown = (u: any): boolean => {
+  const cc = u?.cache_creation;
+  return (u?.cache_creation_input_tokens ?? 0) > 0
+    && typeof cc?.ephemeral_5m_input_tokens !== "number"
+    && typeof cc?.ephemeral_1h_input_tokens !== "number";
+};
+
+const add = (a: Counts, b: Counts): Counts => ({
+  inputTokens:         a.inputTokens + b.inputTokens,
+  cacheReadTokens:     a.cacheReadTokens + b.cacheReadTokens,
+  cacheCreationTokens: a.cacheCreationTokens + b.cacheCreationTokens,
+  outputTokens:        a.outputTokens + b.outputTokens,
+  cacheCreation5mTokens: a.cacheCreation5mTokens + b.cacheCreation5mTokens,
+  cacheCreation1hTokens: a.cacheCreation1hTokens + b.cacheCreation1hTokens,
+});
+
+const valid = (c: Counts): boolean => Object.values(c).every(isCount);
+
+/**
+ * Compaction bills a second sampling step, and the response does not fold it into the
+ * fields most tooling reads. Anthropic's own words: "The top-level `input_tokens` and
+ * `output_tokens` do not include compaction iteration usage" — and "to calculate total
+ * tokens consumed and billed for a request, sum across all entries in the
+ * `usage.iterations` array."
+ *
+ * Their documented example reports 23,000 input and bills 203,000. A reader of the top
+ * level alone under-reports that request by 8.6x. So: when `iterations` is present, the
+ * totals come from the sum and the top level is ignored entirely (it duplicates the
+ * `message` entry). When it is absent, the top level is the total.
+ *
+ * Compaction input is priced at the standard input rate here. Whether the sampling step
+ * is eligible for the cache-read discount is undocumented and unresolved — see the open
+ * questions in docs/research/2026-08-11-context-survival-register.md. If it turns out to
+ * be discounted, this over-states compaction cost; it never under-states it.
+ *
+ * Claude Code transcripts DO emit `iterations` — measured 2026-08-11, on 9,898 of 9,960
+ * assistant records. An earlier revision of this comment claimed they do not, on the
+ * strength of the compaction warning never firing; the real reason it never fired is that
+ * every iteration seen so far is `type: "message"`, so the compaction share is zero. The
+ * summing path is live traffic, not a placeholder.
+ */
+function totalsFromUsage(u: any): { total: Counts; compaction: Counts } | null {
+  const iterations = u?.iterations;
+  if (!Array.isArray(iterations) || iterations.length === 0) {
+    const total = readCounts(u);
+    return valid(total) ? { total, compaction: ZERO } : null;
+  }
+
+  let total = ZERO;
+  let compaction = ZERO;
+  for (const it of iterations) {
+    const c = readCounts(it);
+    if (!valid(c)) return null;
+    total = add(total, c);
+    if (it?.type !== "message") compaction = add(compaction, c);
+  }
+  return { total, compaction };
+}
 
 /**
  * Lines in, events out. Pure: no filesystem, no clock, no network.
@@ -41,6 +151,8 @@ export function importClaudeCodeJsonl(
   const p: ImportProvenance = {
     linesSeen: 0, imported: 0, malformed: 0,
     deduped: 0, synthesizedKeys: 0, skippedNonAssistant: 0,
+    compactionEvents: 0, hiddenInputTokens: 0, hiddenOutputTokens: 0,
+    unknownTtlWrites: 0,
   };
 
   for (const line of lines) {
@@ -62,15 +174,15 @@ export function importClaudeCodeJsonl(
     const ts = rec?.timestamp;
     if (!u || typeof model !== "string" || typeof ts !== "string") { p.malformed++; continue; }
 
-    const inputTokens         = u.input_tokens;
-    const cacheReadTokens     = u.cache_read_input_tokens ?? 0;
-    const cacheCreationTokens = u.cache_creation_input_tokens ?? 0;
-    const outputTokens        = u.output_tokens;
+    const totals = totalsFromUsage(u);
+    if (!totals) { p.malformed++; continue; }
 
-    if (![inputTokens, cacheReadTokens, cacheCreationTokens, outputTokens].every(isCount)) {
-      p.malformed++;
-      continue;
-    }
+    const {
+      inputTokens, cacheReadTokens, cacheCreationTokens, outputTokens,
+      cacheCreation5mTokens, cacheCreation1hTokens,
+    } = totals.total;
+    const compactionInputTokens  = totals.compaction.inputTokens;
+    const compactionOutputTokens = totals.compaction.outputTokens;
 
     let idempotencyKey: string;
     let synthesized = false;
@@ -95,10 +207,20 @@ export function importClaudeCodeJsonl(
 
     events.push({
       idempotencyKey, accountId, projectId: opts.projectId,
-      ts, source: "claude_code", model,
+      ts, sessionId: typeof rec.sessionId === "string" ? rec.sessionId : null,
+      source: "claude_code", model,
       inputTokens, cacheReadTokens, cacheCreationTokens, outputTokens,
+      cacheCreation5mTokens, cacheCreation1hTokens,
+      compactionInputTokens, compactionOutputTokens,
     });
+    if (ttlUnknown(u)) p.unknownTtlWrites += cacheCreationTokens;
     p.imported++;
+    if (compactionInputTokens > 0 || compactionOutputTokens > 0) {
+      p.compactionEvents++;
+      // What a top-level reader misses is exactly the non-message iterations.
+      p.hiddenInputTokens  += compactionInputTokens;
+      p.hiddenOutputTokens += compactionOutputTokens;
+    }
   }
 
   return { events, provenance: p };

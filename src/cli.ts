@@ -4,6 +4,7 @@ import { importClaudeCodeJsonl, type ImportProvenance } from "./importers/claude
 import { computeMetrics, measuredCacheWriteOverheadPct } from "./metrics";
 import { buildReport } from "./report";
 import { RATE_CARD_2026_08_08 as CARD } from "./rates";
+import { detectTtlRightSizing } from "./detect/ttlRightSizing";
 import { simulate } from "./simulate";
 import type { UsageEvent } from "./types";
 
@@ -15,7 +16,6 @@ const flag = (name: string) => process.argv.includes(`--${name}`);
 
 const dir = arg("dir", join(process.env.HOME ?? "", ".claude", "projects"))!;
 const only = arg("only");
-const routable = (arg("routable", "0,25,50,75,100")!).split(",").map((s) => Number(s.trim()));
 const cacheTargetRaw = arg("cache-target");
 const writeOverheadRaw = arg("write-overhead");
 
@@ -43,6 +43,7 @@ function* transcripts(root: string): Generator<{ path: string; projectId: string
 const events: UsageEvent[] = [];
 const provenance: ImportProvenance = {
   linesSeen: 0, imported: 0, malformed: 0, deduped: 0, synthesizedKeys: 0, skippedNonAssistant: 0,
+  compactionEvents: 0, hiddenInputTokens: 0, hiddenOutputTokens: 0, unknownTtlWrites: 0,
 };
 
 // One dedup set for the whole run: the same requestId can appear in two files.
@@ -66,8 +67,6 @@ const measuredOverhead = measuredCacheWriteOverheadPct(metrics);
 const writeOverheadPct = writeOverheadRaw !== undefined ? Number(writeOverheadRaw) : measuredOverhead;
 
 const assumptions = {
-  routableFractionsPct: routable,
-  targetModel: "claude-haiku-4-5",
   targetCacheHitPct: cacheTargetRaw === undefined ? Math.max(observedPct, 90) : Number(cacheTargetRaw),
   ...(writeOverheadPct === null ? {} : { cacheWriteOverheadPct: writeOverheadPct }),
 };
@@ -75,6 +74,7 @@ const assumptions = {
 const report = buildReport({
   metrics,
   simulation: simulate(metrics, CARD, assumptions),
+  ttlRightSizing: detectTtlRightSizing(events, CARD),
   assumptions,
   provenance,
   card: CARD,

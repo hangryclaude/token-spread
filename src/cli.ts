@@ -1,6 +1,7 @@
 import { basename, join } from "node:path";
 import { readdirSync, statSync } from "node:fs";
 import { importClaudeCodeJsonl, type ImportProvenance } from "./importers/claudeCode";
+import { findTranscripts } from "./walk";
 import { computeMetrics, measuredCacheWriteOverheadPct } from "./metrics";
 import { buildReport } from "./report";
 import { RATE_CARD_2026_08_08 as CARD } from "./rates";
@@ -27,18 +28,6 @@ try {
 }
 
 /** Walk one level of project directories, or a flat directory of .jsonl files. */
-function* transcripts(root: string): Generator<{ path: string; projectId: string }> {
-  for (const entry of readdirSync(root)) {
-    const full = join(root, entry);
-    if (statSync(full).isDirectory()) {
-      for (const f of readdirSync(full)) {
-        if (f.endsWith(".jsonl")) yield { path: join(full, f), projectId: entry };
-      }
-    } else if (entry.endsWith(".jsonl")) {
-      yield { path: full, projectId: basename(root) };
-    }
-  }
-}
 
 const events: UsageEvent[] = [];
 const provenance: ImportProvenance = {
@@ -49,7 +38,7 @@ const provenance: ImportProvenance = {
 // One dedup set for the whole run: the same requestId can appear in two files.
 const seen = new Set<string>();
 
-for (const { path, projectId } of transcripts(dir)) {
+for (const { path, projectId } of findTranscripts(dir)) {
   if (only && basename(path) !== only) continue;
   const text = await Bun.file(path).text();
   const r = importClaudeCodeJsonl(text.split("\n").filter((l) => l.trim() !== ""), { projectId, seen });

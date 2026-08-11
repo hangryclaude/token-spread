@@ -17,12 +17,25 @@ STAGE="$(mktemp -d)/site"
 
 trap 'rm -rf "$(dirname "$STAGE")"' EXIT
 
+# Refuse to publish anything that is not a page, an asset, or a crawler file. This reads the
+# --exclude list below and holds whatever survives it against an allowlist, so the two can't
+# drift: widen the excludes without meaning to and this stops the deploy instead of the buyer.
+node "$SRC/tools/publish-manifest.mjs" || {
+  echo "REFUSING TO DEPLOY — see above."
+  exit 1
+}
+
 mkdir -p "$STAGE"
-# Ship the pages and their assets. Not README.md (internal), not og-source.html
-# (a build tool that renders the share card), not deploy.sh, not out/.
+# Ship the pages and their assets, and nothing else. The .md excludes are not housekeeping:
+# BRIEF.md and ACTS.md describe how the site was built, and a buyer doing diligence finds them
+# by typing the filename. tools/ is the verification harness; og-source.html renders the share
+# card; out/ is gate screenshots. publish-manifest.mjs below is what noticed these were missing.
 rsync -a --quiet \
-  --exclude 'README.md' \
+  --exclude '*.md' \
+  --exclude '*.d.ts' \
+  --exclude 'brief.json' \
   --exclude 'deploy.sh' \
+  --exclude 'tools/' \
   --exclude 'out/' \
   --exclude 'assets/og-source.html' \
   "$SRC"/ "$STAGE"/

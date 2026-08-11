@@ -206,11 +206,21 @@ footer .fl a:hover{color:var(--ink)}
 footer small{font-size:.82rem;color:var(--ink-3);line-height:1.75;display:block;max-width:44ch}
 
 /* ── motion ── */
-.reveal{opacity:0;transform:translateY(10px);
+/* Scoped to .js, which an inline script in <head> adds before first paint.
+   .reveal used to start at opacity 0 in CSS and rely on fx.js adding .in to bring it back.
+   With JavaScript off — or a module that failed to load, which CONTRACT §6 says must leave a
+   flatter page rather than a broken one — nothing ever added .in and the rule never lifted:
+   measured on index.html, SEVEN sections holding real copy sat at opacity 0 permanently,
+   including the twin terminals. The text was in the DOM the whole time, which is why word
+   counts and the contrast gate never noticed; an element screenshot of the act came back
+   blank white.
+   Inverted, the no-JS path is the default and the animation is what opts in. */
+.js .reveal{opacity:0;transform:translateY(10px);
   transition:opacity .42s cubic-bezier(.16,1,.3,1),transform .42s cubic-bezier(.16,1,.3,1)}
-.reveal.in{opacity:1;transform:none}
+.js .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){
-  .reveal{opacity:1;transform:none;transition:none}
+  /* .js .reveal is (0,2,0); an unscoped .reveal here would be (0,1,0) and lose to it. */
+  .js .reveal{opacity:1;transform:none;transition:none}
   *{transition:none!important;animation:none!important}
 }
 

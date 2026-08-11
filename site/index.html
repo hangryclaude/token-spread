@@ -20,6 +20,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)">
 <link rel="canonical" href="index.html">
+<script>document.documentElement.classList.add("js")</script>
 <link rel="stylesheet" href="assets/style.css">
 <style>
   .hero h1 em{font-style:normal;color:var(--ink-3)}
@@ -111,10 +112,14 @@
         <span class="twin-tag cold">cache miss</span>
         <span class="twin-note">40,000 tokens at full price</span>
       </div>
-      <pre class="twin-out" data-twin-out aria-label="Response streamed without a cache hit"></pre>
+      <pre class="twin-out" data-twin-out aria-label="Response streamed without a cache hit">The retry wrapper is the bug.
+
+`withRetry` re-invokes the operation on any thrown error, including the 422 from `validate()`. A validation failure is not transient, so the same invalid payload is submitted three times and billed three times.
+
+Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
       <div class="twin-meter">
         <span class="twin-k">this turn</span>
-        <span class="twin-v cold" data-twin-cost>$0.0000</span>
+        <span class="twin-v cold" data-twin-cost>$0.2075</span>
       </div>
     </div>
 
@@ -123,15 +128,19 @@
         <span class="twin-tag warm">cache hit</span>
         <span class="twin-note">the same 40,000 tokens at 0.1&times;</span>
       </div>
-      <pre class="twin-out" data-twin-out aria-label="Response streamed with a cache hit"></pre>
+      <pre class="twin-out" data-twin-out aria-label="Response streamed with a cache hit">The retry wrapper is the bug.
+
+`withRetry` re-invokes the operation on any thrown error, including the 422 from `validate()`. A validation failure is not transient, so the same invalid payload is submitted three times and billed three times.
+
+Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
       <div class="twin-meter">
         <span class="twin-k">this turn</span>
-        <span class="twin-v warm" data-twin-cost>$0.0000</span>
+        <span class="twin-v warm" data-twin-cost>$0.0275</span>
       </div>
     </div>
   </div>
 
-  <p class="twin-done" data-twin-done hidden>
+  <p class="twin-done" data-twin-done>
     <strong>Byte-identical output.</strong> $0.2075 against $0.0275 &mdash; the same answer,
     <strong>7.55&times;</strong> cheaper. Over a thousand turns that is $207.50 against $27.50.
     <button class="twin-replay" type="button" data-twin-replay>Replay</button>

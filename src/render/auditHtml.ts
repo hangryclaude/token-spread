@@ -42,8 +42,8 @@ export function renderAuditHtml(r: Report): string {
     src:url(data:font/woff2;base64,${PLEX_MONO_600}) format('woff2')}
   *,*::before,*::after{box-sizing:border-box}
   :root{
-    --bg:#fff; --bg2:#f6f8f7; --line:#e3e9e6; --ink:#0d1411; --ink2:#4a5a53; --ink3:#75857d;
-    --acc:#0f9d58; --acc-soft:#e8f6ee; --warn:#8a6410; --warn-soft:#fbf4e3; --bad:#a5352a;
+    --bg:#fff; --bg2:#f6f8f7; --line:#e3e9e6; --ink:#0d1411; --ink2:#4a5a53; --ink3:#5f6e67;
+    --acc:#0a7d45; --acc-soft:#e8f6ee; --warn:#8a6410; --warn-soft:#fbf4e3; --bad:#a5352a;
     --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
   }
   @media (prefers-color-scheme:dark){:root{

@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%233DDC84'/%3E%3C/svg%3E">
 <title>Methods — Tokens Saved</title>
-<meta name="description" content="Every way to cut a Claude bill, split by whether it can change your output. We ship the ones that can't.">
+<meta name="description" content="176 techniques adjudicated against one question: does the model read the same bytes? 66 survive. We publish what we rejected.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Tokens Saved">
 <meta property="og:title" content="Methods — Tokens Saved">
-<meta property="og:description" content="Every way to cut a Claude bill, split by whether it can change your output. We ship the ones that can't.">
+<meta property="og:description" content="176 techniques adjudicated against one question: does the model read the same bytes? 66 survive. We publish what we rejected.">
 <meta property="og:image" content="assets/img/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -55,7 +55,7 @@
   <div class="orbwrap" data-orbs aria-hidden="true"></div>
   <div class="wrap"><div class="head">
   <p class="eyebrow">Methods</p>
-  <h1>Every lever, and the line we won't cross.</h1>
+  <h1>One question decides every lever.</h1>
   <p class="lede">There are plenty of ways to make an AI bill smaller. Most of them change what the
     model gives back. We only turn on the ones that can't.</p>
 </div></div></header>
@@ -95,56 +95,45 @@
 
 <section><div class="wrap stack reveal">
   <div class="head">
-    <p class="eyebrow">The full list</p>
-    <h2>What each one does, and what it costs you.</h2>
+    <p class="eyebrow">The register</p>
+    <h2>176 techniques. 66 survive.</h2>
+    <p class="lede">One question decides every one of them: <em>does the model read a different
+      sequence of tokens, does a different model answer, or does a different amount of thinking
+      happen?</em> If the answer is yes it is not a saving — it is a changed product sold as one.</p>
   </div>
-  <div class="tw">
-    <table>
-      <thead><tr><th>Method</th><th class="num">Saves</th><th>Output</th><th>Where it applies</th></tr></thead>
-      <tbody>
-        <tr><td>Prompt caching</td><td class="num">90%</td><td><span class="tag same">identical</span></td><td>Any repeated prefix — system prompts, tool definitions, conversation history</td></tr>
-        <tr><td>Image caching</td><td class="num">90%</td><td><span class="tag same">identical</span></td><td>One image is 1,500–4,800 tokens. Same mechanism as text.</td></tr>
-        <tr><td>Batch API</td><td class="num">50%</td><td><span class="tag same">identical</span></td><td>Input <em>and</em> output. Async-tolerant work only — evals, bulk classification, offline runs.</td></tr>
-        <tr><td>Exact-match cache</td><td class="num">100%</td><td><span class="tag same">byte-identical</span></td><td>A true repeat returns the stored bytes. The only literal byte-identity guarantee here.</td></tr>
-        <tr><td>Request dedup</td><td class="num">varies</td><td><span class="tag same">identical</span></td><td>Concurrent identical calls collapse into one upstream request</td></tr>
-        <tr><td>Batch + caching</td><td class="num">95%</td><td><span class="tag same">identical</span></td>
-          <td>The two stack: a cached token inside a batch is 0.1&times; &times; 0.5. Use the
-            1-hour TTL <em>here specifically</em> — a 5-minute entry expires inside a 24h batch
-            window. On interactive traffic the opposite holds; see TTL right-sizing below.</td></tr>
-        <tr><td>Cache-write TTL right-sizing</td><td class="num">up to 37%</td><td><span class="tag same">identical</span></td>
-          <td>A 1-hour cache write bills at 2&times; base input; a 5-minute write at 1.25&times;. A 5-minute
-            entry refreshes on every read, so an unbroken chain of sub-5-minute turns keeps it alive
-            for free. <strong>Measured on 7,454 real requests: 95% of 1-hour writes were re-read
-            inside five minutes</strong> — 8.8% of that bill was TTL nobody used. <code>ttl</code> is
-            a field the model never reads.</td></tr>
-        <tr><td>Cache diagnosis <span class="tag">beta</span></td><td class="num">&mdash;</td><td><span class="tag same">identical</span></td>
-          <td>Not a saving &mdash; the instrument. Beta <code>cache-diagnosis-2026-04-07</code> compares
-            consecutive requests and names the first divergence: <code>system_changed</code>,
-            <code>tools_changed</code>, <code>messages_changed</code>, <code>model_changed</code>. Hashes
-            and token counts only, never prompt text. Claude API only, not Bedrock or Vertex.
-            <code>cache_missed_input_tokens</code> is a magnitude indicator, not a billing number
-            &mdash; we never price a saving off it.</td></tr>
-        <tr><td>Container pairing</td><td class="num">100%</td><td><span class="tag same">identical</span></td>
-          <td>Code-execution container hours are waived outright on any request that also uses a
-            current <code>web_search</code>/<code>web_fetch</code> tool version.</td></tr>
-        <tr><td>Output truncation</td><td class="num">varies</td><td><span class="tag diff">changes</span></td>
-          <td><code>stop_sequences</code> ends generation at the last token you need, and billing is on
-            tokens actually generated — but it also changes <code>stop_reason</code> and can cut a
-            response short. That is a different answer, so it moved to the opt-in list on
-            2026-08-11.</td></tr>
-        <tr><td>Streaming long jobs</td><td class="num">~2&times;</td><td><span class="tag same">identical</span></td>
-          <td>Avoids the idle-connection drop that makes a client blindly retry and pay for the
-            same generation twice.</td></tr>
-        <tr><td>Billing path</td><td class="num">~10%</td><td><span class="tag same">identical</span></td><td>Inference geography and commitment terms change the invoice, not the model</td></tr>
-        <tr><td>Model routing</td><td class="num">up to 5×</td><td><span class="tag diff">changes</span></td><td>A different model writes different words. Must be proven per workload.</td></tr>
-        <tr><td>Image downsampling</td><td class="num">~3×</td><td><span class="tag diff">changes</span></td><td>Fewer pixels reach the model. Small text degrades first.</td></tr>
-        <tr><td>OCR instead of vision</td><td class="num">~7×</td><td><span class="tag diff">changes</span></td><td>The model never sees the image — only an OCR engine's reading of it</td></tr>
-        <tr><td>Semantic cache</td><td class="num">high</td><td><span class="tag diff">changes</span></td><td>Answers a <em>similar</em> question with a stored response. Can be silently wrong.</td></tr>
-        <tr><td>History trimming</td><td class="num">caps growth</td><td><span class="tag diff">changes</span></td><td>The model permanently loses what it can no longer see</td></tr>
-        <tr><td>Pre-resizing images</td><td class="num">$0</td><td><span class="tag same">identical</span></td><td>Saves upload time, <strong>not</strong> tokens — Claude resizes server-side regardless. We don't bill it as savings.</td></tr>
-      </tbody>
-    </table>
+
+  <div class="split">
+    <div class="box ship">
+      <h3>What the adjudication found</h3>
+      <ul class="t">
+        <li><strong>66</strong> pass the bar</li>
+        <li><strong>50</strong> rejected outright</li>
+        <li><strong>36</strong> unresolved — stated as unresolved, never counted as savings</li>
+      </ul>
+      <p>Each survivor is graded by what can actually be proven about it, strongest first:
+        nothing on the wire changed · only a field the model never reads changed · only
+        <em>when</em> the request was sent changed · a stored response hash-matches a
+        byte-identical repeat · the provider documents neutrality but execution moved. That last
+        class ships opt-in and never by default.</p>
+    </div>
+    <div class="box hold">
+      <h3>What stays in the audit</h3>
+      <p>Which levers apply to <em>your</em> traffic, in what order, and what each one is worth
+        against your own rate card. That is the audit, and the audit is the product. The register
+        is the standard we hold a lever to — not a how-to.</p>
+      <p>Two things we will say for free, because they are costing people money right now: the
+        most-recommended cache fix on the internet — take the timestamp out of your system prompt
+        — <strong>fails this bar</strong>. So does the second, moving static content to the front.
+        Both change what the model reads.</p>
+    </div>
   </div>
+
+  <p class="note"><strong>The register carries its own errata.</strong> A re-verification pass
+    against primary documentation on 2026-08-11 found nine entries wrong or incomplete — three of
+    them wrong about what the register <em>recommends</em>, not merely about what it states. They
+    are corrected inline and dated. A cost register that has never had to correct itself has not
+    been checked.</p>
+
   <p class="note warn"><strong>Two honest limits.</strong> Caching discounts input only; output
     always bills at full rate, which caps every input-side lever. And inference isn't
     bit-deterministic to begin with: send the same prompt a thousand times at temperature&nbsp;0

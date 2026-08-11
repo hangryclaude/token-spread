@@ -1,4 +1,5 @@
 import type { Report } from "../report";
+import { PLEX_MONO_400, PLEX_MONO_600, PLEX_SANS_VAR } from "./fonts";
 
 /**
  * The audit as a document.
@@ -27,18 +28,28 @@ export function renderAuditHtml(r: Report): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Token audit — ${esc(r.generatedAt.slice(0, 10))}</title>
 <style>
+  /* IBM Plex, SIL OFL 1.1, carried as data URIs. A document that fetched its own type
+     would break the promise the rest of this tool makes, and would render wrong on the
+     air-gapped laptop it is most likely to be opened on. */
+  @font-face{font-family:'IBM Plex Sans';font-weight:400 700;font-style:normal;font-display:swap;
+    src:url(data:font/woff2;base64,${PLEX_SANS_VAR}) format('woff2-variations'),
+        url(data:font/woff2;base64,${PLEX_SANS_VAR}) format('woff2')}
+  @font-face{font-family:'IBM Plex Mono';font-weight:400;font-style:normal;font-display:swap;
+    src:url(data:font/woff2;base64,${PLEX_MONO_400}) format('woff2')}
+  @font-face{font-family:'IBM Plex Mono';font-weight:600;font-style:normal;font-display:swap;
+    src:url(data:font/woff2;base64,${PLEX_MONO_600}) format('woff2')}
   *,*::before,*::after{box-sizing:border-box}
   :root{
     --bg:#fff; --bg2:#f6f8f7; --line:#e3e9e6; --ink:#0d1411; --ink2:#4a5a53; --ink3:#75857d;
     --acc:#0f9d58; --acc-soft:#e8f6ee; --warn:#8a6410; --warn-soft:#fbf4e3; --bad:#a5352a;
-    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
   }
   @media (prefers-color-scheme:dark){:root{
     --bg:#0d1114; --bg2:#151b1e; --line:#26302f; --ink:#e8eeeb; --ink2:#b3c1bb; --ink3:#84968d;
     --acc:#4ec98a; --acc-soft:#12291f; --warn:#d6a544; --warn-soft:#2c2314; --bad:#e57866;
   }}
   body{margin:0;background:var(--bg);color:var(--ink);
-    font:400 16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font:400 16px/1.62 'IBM Plex Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     -webkit-font-smoothing:antialiased}
   .wrap{max-width:52rem;margin:0 auto;padding:3.5rem 1.5rem 5rem}
   header{border-bottom:1px solid var(--line);padding-bottom:2rem;margin-bottom:2.5rem}

@@ -1,3 +1,15 @@
+/* IBM Plex — self-hosted, SIL OFL 1.1, see assets/fonts/LICENSE.txt.
+   Self-hosted rather than linked: no third-party request on a page whose whole pitch is
+   that we do not sit in your request path. `font-display:swap` so text is never invisible
+   while a face loads. The Sans is variable — one file covers 400 through 700. */
+@font-face{font-family:'IBM Plex Sans';src:url('fonts/plex-sans-var.woff2') format('woff2-variations'),
+  url('fonts/plex-sans-var.woff2') format('woff2');
+  font-weight:400 700;font-style:normal;font-display:swap}
+@font-face{font-family:'IBM Plex Mono';src:url('fonts/plex-mono-400.woff2') format('woff2');
+  font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'IBM Plex Mono';src:url('fonts/plex-mono-600.woff2') format('woff2');
+  font-weight:600;font-style:normal;font-display:swap}
+
 /* Tokens Saved — design system
    Tokens derived from Uniswap's open-source Spore system (Uniswap/interface:
    packages/ui/src/theme/colors.ts, borderRadii.ts, spacing.ts, fonts.ts) plus a
@@ -42,8 +54,8 @@
   /* shadows exist in Spore but are reserved for genuinely floating things */
   --shadow-pop:0 4px 24px rgba(19,19,19,.10);
 
-  --sans:'Inter var','Inter',-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:'IBM Plex Sans',-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
   --w-book:485; --w-med:535;   /* Basel's real weights; degrade fine on system fonts */
 
   --nav-h:72px;                /* INTERFACE_NAV_HEIGHT */

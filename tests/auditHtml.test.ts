@@ -93,3 +93,12 @@ test("carries no prompt content, because the report never had any", () => {
     expect(html).not.toContain(`"${banned}":`);
   }
 });
+
+test("carries its own type rather than fetching it", () => {
+  // A document that fetched its own fonts would render wrong on the air-gapped laptop it
+  // is most likely to be opened on, and would break the promise the rest of the tool makes.
+  const html = renderAuditHtml(report());
+  expect(html).toContain("@font-face");
+  expect(html).toContain("url(data:font/woff2;base64,");
+  expect(html).not.toMatch(/fonts\.googleapis|fonts\.gstatic|url\(['"]?https?:/);
+});

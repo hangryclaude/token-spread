@@ -1,0 +1,56 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0c1110; --bg2:#141b19; --line:#26302e; --ink:#eef3f1; --ink2:#9fb2ab; --ink3:#6d817a;
+    --acc:#3ddc84; --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  body{width:1280px;height:640px;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex;flex-direction:column;justify-content:center;padding:0 88px;position:relative;
+    overflow:hidden;-webkit-font-smoothing:antialiased}
+
+  /* a 28px grid — the unit Claude bills vision in, and the unit this repo is about */
+  .grid{position:absolute;inset:0;
+    background:
+      repeating-linear-gradient(to right,rgba(61,220,132,.05) 0 1px,transparent 1px 28px),
+      repeating-linear-gradient(to bottom,rgba(61,220,132,.05) 0 1px,transparent 1px 28px);
+    -webkit-mask-image:radial-gradient(120% 90% at 78% 30%,#000 0%,transparent 70%)}
+
+  .dot{width:15px;height:15px;border-radius:50%;background:var(--acc);
+    box-shadow:0 0 0 7px rgba(61,220,132,.13)}
+  .top{display:flex;align-items:center;gap:15px;margin-bottom:34px;position:relative}
+  .name{font-family:var(--mono);font-size:19px;letter-spacing:.03em;color:var(--ink2)}
+
+  h1{font-size:70px;line-height:1.03;letter-spacing:-.035em;font-weight:700;
+    max-width:19ch;position:relative}
+  h1 em{font-style:normal;color:var(--acc)}
+  .sub{margin-top:26px;font-size:22px;line-height:1.5;color:var(--ink2);max-width:52ch;position:relative}
+
+  .row{display:flex;gap:0;margin-top:52px;position:relative;
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;width:fit-content}
+  .stat{padding:20px 34px;border-right:1px solid var(--line);background:var(--bg2)}
+  .stat:last-child{border-right:none}
+  .stat b{display:block;font-family:var(--mono);font-size:31px;font-weight:650;
+    letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums}
+  .stat span{display:block;font-size:12.5px;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--ink3);margin-top:7px}
+  .stat b.acc{color:var(--acc)}
+</style></head>
+<body>
+  <div class="grid"></div>
+
+  <div class="top"><div class="dot"></div><div class="name">token-spread</div></div>
+
+  <h1>The same request.<br>The same model.<br><em>A smaller bill.</em></h1>
+
+  <p class="sub">A read-only audit of what your Claude usage actually costs — and which
+    savings survive the test that the model must read the same bytes.</p>
+
+  <div class="row">
+    <div class="stat"><b class="acc">66</b><span>levers adjudicated</span></div>
+    <div class="stat"><b>123</b><span>tests passing</span></div>
+    <div class="stat"><b>0</b><span>bytes written</span></div>
+    <div class="stat"><b>0</b><span>prompts read</span></div>
+  </div>
+</body></html>

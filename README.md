@@ -1,6 +1,8 @@
 <div align="center">
 
-# token-spread
+<img src="docs/img/banner.png" alt="token-spread — the same request, the same model, a smaller bill" width="820">
+
+<br>
 
 **Make the tokens you already pay for go further — and keep the difference.**
 
@@ -9,9 +11,97 @@ zero margin). By serving the **same request to the same model** more cheaply tha
 customer can buy it direct. That gap is the business — and it survives scrutiny only
 because nothing about the request changes.
 
-`slice 1 · read-only` &nbsp;•&nbsp; `63 tests passing` &nbsp;•&nbsp; `core verified` &nbsp;•&nbsp; `private` &nbsp;•&nbsp; `bun + TypeScript`
+`123 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
 
 </div>
+
+---
+
+## The bar
+
+One question decides whether a saving is real:
+
+> Does the model read a different sequence of tokens, does a different model answer, or
+> does a different amount of thinking happen?
+
+If the answer is yes it is not a saving — it is a changed product sold as one. That rules
+out the largest number anyone can put on a slide. What is left is smaller, and true:
+
+| Lever | Evidence | What actually changes |
+|---|---|---|
+| Cache-hit headroom | `PASS_METADATA` | which rate a token bills at |
+| Cache-write TTL right-sizing | `PASS_METADATA` | how long a prefix is stored |
+| Compaction accounting | `PASS_ABSOLUTE` | nothing — it corrects a mis-read bill |
+| Batch tier | `CONTRACTUAL_ONLY` | when the work runs. Off by default |
+
+176 candidate techniques were adjudicated against that question — 66 pass, 50 rejected, 36
+unresolved. The working is in
+[`docs/research/2026-08-10-strict-identity-register.md`](docs/research/2026-08-10-strict-identity-register.md).
+
+---
+
+## The deliverable
+
+`--html` writes a standalone document: no remote stylesheet, no webfont, no script. It
+opens offline, from an attachment, on a machine that has never heard of this tool.
+
+<div align="center">
+<img src="docs/img/audit-document.png" alt="The audit document: measured spend, cache-hit rate, recoverable amount, and per-lever findings carrying evidence classes" width="700">
+</div>
+
+Every figure sits beside the events and the dated rate card that produced it. Anything that
+**cannot** be measured says so rather than being dropped — on an aggregate usage report the
+1-hour cache-write volume appears as *exposure*, never as a saving, because the gap between
+consecutive turns that would decide it is not in that data.
+
+---
+
+## Two ways in
+
+```bash
+git clone https://github.com/hangryclaude/token-spread.git
+cd token-spread && bun install
+```
+
+**A machine running Claude Code** — reads `~/.claude/projects` at every depth, including the
+subagent transcripts five levels down that hold most of an agent-heavy bill:
+
+```bash
+bun run src/cli.ts --html audit.html
+```
+
+**An organisation running the API** — reads Anthropic's own usage report. The customer
+produces the file with one curl on their own machine; no admin key is read here, and nothing
+is sent anywhere:
+
+```bash
+curl https://api.anthropic.com/v1/organizations/usage_report/messages \
+  -H "anthropic-version: 2023-06-01" -H "x-api-key: $ANTHROPIC_ADMIN_KEY" \
+  -G --data-urlencode "starting_at=2026-07-01T00:00:00Z" \
+     --data-urlencode "bucket_width=1d" \
+     --data-urlencode "group_by[]=model" \
+     --data-urlencode "group_by[]=workspace_id" \
+     --data-urlencode "group_by[]=service_tier" > usage.json
+
+bun run src/cli.ts --admin usage.json --html audit.html
+```
+
+Every flag, and how to prove the read-only property yourself, is in
+[`RUNNING.md`](RUNNING.md).
+
+---
+
+## It only reads
+
+Not a claim — a property the suite defends. Five tests in
+[`tests/readOnly.test.ts`](tests/readOnly.test.ts) spawn the real CLI against a temporary
+transcript tree and assert that after a full run every input file is **byte-identical**
+(content hash, size and mtime), **no file was created**, the same input gives the **same
+numbers**, **no prompt text** reaches output though the fixture plants a canary, and
+`--html` writes **exactly one** file at the path you named.
+
+The fingerprint hashes contents, not just size and mtime — verified by mutating a same-size
+file and confirming it moves. The only write in the program is `Bun.write(htmlOut)`.
 
 ---
 
@@ -23,29 +113,36 @@ input always yields the same report, and prompt content is dropped at the very f
 
 ```mermaid
 flowchart TD
-    subgraph input["input · local only"]
-        T["~/.claude transcripts<br/>token counts only"]
+    subgraph input["input · read-only"]
+        T["~/.claude transcripts<br/>every depth, incl. subagents"]
+        A["Admin usage report<br/>counts and dimensions"]
     end
     subgraph pure["pure core · no I/O · no network · deterministic"]
         direction TB
-        E["UsageEvent array<br/>10 metadata keys · zero content"]
-        RC["rates.ts<br/>dated card · integer micro-cents"]
+        E["UsageEvent<br/>16 metadata keys · zero content"]
+        RC["rates.ts<br/>dated card · lapse dates<br/>integer micro-cents"]
         P["pricing.ts<br/>costOfEvent()"]
         M["metrics.ts<br/>current cost · cache-hit rate"]
         S["simulate.ts<br/>cache headroom<br/>compounding savings"]
+        D["detect/<br/>TTL right-sizing"]
         R["report.ts<br/>buildReport()<br/>measured vs assumed"]
     end
     subgraph io["I/O boundary"]
         C["cli.ts<br/>JSON + human report"]
+        H["render/auditHtml.ts<br/>standalone document"]
     end
-    T -->|"importClaudeCodeJsonl<br/>strips content"| E
+    T -->|"strips content"| E
+    A -->|"strips nothing — there is none"| E
     E --> P
     RC --> P
     P --> M
     P --> S
+    E --> D
     M --> R
     S --> R
+    D --> R
     R --> C
+    R --> H
 ```
 
 **Read it as:** transcripts → the importer strips everything but token counts → every event
@@ -130,15 +227,28 @@ traffic. The example is the shape, not your bill.
 
 ```bash
 bun install                              # no runtime deps
-bun test                                 # 63 tests
+bun test                                 # 123 tests
 bun run src/cli.ts --dir ~/.claude/projects
 ```
 
 ## Privacy — tested, not promised
 
 - **Local only.** Reads the filesystem, nothing else. A source-level test forbids `fetch` and URLs.
-- **No content, ever.** `message.content` is never read into an event, logged, or printed — a test asserts every event has only its ten metadata keys.
+- **No content, ever.** `message.content` is never read into an event, logged, or printed — a test asserts every event carries only its metadata keys and nothing else.
 - **No telemetry.** Phones nobody.
+
+## What it refuses to do
+
+A tool that always finds a saving is not measuring anything.
+
+| Refusal | Why |
+|---|---|
+| Won't route to a cheaper model | a different model writes different words |
+| Won't price an unknown model | excluded and counted, never guessed |
+| Won't price `flex` / `priority` tiers | no published multiplier exists; refused as `unknown_tier` |
+| Won't claim waste it cannot see | reports `UNQUANTIFIED`, not a flattering `$0` |
+| Won't size TTL from aggregates | exposure without the timing that would make it a saving |
+| Won't sum levers | multipliers compound by product; a sum overstates |
 
 ## Verified vs. assumed
 
@@ -155,19 +265,35 @@ bun run src/cli.ts --dir ~/.claude/projects
 
 ```text
 src/
-  rates.ts          dated rate card · integer micro-cents
-  pricing.ts        costOfEvent() — the one price everything agrees on
-  metrics.ts        current cost · observed cache-hit rate
-  simulate.ts       cache headroom · compounding attribution
-  report.ts         buildReport() — deterministic, self-auditing
-  cli.ts            the only I/O boundary
+  rates.ts               dated rate card · lapse dates · integer micro-cents
+  pricing.ts             costOfEvent() — the one price everything agrees on
+  metrics.ts             current cost · observed cache-hit rate
+  simulate.ts            cache headroom · compounding attribution
+  evidence.ts            the tier boundary, as a type
+  detect/
+    ttlRightSizing.ts    1h writes re-read inside 5 minutes
+  report.ts              buildReport() — deterministic, self-auditing
+  render/
+    auditHtml.ts         the standalone audit document
+  walk.ts                transcript discovery, every depth
+  cli.ts                 the only I/O boundary
   importers/
-    claudeCode.ts   JSONL → UsageEvent[], strips content at the door
-tests/              one suite per module + a fixture-level acceptance gate
-fixtures/           synthetic transcripts + hand-computed expected values
-docs/specs/         the design spec (+ a rendered HTML copy)
-docs/               architecture notes · worked margin model
+    claudeCode.ts        JSONL → UsageEvent[], strips content at the door
+    adminUsageReport.ts  org usage report → UsageEvent[]
+tests/                   one suite per module + acceptance and read-only gates
+fixtures/                synthetic transcripts + hand-computed expected values
+bench/optical/           does text-as-an-image buy context? (it does not)
+docs/research/           the registers
+docs/specs/              the design spec (+ a rendered HTML copy)
 ```
+
+## Research
+
+| Document | |
+|---|---|
+| [Strict identity register](docs/research/2026-08-10-strict-identity-register.md) | 176 techniques adjudicated, 66 pass, six dated errata |
+| [Context survival register](docs/research/2026-08-11-context-survival-register.md) | the behaviour-affecting tier, measured and kept separate |
+| [Optical compression bench](bench/optical/README.md) | 2.07× at 93.9% blind recall, against 20–100× from delegation |
 
 ## Roadmap
 

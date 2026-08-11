@@ -105,6 +105,17 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16p
 ::selection{background:var(--acc-fill);color:var(--acc-ink)}
 :focus-visible{outline:2px solid var(--acc-text);outline-offset:3px;border-radius:var(--r-12)}
 
+/* Every page repeats the same five navigation stops — wordmark, How it works, Methods,
+   Pricing, Free audit — before any content, with nothing to bypass them (WCAG 2.4.1).
+   Off-canvas by transform rather than display:none, because a hidden link cannot take focus
+   and taking focus is the one thing a skip link must do. */
+.skip{position:fixed;top:0;left:0;z-index:60;transform:translateY(-120%);
+  background:var(--acc-text);color:#fff;font-weight:var(--w-med);font-size:.9rem;
+  padding:.7rem 1.1rem;border-radius:0 0 var(--r-12) 0;text-decoration:none}
+.skip:focus{transform:translateY(0)}
+/* Programmatic focus on a container should not paint a ring. */
+#content:focus{outline:none}
+
 /* ── nav: plain full-width bar (Spore INTERFACE_NAV_HEIGHT 72px), hairline only ── */
 nav{height:var(--nav-h);border-bottom:1px solid var(--line)}
 nav .inner{display:flex;align-items:center;gap:1.75rem;height:100%;
@@ -322,7 +333,14 @@ footer small{font-size:.82rem;color:var(--ink-3);line-height:1.75;display:block;
 .meter .amt{font-size:2rem;line-height:1.15;font-weight:var(--w-book);letter-spacing:-.028em;
   font-variant-numeric:tabular-nums;color:var(--ink);border:none;background:none;
   width:100%;min-width:0;padding:0;font-family:inherit}
-.meter .amt:focus{outline:none}
+/* No outline:none here, deliberately. It used to read `.meter .amt:focus{outline:none}`, which
+   also matched :focus-visible and so killed the global keyboard ring on the one input this page
+   is built around — a keyboard user tabbing to the spend field got no indication at all
+   (WCAG 2.4.7). Narrowing it to :focus:not(:focus-visible) does not help either: per spec an
+   element that expects text input ALWAYS matches :focus-visible, so that selector can never
+   match and the rule would be dead code pretending to do something. The global ring at the top
+   of this file handles it, and it earns its place — the field reads as static type until it is
+   focused, so the ring is the only thing that says it is editable. */
 .meter .amt::-webkit-outer-spin-button,.meter .amt::-webkit-inner-spin-button{
   -webkit-appearance:none;margin:0}
 .meter .amt[type=number]{-moz-appearance:textfield}

@@ -15,7 +15,9 @@
     "shoot:audit": "node site/tools/shoot-audit.mjs",
     "shoot:audit:check": "node site/tools/shoot-audit.mjs --check",
     "sweep:pricing": "node site/tools/sweep-pricing.mjs",
-    "sweep:pricing:control": "node site/tools/sweep-pricing.mjs --control"
+    "sweep:pricing:control": "node site/tools/sweep-pricing.mjs --control",
+    "render:media": "node docs/media/render.mjs",
+    "render:media:check": "node docs/media/render.mjs --check"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

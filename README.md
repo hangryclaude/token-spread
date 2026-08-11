@@ -11,7 +11,7 @@ zero margin). By serving the **same request to the same model** more cheaply tha
 customer can buy it direct. That gap is the business — and it survives scrutiny only
 because nothing about the request changes.
 
-`140 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
+`145 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
 
 </div>
 
@@ -34,9 +34,19 @@ out the largest number anyone can put on a slide. What is left is smaller, and t
 | Compaction accounting | `PASS_ABSOLUTE` | nothing — it corrects a mis-read bill |
 | Batch tier | `CONTRACTUAL_ONLY` | when the work runs. Off by default |
 
-176 candidate techniques were adjudicated against that question — 66 pass, 50 rejected, 36
-unresolved. The working is in
+176 candidate techniques were adjudicated against that question — **66 pass**, **24 pass on
+the provider's word alone**, **50 rejected**, **36 unresolved**. Those four add to 176; a
+register that quietly drops a category is doing the thing it exists to prevent. The working is in
 [`docs/research/2026-08-10-strict-identity-register.md`](docs/research/2026-08-10-strict-identity-register.md).
+
+<div align="center">
+
+<img src="docs/media/register.gif" alt="The question, then 176 candidates sorting into 66 that pass the bar, 24 that pass on the provider's word alone, 50 rejected and 36 unresolved" width="820">
+
+<sub>Rendered by <a href="docs/media/render.mjs"><code>docs/media/render.mjs</code></a> — the four
+counts are read from the verdict file at render time, never typed into the film.</sub>
+
+</div>
 
 ---
 

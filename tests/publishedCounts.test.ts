@@ -62,6 +62,16 @@ const READERS: Record<string, Record<string, RegExp>> = {
     rejected: /<dt>rejected<\/dt><dd[^>]*>(\d+)</,
     unresolved: /<dt>unresolved<\/dt><dd[^>]*>(\d+)</,
   },
+  /* The README carried the same 66/50/36-under-a-headline-of-176 drift as both pages, found
+     after the pages were fixed. Three independent copies of one tally is why this file exists
+     rather than a one-off correction. */
+  "README.md": {
+    total: /(\d+) candidate techniques were adjudicated/,
+    pass: /\*\*(\d+) pass\*\*/,
+    contractual: /\*\*(\d+) pass on\n?the provider's word alone\*\*/,
+    rejected: /\*\*(\d+) rejected\*\*/,
+    unresolved: /\*\*(\d+) unresolved\*\*/,
+  },
 };
 
 for (const [page, reader] of Object.entries(READERS)) {

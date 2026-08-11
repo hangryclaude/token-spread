@@ -63,38 +63,28 @@ async function mountAll() {
     }));
   if (ground?.setProgress) driven.push(ground);
 
-  // ── act 1 · the hero IS the marquee ───────────────────────────────────────────
-  // 'band' mode, whose fit ceiling is 1.15. Deliberately not 'announcement': that mode
-  // ships no fit ceiling at all, which is an overflow risk at 390px on a mobile-first page.
+  // ── act 1 · the hero ticker ───────────────────────────────────────────────────
+  // The marquee was the headline, per the interview. It is now a ticker beneath a real h1,
+  // for a reason that no config could fix: a band loop has no phase control, so at rest it
+  // opened mid-phrase on the CONCLUSION — "a smaller bill · the same request · the same m" —
+  // arguing backwards and clipped mid-word. A ticker is a form that is supposed to run past
+  // both edges, so the same pixels stop being a defect once the h1 carries the sentence.
   //
-  // `size` is cap height as a fraction of CONTAINER height, and the container is the whole
-  // act. The band default of 1/6 gives a ~150px cap in a 900px desktop viewport, which is
-  // right — and the same 1/6 on an 844px-tall phone gives a ~140px cap on a 390px-wide
-  // screen, which clips the phrase to two words. The effect's own SKILL.md predicts exactly
-  // this ("the hero shows 'Ty'"). So the size is chosen per width, not once.
-  const narrow = window.matchMedia('(max-width: 720px)');
-  const marqueeCfg = () => ({
+  // The container is now a fixed 2.6rem band rather than the whole act, and that is the
+  // load-bearing part. `size` is cap height as a fraction of CONTAINER height, so a constant
+  // container gives a constant cap on every viewport — which is what actually retires the
+  // 140px-cap-on-a-390px-phone defect that all three gates certified, instead of patching it
+  // per breakpoint. With fit:0 there is no width-dependent term left in the config at all.
+  const marqueeCfg = {
     text: 'the same request · the same model · a smaller bill · ',
     mode: 'band',
-    // `y` is the CENTRE of the cap band inside the container, not a top offset.
-    y: narrow.matches ? 0.33 : 0.38,
-    size: narrow.matches ? 0.052 : 1 / 6,
-    // Ceiling on the repeat unit as a fraction of container width; the type shrinks until
-    // it fits. Tight on a phone because this phrase is long.
-    fit: narrow.matches ? 0.98 : 1.15,
-    // Page ink, not pure white: the band and the h1 are the same family of light,
-    // which is what stops the marquee reading as a different site showing through.
+    y: 0.5,          // centred in its own band, which is all the container now is
+    size: 0.42,      // a fraction of a 2.6rem band ≈ a 17px cap, at every width
+    fit: 0,          // no ceiling: a ticker is MEANT to run past both edges
     color: '#f2f7f4',
-  });
-  let marquee = safe('kinetic-marquee', () => initKineticMarquee($('#hero-marquee'), marqueeCfg()));
+  };
+  const marquee = safe('kinetic-marquee', () => initKineticMarquee($('#hero-marquee'), marqueeCfg));
   if (marquee?.setProgress) driven.push(marquee);
-  narrow.addEventListener('change', () => {
-    const i = driven.indexOf(marquee);
-    if (i >= 0) driven.splice(i, 1);
-    safe('kinetic-marquee.destroy', () => marquee?.destroy?.());
-    marquee = safe('kinetic-marquee', () => initKineticMarquee($('#hero-marquee'), marqueeCfg()));
-    if (marquee?.setProgress) driven.push(marquee);
-  });
 
   // ── act 2 · the spine, on wide screens only ───────────────────────────────────
   // Requires [data-split-copy] and [data-split-media] as DIRECT children of the section.
@@ -126,23 +116,35 @@ async function mountAll() {
   // `cards:` — not `items:`. The wrong key is a documented session-loser.
   safe('card-grammar', () =>
     initCardGrammar($('#refusals'), {
+      // Six cards in the default 4×2 left two cells empty and squeezed each card to ~150px
+      // wide, where `overflow:hidden` ate the last line of five of the six — the engine's own
+      // "a card that eats its own last sentence". 3×2 is exactly six cells with no ragged row.
+      cols: 3,
+      rows: 2,
+      // `width` 0.62 is measured (technique 13) against a THREE-card row of short labels; these
+      // carry a heading and a sentence. 0.84 is the widest the engine allows without warning,
+      // since it asserts width × scale[1] ≤ 1 and scale[1] is 1.161. `ratio` is width ÷ height
+      // and the engine calls it a design choice, not a measurement: 2.0 buys the rows the
+      // height the copy actually needs.
+      width: 0.84,
+      ratio: 2.0,
       cards: [
-        { grammar: 'ledger', title: 'Model routing', entries: [
+        { grammar: 'ledger', heading: 'Model routing', entries: [
           { label: 'verdict', value: 'refused' },
           { label: 'why', value: 'a different model writes different words' } ] },
-        { grammar: 'ledger', title: 'Unknown models', entries: [
+        { grammar: 'ledger', heading: 'Unknown models', entries: [
           { label: 'verdict', value: 'excluded' },
           { label: 'why', value: 'counted, never guessed' } ] },
-        { grammar: 'ledger', title: 'flex / priority tiers', entries: [
+        { grammar: 'ledger', heading: 'flex / priority tiers', entries: [
           { label: 'verdict', value: 'refused' },
           { label: 'why', value: 'no published multiplier exists' } ] },
-        { grammar: 'ledger', title: 'Waste we cannot see', entries: [
-          { label: 'verdict', value: 'UNQUANTIFIED' },
+        { grammar: 'ledger', heading: 'Waste we cannot see', entries: [
+          { label: 'verdict', value: 'unquantified' },
           { label: 'why', value: 'never a flattering $0' } ] },
-        { grammar: 'ledger', title: 'TTL from aggregates', entries: [
+        { grammar: 'ledger', heading: 'TTL from aggregates', entries: [
           { label: 'verdict', value: 'exposure only' },
           { label: 'why', value: 'no per-request timing to size it' } ] },
-        { grammar: 'ledger', title: 'Summed levers', entries: [
+        { grammar: 'ledger', heading: 'Summed levers', entries: [
           { label: 'verdict', value: 'refused' },
           { label: 'why', value: 'multipliers compound by product' } ] },
       ],

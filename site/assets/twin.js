@@ -28,33 +28,57 @@ const ANSWER = [
 
 const money = (n) => "$" + n.toFixed(4);
 
-function run(root) {
+function run(root, answer) {
   const panes = [...root.querySelectorAll("[data-twin-out]")];
   const meters = [...root.querySelectorAll("[data-twin-cost]")];
   const totals = [COLD, WARM];
   const done = root.querySelector("[data-twin-done]");
 
+  /**
+   * Paint `n` characters, keeping the remainder in the box as hidden text.
+   *
+   * Measured: clearing the pane outright collapsed the act from 1109px to 963px the instant
+   * typing began, so every act below it jumped 146px up the page while the visitor was
+   * reading. visibility:hidden still occupies its space and is dropped from the a11y tree,
+   * so the pane is always exactly full-answer height — at every viewport width, with no
+   * measurement and no resize handling. Inline rather than a class because index.html shares
+   * this file and would otherwise need a stylesheet edit to avoid painting the remainder.
+   */
+  const paint = (n) => {
+    const rest = answer.slice(n);
+    panes.forEach((p) => {
+      // One write, both panes: they cannot drift apart, because there is nothing to drift.
+      p.textContent = answer.slice(0, n);
+      if (!rest) return;
+      const ghost = document.createElement("span");
+      ghost.style.visibility = "hidden";
+      ghost.textContent = rest;
+      p.appendChild(ghost);
+    });
+  };
+
   const finish = () => {
-    panes.forEach((p) => { p.textContent = ANSWER; });
+    paint(answer.length);
     meters.forEach((m, i) => { m.textContent = money(totals[i]); });
-    if (done) done.hidden = false;
+    // hidden=false for the page that ships it hidden; visibility for the one that does not.
+    if (done) { done.hidden = false; done.style.visibility = ""; }
   };
 
   // Anyone who has asked not to be animated gets the answer, not the performance.
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return finish();
 
   let i = 0;
-  if (done) done.hidden = true;
-  panes.forEach((p) => { p.textContent = ""; });
+  // Reserved, not removed — the same 146px argument as paint(): `hidden` took this
+  // paragraph's 57px out of flow and moved everything below it while the answer typed.
+  if (done) { done.hidden = false; done.style.visibility = "hidden"; }
+  paint(0);
 
   const step = () => {
     i += 2;
-    const slice = ANSWER.slice(0, i);
-    // One write, both panes: they cannot drift apart, because there is nothing to drift.
-    panes.forEach((p) => { p.textContent = slice; });
-    const progress = Math.min(1, i / ANSWER.length);
+    paint(i);
+    const progress = Math.min(1, i / answer.length);
     meters.forEach((m, k) => { m.textContent = money(totals[k] * progress); });
-    if (i < ANSWER.length) return setTimeout(step, 16);
+    if (i < answer.length) return setTimeout(step, 16);
     finish();
   };
   setTimeout(step, 400);
@@ -62,16 +86,28 @@ function run(root) {
 
 const root = document.querySelector("[data-twin]");
 if (root) {
+  /**
+   * The markup wins where it carries the answer. index-scroll.html ships both panes filled
+   * and both meters at their true totals, so the act still states its case with no JS, a
+   * module that failed to load, or a screenshot taken inside the 400ms before the first
+   * timer fires — which is exactly how it was found blank. ANSWER above stays the fallback
+   * for a page that ships them empty, which index.html still does.
+   *
+   * Read ONCE, out here: reading it inside run() would let a replay clicked mid-type reseed
+   * the whole animation from a half-typed pane.
+   */
+  const seeded = root.querySelector("[data-twin-out]");
+  const answer = (seeded && seeded.textContent.trim()) || ANSWER;
   // Only run when it is actually on screen, and only once.
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) {
       if (!e.isIntersecting) continue;
       io.disconnect();
-      run(root);
+      run(root, answer);
     }
   }, { threshold: 0.35 });
   io.observe(root);
 
   const replay = root.querySelector("[data-twin-replay]");
-  if (replay) replay.addEventListener("click", () => run(root));
+  if (replay) replay.addEventListener("click", () => run(root, answer));
 }

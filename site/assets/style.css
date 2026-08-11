@@ -234,6 +234,16 @@ footer small{font-size:.82rem;color:var(--ink-3);line-height:1.75;display:block;
   .js .reveal{opacity:1;transform:none;transition:none}
   *{transition:none!important;animation:none!important}
 }
+/* Printing does not scroll, so the IntersectionObserver that adds .in never fires for anything
+   below the fold and every section after the hero prints blank. A buyer prints this for someone
+   who was not at the meeting — it is the one context where the whole argument has to survive at
+   once. Same specificity as the rule above and later in the file, so it wins without !important. */
+@media print{
+  .js .reveal{opacity:1;transform:none;transition:none}
+  /* Fixed chrome tiles itself onto every printed page and covers the text underneath. */
+  .hud,.skip,[data-sc-hud],[data-twin-replay]{display:none!important}
+  a[href]{text-decoration:underline}
+}
 
 
 /* ── module: Uniswap's stacked-row card (their swap widget's structure) ── */

@@ -70,7 +70,6 @@
         nothing to test and nothing to argue about in a security review.</p>
       <ul class="t">
         <li>Prompt caching, text and images</li>
-        <li>Batch API for async work</li>
         <li>Exact-match response cache</li>
         <li>In-flight request dedup</li>
         <li>Billing-path selection</li>
@@ -79,9 +78,12 @@
     </div>
     <div class="box hold">
       <h3>Off unless you ask</h3>
-      <p>Each of these genuinely saves money, and each changes what the model receives or which
-        model answers. We'll tell you what they'd save. We won't switch them on for you.</p>
+      <p>Each of these genuinely saves money, and each is your call rather than ours. Most of them
+        change what the model receives or which model answers. The batch API does not &mdash; but
+        only Anthropic can vouch for that, and their word is not the same as our proof, so it sits
+        here too. We'll tell you what they'd save. We won't switch them on for you.</p>
       <ul class="t">
+        <li>Batch API for async work <span class="fine">&mdash; provider's word only</span></li>
         <li>Routing to a cheaper model</li>
         <li>Image downsampling</li>
         <li>OCR instead of vision</li>

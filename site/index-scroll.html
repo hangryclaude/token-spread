@@ -303,6 +303,14 @@
   @media (prefers-reduced-motion:reduce){
     .shot{transition:none}
   }
+  /* The act engine sets opacity inline as you scroll, and printing never scrolls — so every act
+     below the fold prints blank. Inline styles can only be beaten with !important here, unlike
+     the .reveal rule in style.css which is a stylesheet rule and merely needs to come later. */
+  @media print{
+    [data-act-reveal],[data-act]{opacity:1!important;transform:none!important;filter:none!important}
+    .hud,.skip,[data-twin-replay]{display:none!important}
+    .act{min-height:0!important;page-break-inside:avoid}
+  }
 </style>
 </head>
 <body>
@@ -435,7 +443,8 @@ Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
     </div>
 
     <p class="twin-done" data-twin-done>
-      <strong>Byte-identical output.</strong> $0.2075 against $0.0275 — the same answer,
+      <strong>Same model, same input tokens.</strong> $0.2075 against $0.0275 — the same 40,000
+      tokens read by the same model,
       <strong>7.55&times;</strong> cheaper. Over a thousand turns that is $207.50 against $27.50.
       <button class="twin-replay" type="button" data-twin-replay>Replay</button>
     </p>

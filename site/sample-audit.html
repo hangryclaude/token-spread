@@ -36,6 +36,13 @@
     color:var(--acc);margin:0 0 .8rem}
   h1{font-size:clamp(1.9rem,5vw,2.7rem);line-height:1.1;letter-spacing:-.025em;margin:0 0 .7rem}
   .sub{color:var(--ink2);margin:0}
+  /* The pages that link to this document say it is synthetic; the document did not. It is built
+     to be downloaded, forwarded and printed on its own — "one file, opens offline" is the pitch —
+     so the disclosure has to travel with the file or it is not a disclosure. Backgrounds are
+     often dropped when printing, hence a border and coloured text rather than a fill alone. */
+  .synthetic{margin:0 0 1.1rem;padding:.65rem .85rem;border:1px solid var(--warn);border-radius:8px;
+    background:var(--warn-soft);color:var(--warn);font-family:var(--mono);font-size:.76rem;
+    letter-spacing:.03em;line-height:1.5}
   h2{font-size:.78rem;font-family:var(--mono);letter-spacing:.13em;text-transform:uppercase;
     color:var(--ink3);font-weight:600;margin:2.8rem 0 1rem;padding-bottom:.6rem;
     border-bottom:1px solid var(--line)}
@@ -75,6 +82,9 @@
 <div class="wrap">
 
 <header>
+  <p class="synthetic"><strong>Synthetic sample.</strong> The events behind every figure below are
+    fabricated to show the format of the report. This is not a customer's data and not a
+    customer's bill.</p>
   <p class="eyebrow">Token audit</p>
   <h1>$19,486.50 of measured spend.</h1>
   <p class="sub">Generated 2026-08-11 from 4 priced

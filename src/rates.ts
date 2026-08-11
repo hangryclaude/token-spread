@@ -35,10 +35,9 @@ export const RATE_CARD_2026_08_08: RateCard = {
   rates: {
     "claude-opus-5":    { input: 500, output: 2500, cacheRead: 50, cacheWrite: 625, cacheWrite1h: 1000 },
     "claude-opus-4-8":  { input: 500, output: 2500, cacheRead: 50, cacheWrite: 625, cacheWrite1h: 1000 },
-    // Introductory pricing, in force on this card's capture date. It becomes
-    // 300/1500/30/375 on 2026-09-01 — see `lapses`. Carrying the post-lapse rate here
-    // (as this card did until 2026-08-11) over-states Sonnet 5 cost by 50% and therefore
-    // over-states every saving measured against it.
+    // $2/$10, and no longer introductory — see the 2026-08-12 note below. Carrying the
+    // once-scheduled $3/$15 here (as this card did until 2026-08-11) over-states Sonnet 5
+    // cost by 50% and therefore over-states every saving measured against it.
     "claude-sonnet-5":  { input: 200, output: 1000, cacheRead: 20, cacheWrite: 250, cacheWrite1h: 400 },
     "claude-haiku-4-5": { input: 100, output:  500, cacheRead: 10, cacheWrite: 125, cacheWrite1h: 200 },
     // Transcripts carry the dated Haiku id, not the alias. Same model, same price —
@@ -46,12 +45,29 @@ export const RATE_CARD_2026_08_08: RateCard = {
     "claude-haiku-4-5-20251001": { input: 100, output: 500, cacheRead: 10, cacheWrite: 125, cacheWrite1h: 200 },
   },
   notes: [
-    "claude-sonnet-5 is priced at its introductory $2/$10 per MTok, in force through 2026-08-31.",
+    "claude-sonnet-5 is priced at $2/$10 per MTok. Announced as introductory pricing through 2026-08-31, this is now the standard price (corrected 2026-08-12).",
     "claude-haiku-4-5-20251001 is the dated id for claude-haiku-4-5; both are priced identically.",
   ],
-  lapses: [
-    { on: "2026-09-01", what: "claude-sonnet-5 rises from $2/$10 to $3/$15 per MTok (a 50% increase)" },
-  ],
+  /*
+   * Empty, and deliberately so — the entry that was here has been CANCELLED, not merely served.
+   *
+   * Until 2026-08-12 this card carried `{ on: "2026-09-01", what: "claude-sonnet-5 rises from
+   * $2/$10 to $3/$15 per MTok (a 50% increase)" }`, so every run printed a warning that the
+   * reader's Sonnet 5 costs were about to rise by half. Anthropic's pricing page now says:
+   *
+   *   "The $2/$10 per million input/output token pricing for Claude Sonnet 5, announced at
+   *    launch as introductory pricing through August 31, 2026, is now the standard price. The
+   *    previously scheduled increase to $3/$15 per million input/output tokens on September 1,
+   *    2026 will not occur."
+   *   — https://platform.claude.com/docs/en/about-claude/pricing, read 2026-08-12
+   *
+   * The rates themselves never moved, so capturedAt still honestly describes when they were
+   * taken. What changed is a future event that is no longer going to happen. A cancelled lapse
+   * is the failure mode this field cannot see on its own: `lapsesDue` correctly reports a lapse
+   * that has passed, and has no way to know one was called off. Only re-reading the source finds
+   * it, which is why the note above carries a date.
+   */
+  lapses: [],
 };
 
 /**

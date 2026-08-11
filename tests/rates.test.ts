@@ -58,8 +58,20 @@ test("every rate is the one in force on capturedAt, not a future one", () => {
   }
 });
 
+/*
+ * lapsesDue is exercised against a synthetic card rather than the real one. The real card's
+ * only lapse — the Sonnet 5 rise to $3/$15 — was CANCELLED by Anthropic, not served, so
+ * asserting the function's behaviour through it would tie a correct piece of logic to a fact
+ * that stopped being true. The behaviour still needs testing; it just must not be tested
+ * through data that moves for unrelated reasons.
+ */
+const SYNTHETIC = {
+  ...CARD,
+  lapses: [{ on: "2026-09-01", what: "a scheduled rise, for testing the reporting logic only" }],
+};
+
 test("a scheduled lapse is reported before it lands", () => {
-  const due = lapsesDue(CARD, new Date("2026-08-11T00:00:00Z"));
+  const due = lapsesDue(SYNTHETIC, new Date("2026-08-11T00:00:00Z"));
   expect(due.length).toBe(1);
   expect(due[0].on).toBe("2026-09-01");
   expect(due[0].daysAway).toBe(21);
@@ -67,13 +79,22 @@ test("a scheduled lapse is reported before it lands", () => {
 
 test("a lapse that has already passed reports as negative, not as absent", () => {
   // The failure this guards: a card that is only days old, and already wrong.
-  const due = lapsesDue(CARD, new Date("2026-09-05T00:00:00Z"));
+  const due = lapsesDue(SYNTHETIC, new Date("2026-09-05T00:00:00Z"));
   expect(due.length).toBe(1);
   expect(due[0].daysAway).toBeLessThan(0);
 });
 
 test("a lapse far in the future is not yet noise", () => {
-  expect(lapsesDue(CARD, new Date("2026-06-01T00:00:00Z")).length).toBe(0);
+  expect(lapsesDue(SYNTHETIC, new Date("2026-06-01T00:00:00Z")).length).toBe(0);
+});
+
+test("the card announces no price change that has been called off", () => {
+  // Until 2026-08-12 this card warned every reader that Sonnet 5 was about to cost 50% more.
+  // Anthropic's pricing page says the increase "will not occur". A tool that sells traceable
+  // figures cannot be the one telling a buyer to budget for a rise that was cancelled.
+  const cancelled = (CARD.lapses ?? []).filter((l) => /sonnet-5.*\$3/.test(l.what));
+  expect(cancelled, "the cancelled Sonnet 5 rise is back on the card").toEqual([]);
+  expect(lapsesDue(CARD, new Date("2026-08-12T00:00:00Z")).length).toBe(0);
 });
 
 test("covers every model seen in real Claude Code transcripts", () => {

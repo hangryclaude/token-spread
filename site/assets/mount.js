@@ -29,6 +29,32 @@ import initCapsuleControls from './effects/capsule-controls/engine.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
+/**
+ * Force act-breaks to recompute after an INSTANT jump.
+ *
+ * It bounds its per-frame rect reads with an IntersectionObserver and its loop early-returns
+ * when scrollY is unchanged, so on a jump the observer's callback lands on a frame where the
+ * scroll has already settled: elements that just came on screen keep the opacity they had
+ * while they were far below. Measured on the twin act at 390x844 — heading stuck at opacity 0
+ * for three seconds at scrollY 3590, then reading 1 at that same 3590 after a one-pixel nudge.
+ * The same position giving two answers is the tell that it is stale state, not the design.
+ *
+ * Smooth scrolling hides it, because the intermediate positions keep the loop working, and so
+ * does reduced motion, where act-breaks clears the reveal styles outright rather than animating
+ * them. What is left is the case that matters most: a #fragment link under normal motion —
+ * which is precisely the hero's own "See the same answer billed twice" landing on the proof.
+ *
+ * One pixel out and back on the next frame is the smallest change that makes it recompute.
+ */
+const settleReveals = () => requestAnimationFrame(() => {
+  window.scrollBy(0, 1);
+  // The -1 must land on the NEXT frame. Both in one frame nets to zero change, the loop's
+  // early-return never lifts, and nothing recomputes — which is exactly how the first version
+  // of this helper failed while appearing to work, because reduced motion passes it for an
+  // unrelated reason (act-breaks clears opacity outright under the preference, engine.js:364).
+  requestAnimationFrame(() => window.scrollBy(0, -1));
+});
+
 /** Decorative layers never throw (CONTRACT §6): a failed mount leaves a flatter page. */
 function safe(name, fn) {
   try {
@@ -172,10 +198,19 @@ async function mountAll() {
         // Honour the visitor's preference for the scroll itself, not just for decoration.
         const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         el.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+        // Only the instant branch needs it, but a smooth scroll that is already at its target
+        // is instant too, so this runs either way rather than guessing which one happened.
+        settleReveals();
       },
     }));
 
   safe('capsule-controls', () => initCapsuleControls(document.body));
+
+  // The hero's link to the proof is a plain #fragment, so the browser jumps without asking
+  // anything here. hashchange fires once the jump has landed, which is when the reveals need
+  // the nudge. Skipped when the preference is honoured elsewhere — this is not motion, it is
+  // a one-pixel correction, so it runs under reduced motion too.
+  window.addEventListener('hashchange', settleReveals);
 
   // ── act rhythm ────────────────────────────────────────────────────────────────
   // ZERO backdrops: a ground already exists, and a second full-viewport ground layer is

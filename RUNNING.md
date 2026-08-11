@@ -119,6 +119,19 @@ bun run check:page:full   # the full 15-viewport sweep
 bun run check:page:self   # run the controls — a check that cannot fail is not a check
 ```
 
+The pricing calculator gets its own sweep, because its five sliders are bounded and stepped and
+so the reachable surface is finite — 78,844,640 states, enumerated exactly rather than sampled.
+It needs no server; it imports the model directly.
+
+```bash
+bun run sweep:pricing           # every state, ~2 min, exit 1 on any finding
+bun run sweep:pricing:control   # inject faults; every assertion must fire
+```
+
+It checks the arithmetic, the two places the page divides (a NaN there prints to a buyer), and
+the commercial claim the page makes about itself: "we'd tell you not to buy" must appear exactly
+when the fee outruns the saving, in both directions.
+
 Each check knows whether it applies. One that does not prints `– SKIPPED` with the reason
 and is counted apart from the passes, because a suite that skips quietly ends up certifying
 what it never looked at. The viewport line also names how many overlap pairs exist on that

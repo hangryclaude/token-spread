@@ -13,7 +13,9 @@
     "check:page:self": "node site/tools/page-checks.mjs --self-test",
     "check:page:full": "node site/tools/page-checks.mjs --full",
     "shoot:audit": "node site/tools/shoot-audit.mjs",
-    "shoot:audit:check": "node site/tools/shoot-audit.mjs --check"
+    "shoot:audit:check": "node site/tools/shoot-audit.mjs --check",
+    "sweep:pricing": "node site/tools/sweep-pricing.mjs",
+    "sweep:pricing:control": "node site/tools/sweep-pricing.mjs --control"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

@@ -277,6 +277,39 @@ async function checkNoJs(browser, url, breakIt) {
     : PASS(`${r.words} words, ${r.headings}/${r.total} headings, 0 hidden${r.twinChars !== null ? `, terminal ${r.twinChars} chars at ${r.meter}` : ''}`);
 }
 
+/**
+ * Console errors, uncaught exceptions and failed requests.
+ *
+ * verify.mjs already asserts all three — but it asserts them AFTER waiting for window.__ready,
+ * and it exits on the timeout without ever reaching them. sample-audit.html has zero <script>
+ * tags on purpose, because the product's claim about the audit is that it is one static file that
+ * opens offline. So it can never set the flag, gate 1 never gets past the wait, and nothing in
+ * this harness was checking the deliverable for a broken asset or a page error. Measured
+ * 2026-08-12: gate 1 returns NOT_READY on that page and always has.
+ *
+ * Adding the flag to the document would satisfy the gate by contradicting the thing the document
+ * is supposed to demonstrate. Checking the property directly, with no readiness handshake, works
+ * on every page including the script-free one.
+ */
+async function checkConsole(browser, url, breakIt) {
+  const page = await newPage(browser);
+  const errs = [], bad = [];
+  page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text().slice(0, 80)); });
+  page.on('pageerror', (e) => errs.push(`uncaught ${e.message.slice(0, 70)}`));
+  page.on('requestfailed', (r) => bad.push(`${r.failure()?.errorText ?? 'failed'} ${r.url().split('/').pop()}`));
+  page.on('response', (r) => { if (r.status() >= 400) bad.push(`${r.status()} ${r.url().split('/').pop()}`); });
+
+  await page.goto(url, { waitUntil: 'networkidle0' });
+  // Puppeteer evaluates in a page with no scripts of its own, so the control works everywhere.
+  if (breakIt) await page.evaluate(() => { console.error('control'); return fetch('/control-404').catch(() => {}); });
+  await new Promise((r) => setTimeout(r, 800));
+  await page.close();
+
+  const all = [...errs, ...bad];
+  return all.length ? FAIL(all.slice(0, 3).join(' · ') + (all.length > 3 ? ` (+${all.length - 3} more)` : ''))
+    : PASS('no console errors, no failed requests');
+}
+
 async function checkFonts(browser, url, breakIt) {
   const page = await newPage(browser, { blockFonts: true });
   const t0 = Date.now();
@@ -327,7 +360,7 @@ async function checkTwin(browser, url, breakIt) {
 
 const CHECKS = [
   ['viewports', checkViewports], ['navigation', checkNavigation], ['keyboard', checkKeyboard],
-  ['nojs', checkNoJs], ['fonts', checkFonts], ['twin', checkTwin],
+  ['nojs', checkNoJs], ['fonts', checkFonts], ['twin', checkTwin], ['console', checkConsole],
 ];
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: 'new', args: ['--no-sandbox'] });

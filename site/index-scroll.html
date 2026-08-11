@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%233DDC84'/%3E%3C/svg%3E">
+<title>Tokens Saved — the same request, the same model, a smaller bill</title>
+<meta name="description" content="A read-only audit of what your Claude usage actually costs, and which savings survive the test that the model must read the same bytes. 176 techniques adjudicated, 66 pass.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tokens Saved">
+<meta property="og:title" content="Tokens Saved — the same request, the same model, a smaller bill">
+<meta property="og:description" content="Most ways to cut an AI bill change what the model gives back. We only ship the ones that can't.">
+<meta property="og:image" content="assets/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<style>
+  /* ── type: IBM Plex, self-hosted, SIL OFL 1.1 (assets/fonts/LICENSE.txt) ────────── */
+  @font-face{font-family:'IBM Plex Sans';src:url('assets/fonts/plex-sans-var.woff2') format('woff2-variations'),
+    url('assets/fonts/plex-sans-var.woff2') format('woff2');
+    font-weight:400 700;font-style:normal;font-display:swap}
+  @font-face{font-family:'IBM Plex Mono';src:url('assets/fonts/plex-mono-400.woff2') format('woff2');
+    font-weight:400;font-style:normal;font-display:swap}
+  @font-face{font-family:'IBM Plex Mono';src:url('assets/fonts/plex-mono-600.woff2') format('woff2');
+    font-weight:600;font-style:normal;font-display:swap}
+
+  /* ── the dark register ───────────────────────────────────────────────────────────
+     Chosen at interview: caustic-field cannot carry a light page (measured — a light
+     build returned 24 contrast FAILs at 1.87–2.73:1). Ink values below are authored
+     against the DARKEST point of the ground, not the average, because the ground's
+     radial vignette takes up to ~45% of the light out of the frame edges.            */
+  :root{
+    --ink:#f2f7f4;          /* body ink on the dark ground */
+    --ink-2:#adc0b7;
+    --ink-3:#7e938a;
+    --acc:#3ddc84;          /* the brand green, unchanged from the existing site */
+    --acc-ink:#04140b;
+    --stop:#ff6b57;         /* the cold/expensive side of the twin terminals */
+    --line:rgba(255,255,255,.13);
+    --line-2:rgba(255,255,255,.07);
+    --panel:rgba(9,18,14,.62);
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --gutter:clamp(1.25rem,5vw,4.5rem);
+    --measure:34rem;
+  }
+
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:auto}          /* the page owns scroll; never smooth-scroll under an engine */
+  body{
+    margin:0;background:#050b08;color:var(--ink);
+    font:400 clamp(1rem,1.05vw,1.09rem)/1.62 var(--sans);
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+
+  /* One ground for the whole document, fixed, z-index 0 — never one per section.
+     CONTRACT §2: a ground per section is what puts a visible seam between acts.      */
+  #ground{position:fixed;inset:0;z-index:0;pointer-events:none}
+  main,.foot{position:relative;z-index:1}
+
+  /* The chrome owns a lane on each side; the column never enters it. A halo would make
+     the chrome legible over the copy but the copy would still be occluded — that is the
+     failure the occlusion sweep reports, and it is a layout problem, not a colour one. */
+  .act{padding:clamp(5rem,14vh,9rem) calc(var(--gutter) + 3.5rem);max-width:78rem;margin:0 auto}
+  .act--tall{min-height:100vh;display:flex;flex-direction:column;justify-content:center}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--acc);margin:0 0 1.1rem}
+  h2{font-size:clamp(1.9rem,4.4vw,3.1rem);line-height:1.08;letter-spacing:-.03em;
+    margin:0 0 1.1rem;text-wrap:balance;max-width:20ch}
+  h3{font-size:1.08rem;margin:0 0 .5rem;letter-spacing:-.01em}
+  p{margin:0 0 1.05rem;max-width:var(--measure);color:var(--ink-2)}
+  p.lede{font-size:clamp(1.06rem,1.6vw,1.28rem);color:var(--ink);max-width:38rem}
+  strong{color:var(--ink);font-weight:600}
+  a{color:var(--acc)}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  :focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:4px}
+
+  /* ── act 1 · the marquee is the headline ─────────────────────────────────────── */
+  #act-hero{position:relative;min-height:100svh;display:flex;flex-direction:column;
+    justify-content:center;padding-block:clamp(6rem,18vh,11rem)}
+  /* band mode measures its container: a zero-height flow div renders nothing at all.
+     Full-bleed inside the act, with the band placed by the engine's own `y`. */
+  #hero-marquee{position:absolute;inset:0;pointer-events:none}
+  .hero-sub{position:relative}
+  .hero-sub{margin-top:clamp(2rem,6vh,3.4rem);max-width:36rem}
+
+  /* ── act 3 · the twin terminals ──────────────────────────────────────────────── */
+  .twin{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:2.6rem}
+  .twin-pane{border:1px solid var(--line);border-radius:14px;background:var(--panel);
+    overflow:hidden;display:flex;flex-direction:column;backdrop-filter:blur(8px)}
+  .twin-bar{display:flex;align-items:center;gap:.7rem;padding:.75rem 1rem;
+    border-bottom:1px solid var(--line-2);flex-wrap:wrap}
+  .twin-tag{font-family:var(--mono);font-size:.68rem;font-weight:600;letter-spacing:.07em;
+    text-transform:uppercase;padding:.2rem .5rem;border-radius:5px}
+  .twin-tag.cold{background:rgba(255,107,87,.16);color:#ffb0a2}
+  .twin-tag.warm{background:rgba(61,220,132,.15);color:var(--acc)}
+  .twin-note{font-size:.78rem;color:var(--ink-3)}
+  .twin-out{margin:0;padding:1.05rem;font-family:var(--mono);font-size:.76rem;line-height:1.7;
+    color:var(--ink-2);white-space:pre-wrap;min-height:12rem;flex:1}
+  .twin-meter{display:flex;align-items:baseline;justify-content:space-between;
+    padding:.8rem 1rem;border-top:1px solid var(--line-2)}
+  .twin-k{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .twin-v{font-family:var(--mono);font-size:1.4rem;font-weight:600;font-variant-numeric:tabular-nums}
+  .twin-v.cold{color:#ff8f7d} .twin-v.warm{color:var(--acc)}
+  .twin-done{margin-top:1.5rem;max-width:44rem}
+  .twin-replay{margin-left:.55rem;font:inherit;font-size:.82rem;background:transparent;
+    border:1px solid var(--line);border-radius:999px;padding:.24rem .8rem;cursor:pointer;
+    color:var(--ink-2)}
+  .twin-replay:hover{border-color:var(--acc);color:var(--ink)}
+
+  /* ── act 5 · the two findings ────────────────────────────────────────────────── */
+  .finds{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1rem;margin-top:2.4rem}
+  .find{border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:12px;
+    padding:1.4rem 1.5rem;background:var(--panel);backdrop-filter:blur(8px)}
+  .find .big{display:block;font-family:var(--mono);font-size:2rem;font-weight:600;
+    letter-spacing:-.02em;color:var(--acc);margin-bottom:.4rem}
+  .find p{font-size:.94rem;margin:0;color:var(--ink-2)}
+
+  /* ── act 6 · the close ───────────────────────────────────────────────────────── */
+  .shot{display:block;position:relative;border:1px solid var(--line);border-radius:16px;
+    overflow:hidden;background:var(--panel);margin-top:2.4rem;text-decoration:none}
+  .shot img{display:block;width:100%;height:auto}
+  .shot::after{content:"";position:absolute;z-index:1;inset:auto 0 0 0;height:34%;
+    background:linear-gradient(to bottom,transparent,#050b08);pointer-events:none}
+  .shot-cta{position:absolute;z-index:2;right:1rem;bottom:1rem;background:var(--acc);
+    color:var(--acc-ink);font-size:.84rem;font-weight:600;padding:.5rem .9rem;border-radius:999px}
+  .synthetic{font-size:.84rem;color:var(--ink-3);margin-top:.9rem}
+
+  .foot{border-top:1px solid var(--line-2);margin-top:4rem;padding:2.2rem var(--gutter) 4rem;
+    max-width:78rem;margin-inline:auto;font-size:.86rem;color:var(--ink-3)}
+  .foot a{color:var(--ink-2)}
+
+  /* fixed-hud chrome */
+  #hud{position:fixed;inset:0;z-index:5;pointer-events:none}
+  #hud > *{pointer-events:auto}
+  .hud-mark{position:fixed;top:1.15rem;left:1rem;font-family:var(--mono);
+    font-size:.82rem;letter-spacing:.02em;color:var(--ink);text-decoration:none}
+  .hud-rail{position:fixed;right:.6rem;bottom:1.2rem;display:flex;gap:.4rem}
+  #hud .sc-hud-chip{background:rgba(3,12,8,.93);border-color:rgba(255,255,255,.22)}
+  #hud .sc-hud-num{color:#f2f7f4}
+  #hud .sc-hud-chip[aria-current="true"]{background:rgba(2,9,6,.96)}
+
+  /* act 2 · the two usage blocks in the pinned pane */
+  /* The pane owns its own stacking so a restack cannot put both figures in one place. */
+  .usage-pair{display:flex;flex-direction:column;gap:1.1rem;justify-content:center;height:100%}
+  .usage{margin:0}
+  .usage-k{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;color:var(--ink-3);
+    margin:0 0 .5rem}
+  /* A grid that wraps, not preformatted text that overflows. Values right-aligned so the
+     two blocks still read as a column of numbers without char-counted padding. */
+  .usage-b{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.35rem .9rem;
+    margin:0;padding:1rem 1.1rem;border:1px solid var(--line);border-radius:12px;
+    background:rgba(4,12,9,.86);font-family:var(--mono);font-size:.74rem;line-height:1.6;
+    color:var(--ink-2)}
+  /* NOT overflow-wrap:anywhere — it broke `input_tokens` across four lines as
+     inp/ut_/tok/ens. These are identifiers; they wrap at the whole token or not at all. */
+  .usage-b dt{color:var(--ink-3);min-width:0;overflow-wrap:normal;word-break:keep-all}
+  .usage-b dd{margin:0;text-align:right;white-space:nowrap}
+  .usage-b .ok{color:var(--acc)} .usage-b .bad{color:#ff8f7d} .usage-b .dim{color:var(--ink-3)}
+
+  /* act 6 · the capsule CTA */
+  .cta{display:inline-block;margin-top:2rem;background:var(--acc);color:var(--acc-ink);
+    font-weight:600;text-decoration:none;padding:.85rem 1.5rem;border-radius:999px}
+  .cta-note{font-size:.86rem;color:var(--ink-3);margin-top:.9rem}
+
+  @media (max-width:760px){
+    .twin{grid-template-columns:1fr}
+    .twin-out{min-height:8.5rem}
+    /* qualified with [data-sc-capsule] on purpose: the engine ships its own rule at the
+       same specificity and later in source order, so an unqualified .cta rule loses. */
+    .cta[data-sc-capsule]{display:block;text-align:center}
+    /* vertical, right edge, and the acts reserve room for it — a bottom rail over a
+       full-width column occludes the copy by construction, not by accident. */
+    /* Bottom-right, not vertically centred: centred put the chips exactly where the hero
+       band sits, and a chip over the headline is the same occlusion defect in a new place.
+       The acts already reserve this lane, so nothing runs beneath it. */
+    .hud-rail{left:auto;right:.45rem;top:auto;bottom:1rem;transform:none;
+      flex-direction:column;gap:.3rem}
+    /* No sticky band at this width — the spine is not mounted here, so the comparison is
+       ordinary flow and needs no opaque plate to scroll behind. */
+    .usage-pair{gap:.9rem;height:auto}
+    .usage-b{font-size:.72rem}
+    .act{padding-right:calc(var(--gutter) + 2.6rem)}
+    .foot{padding-right:calc(var(--gutter) + 2.6rem)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .shot{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- One ground for the whole document. caustic-field mounts here. -->
+<div id="ground" aria-hidden="true"></div>
+
+<!-- fixed-hud: the way back. Past ~5 viewports a page needs one. The rail is where
+     the chapter chips build; the halo slots are what keeps the chrome legible over a
+     ground whose hue moves. -->
+<div id="hud">
+  <a class="hud-mark" href="index.html" data-hud-halo>Tokens&nbsp;Saved</a>
+  <nav class="hud-rail" data-hud-rail aria-label="Sections"></nav>
+</div>
+
+<main>
+
+  <!-- ══ ACT 1 · the thesis ══════════════════════════════════════════════════════ -->
+  <section class="act" id="act-hero" aria-labelledby="h1" data-act>
+    <h1 id="h1" class="visually-hidden">Tokens Saved — the same request, the same model, a smaller bill</h1>
+    <div id="hero-marquee" aria-hidden="true"></div>
+    <p class="lede hero-sub">Most ways to cut an AI bill change what the model gives back.
+      We only ship the ones that can't.</p>
+  </section>
+
+  <!-- ══ ACT 2 · the problem ═════════════════════════════════════════════════════ -->
+  <section class="act act--tall" id="act-problem" aria-labelledby="h-problem" data-act>
+    <div data-split-copy>
+      <p class="eyebrow" data-act-reveal="0">The problem</p>
+      <h2 data-act-reveal="1" id="h-problem">A broken cache throws no error.</h2>
+      <p class="lede">It doesn't crash. It doesn't warn. <code class="num">cache_read_input_tokens</code>
+        quietly goes to zero and your bill goes up. One dynamic field in the wrong place is enough.</p>
+      <p>Anthropic now ships a beta that names the cause — <code class="num">cache-diagnosis-2026-04-07</code>
+        returns <code class="num">system_changed</code>, <code class="num">tools_changed</code>,
+        <code class="num">messages_changed</code> or <code class="num">model_changed</code>. It is
+        opt-in, first-party only, and needs the previous response id threaded through every turn.</p>
+      <p><strong>The signal exists now. Nobody is watching it.</strong></p>
+    </div>
+
+    <div data-split-media>
+      <!-- ONE element in the slot. sticky-split adopts every element child of the
+           media slot and absolutely positions each at inset:0, so two siblings stack
+           and paint through each other. Its own SKILL.md lists "multiple media
+           elements in one slot" as untested. These two blocks are a comparison and
+           must be seen together, so they travel as one adopted child. -->
+      <div class="usage-pair">
+      <figure class="usage">
+        <figcaption class="usage-k">healthy — the prefix is being reused</figcaption>
+        <dl class="usage-b">
+          <dt>input_tokens</dt><dd class="ok">1,204</dd>
+          <dt>cache_read_input_tokens</dt><dd class="ok">847,392 <span class="dim">· 0.1×</span></dd>
+        </dl>
+      </figure>
+      <figure class="usage">
+        <figcaption class="usage-k">broken — same code, one field moved</figcaption>
+        <dl class="usage-b">
+          <dt>input_tokens</dt><dd class="bad">848,596 <span class="dim">· full price</span></dd>
+          <dt>cache_read_input_tokens</dt><dd class="bad">0 <span class="dim">· no error</span></dd>
+        </dl>
+      </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ ACT 3 · the proof ═══════════════════════════════════════════════════════ -->
+  <section class="act act--tall" id="act-twin" aria-labelledby="h-twin" data-act data-twin>
+    <p class="eyebrow" data-act-reveal="0">The whole idea, in one screen</p>
+    <h2 data-act-reveal="1" id="h-twin">Same question. Same answer.<br>Seven times the price.</h2>
+    <p class="lede">Both panes run Claude Opus 5 on the identical prompt and stream the identical
+      response, at the identical speed. The only difference is whether the 40,000 tokens of context
+      in front of it were already in the cache.</p>
+
+    <div class="twin">
+      <div class="twin-pane">
+        <div class="twin-bar">
+          <span class="twin-tag cold">cache miss</span>
+          <span class="twin-note">40,000 tokens at full price</span>
+        </div>
+        <pre class="twin-out" data-twin-out aria-label="Response streamed without a cache hit"></pre>
+        <div class="twin-meter">
+          <span class="twin-k">this turn</span>
+          <span class="twin-v cold" data-twin-cost>$0.0000</span>
+        </div>
+      </div>
+      <div class="twin-pane">
+        <div class="twin-bar">
+          <span class="twin-tag warm">cache hit</span>
+          <span class="twin-note">the same 40,000 tokens at 0.1&times;</span>
+        </div>
+        <pre class="twin-out" data-twin-out aria-label="Response streamed with a cache hit"></pre>
+        <div class="twin-meter">
+          <span class="twin-k">this turn</span>
+          <span class="twin-v warm" data-twin-cost>$0.0000</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="twin-done" data-twin-done hidden>
+      <strong>Byte-identical output.</strong> $0.2075 against $0.0275 — the same answer,
+      <strong>7.55&times;</strong> cheaper. Over a thousand turns that is $207.50 against $27.50.
+      <button class="twin-replay" type="button" data-twin-replay>Replay</button>
+    </p>
+  </section>
+
+  <!-- ══ ACT 4 · the bar ═════════════════════════════════════════════════════════ -->
+  <section class="act act--tall" id="act-bar" aria-labelledby="h-bar" data-act>
+    <p class="eyebrow" data-act-reveal="0">The bar</p>
+    <h2 data-act-reveal="1" id="h-bar">176 techniques. 66 survive.</h2>
+    <p class="lede">One question decides it: does the model read a different sequence of tokens,
+      does a different model answer, or does a different amount of thinking happen? If the answer
+      is yes, it is not a saving — it is a changed product sold as one.</p>
+    <div id="refusals"></div>
+  </section>
+
+  <!-- ══ ACT 5 · what we found ═══════════════════════════════════════════════════ -->
+  <section class="act act--tall" id="act-found" aria-labelledby="h-found" data-act>
+    <p class="eyebrow" data-act-reveal="0">What the audit found</p>
+    <h2 data-act-reveal="1" id="h-found">Two things nobody was billing for correctly.</h2>
+    <div class="finds">
+      <div class="find">
+        <span class="big num">100%</span>
+        <h3>of cache writes ran at the 1-hour TTL</h3>
+        <p>7,454 deduped requests, 40.4M write tokens, zero at five minutes. A 1-hour write bills at
+          2&times; base input; five minutes bills at 1.25&times; and refreshes on every read.
+          <strong>95% of them were re-read inside five minutes.</strong></p>
+      </div>
+      <div class="find">
+        <span class="big num">8.6&times;</span>
+        <h3>under-reported by compaction</h3>
+        <p>Anthropic's own worked example shows <code class="num">usage.input_tokens: 23,000</code>
+          against <strong>207,500</strong> tokens actually billed. Their words: the top-level fields
+          <em>do not include compaction iteration usage</em>. Most tooling reads the top level.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ ACT 6 · the close ═══════════════════════════════════════════════════════ -->
+  <section class="act act--tall" id="act-close" aria-labelledby="h-close" data-act>
+    <p class="eyebrow" data-act-reveal="0">What you get back</p>
+    <h2 data-act-reveal="1" id="h-close">A document, not a dashboard login.</h2>
+    <p class="lede">One file. It opens offline, it carries its own type, and every figure sits next
+      to the events and the dated rate card that produced it. Where a lever cannot be measured from
+      your data, it says so instead of estimating it.</p>
+
+    <a class="shot" href="sample-audit.html">
+      <img src="assets/img/sample-audit.png" width="920" height="700" loading="lazy"
+        alt="A sample audit: $19,486.50 of measured spend, a 5% cache-hit rate, $10,563.68 recoverable, and a cache-write TTL exposure stated as exposure rather than as a saving">
+      <span class="shot-cta">Open the real one &rarr;</span>
+    </a>
+    <p class="synthetic">Generated from synthetic usage, not a customer's. Yours is computed the
+      same way, from a file you produce yourself.</p>
+
+    <div id="close-cta">
+      <a class="cta" data-sc-capsule="cta"
+         href="mailto:angus@angusbuilds.com?subject=Audit%20-%20usage.json%20attached">Send the file, get the audit</a>
+      <p class="cta-note">No call required first. If the audit finds under 20% on the table,
+        we'll say so and leave.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <p>Token counts and dimensions only. No prompt or completion text is read to produce an audit,
+    and none appears in one. Levers compound by product, never by sum.</p>
+  <p><a href="how.html">How it works</a> · <a href="methods.html">Methods</a> ·
+     <a href="pricing.html">Pricing</a> · <a href="mailto:angus@angusbuilds.com">angus@angusbuilds.com</a></p>
+</footer>
+
+<script type="module" src="assets/mount.js"></script>
+</body>
+</html>

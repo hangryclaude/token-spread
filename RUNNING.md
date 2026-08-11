@@ -34,17 +34,24 @@ nothing further — there is no runtime dependency to audit, vendor or trust.
 
 ```bash
 # audit this machine's Claude Code history
-bun run src/cli.ts
+bun run audit
 
 # the same, as a document you can send someone
-bun run src/cli.ts --html audit.html
+bun run audit --html audit.html
 
 # machine-readable
-bun run src/cli.ts --json
+bun run audit --json
 
 # audit an organisation from Anthropic's usage report instead of local transcripts
-bun run src/cli.ts --admin usage.json --html audit.html
+bun run audit --admin usage.json --html audit.html
+
+# every flag
+bun run audit --help
 ```
+
+`src/cli.ts` is executable and carries a shebang, so `./src/cli.ts --help` works too.
+A `bin` entry is declared for `token-spread`, though the global-link path is not
+something this machine has exercised — use `bun run audit` for anything that matters.
 
 | Flag | Default | What it does |
 |---|---|---|
@@ -55,6 +62,13 @@ bun run src/cli.ts --admin usage.json --html audit.html
 | `--cache-target <n>` | `max(observed, 90)` | simulated cache-hit target, integer percent |
 | `--write-overhead <n>` | measured | cache-write overhead assumption, integer percent |
 | `--only <file>` | — | restrict to one transcript file |
+| `--help` | — | every flag, with examples |
+| `--version` | — | the version |
+
+**Exit codes.** `0` on a real report. `1` when there is nothing to report — an unreadable
+directory, no transcripts found, or records read but none priced. `2` on an unknown flag.
+A directory with no transcripts never prints `$0.00`: finding no input is not the same as
+finding no spend, and the two are indistinguishable once a clean report is on screen.
 
 ## Prove it yourself before you trust it
 
@@ -89,6 +103,6 @@ asserted by a test.
 ## Verify the build
 
 ```bash
-bun test            # 123 tests
+bun run test        # 130 tests
 bunx tsc --noEmit   # no type errors
 ```

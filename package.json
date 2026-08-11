@@ -4,11 +4,23 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "audit": "bun run src/cli.ts",
     "test": "bun test",
-    "report": "bun run src/cli.ts"
+    "typecheck": "bunx tsc --noEmit",
+    "build:fonts": "bun run ./bench/build-fonts.ts",
+    "build:figures": "bun run ./bench/margin-model.ts --write"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.116.0",
     "@types/bun": "^1.3.14"
-  }
+  },
+  "description": "A read-only audit of what your Claude usage actually costs, and which savings survive the test that the model must read the same bytes.",
+  "bin": {
+    "token-spread": "./src/cli.ts"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "RUNNING.md"
+  ]
 }

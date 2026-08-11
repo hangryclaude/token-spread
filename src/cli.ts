@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { basename, join } from "node:path";
 import { readdirSync, statSync } from "node:fs";
 import { importClaudeCodeJsonl, type ImportProvenance } from "./importers/claudeCode";
@@ -11,11 +12,60 @@ import { renderAuditHtml } from "./render/auditHtml";
 import { simulate } from "./simulate";
 import type { UsageEvent } from "./types";
 
+export const VERSION = "0.1.0";
+
+/** Every flag the program accepts. One list, so --help and validation cannot disagree. */
+const FLAGS = [
+  { name: "dir", arg: "<path>", desc: "where to look for transcripts (default ~/.claude/projects)" },
+  { name: "admin", arg: "<files>", desc: "comma-separated Admin usage-report JSON; skips transcripts" },
+  { name: "html", arg: "<path>", desc: "write the audit as a standalone document" },
+  { name: "json", arg: "", desc: "emit the full report object" },
+  { name: "cache-target", arg: "<n>", desc: "simulated cache-hit target, integer percent" },
+  { name: "write-overhead", arg: "<n>", desc: "cache-write overhead assumption, integer percent" },
+  { name: "only", arg: "<file>", desc: "restrict to one transcript file" },
+  { name: "help", arg: "", desc: "this" },
+  { name: "version", arg: "", desc: "print the version" },
+] as const;
+
+const KNOWN = new Set(FLAGS.map((f) => f.name));
+
+// A silently ignored --htlm is how someone concludes the tool cannot write documents.
+for (const a of process.argv.slice(2)) {
+  if (a.startsWith("--") && !KNOWN.has(a.slice(2) as never)) {
+    console.error(`unknown flag: ${a}\nrun with --help to see what is accepted`);
+    process.exit(2);
+  }
+}
+
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
   return i === -1 ? fallback : process.argv[i + 1];
 }
 const flag = (name: string) => process.argv.includes(`--${name}`);
+
+if (flag("version")) {
+  console.log(VERSION);
+  process.exit(0);
+}
+
+if (flag("help")) {
+  const width = Math.max(...FLAGS.map((f) => `--${f.name} ${f.arg}`.length));
+  console.log(`token-spread ${VERSION} — a read-only audit of what Claude usage costs.
+
+usage:
+  bun run src/cli.ts [flags]
+
+flags:
+${FLAGS.map((f) => `  ${`--${f.name} ${f.arg}`.padEnd(width)}  ${f.desc}`).join("\n")}
+
+examples:
+  bun run src/cli.ts                             audit this machine
+  bun run src/cli.ts --html audit.html           write the document
+  bun run src/cli.ts --admin usage.json --json   audit an org, machine-readable
+
+It reads. The only file it writes is the one named by --html.`);
+  process.exit(0);
+}
 
 const dir = arg("dir", join(process.env.HOME ?? "", ".claude", "projects"))!;
 const only = arg("only");
@@ -88,6 +138,25 @@ for (const { path, projectId } of adminFiles === undefined ? findTranscripts(dir
   const r = importClaudeCodeJsonl(text.split("\n").filter((l) => l.trim() !== ""), { projectId, seen });
   events.push(...r.events);
   for (const k of Object.keys(provenance) as (keyof ImportProvenance)[]) provenance[k] += r.provenance[k];
+}
+
+if (events.length === 0) {
+  // A clean $0.00 report here is indistinguishable from a real audit of a quiet month,
+  // and the most likely cause is a wrong path. Refuse rather than reassure.
+  if (adminFiles !== undefined) {
+    console.error(
+      `no priced events in the admin usage report — the file parsed but produced no usage.\n` +
+      `check that it is the response body from /v1/organizations/usage_report/messages.`);
+  } else if (provenance.linesSeen === 0) {
+    console.error(
+      `no transcripts found under ${dir}\n` +
+      `expected .jsonl files at any depth. finding nothing is not the same as finding no spend.`);
+  } else {
+    console.error(
+      `no priced events: read ${provenance.linesSeen.toLocaleString()} records but none carried usage.\n` +
+      `${provenance.malformed.toLocaleString()} were malformed. this points at a parsing problem, not a quiet month.`);
+  }
+  process.exit(1);
 }
 
 const metrics = computeMetrics(events, CARD);

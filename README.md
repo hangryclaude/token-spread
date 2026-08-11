@@ -67,7 +67,7 @@ cd token-spread && bun install
 subagent transcripts five levels down that hold most of an agent-heavy bill:
 
 ```bash
-bun run src/cli.ts --html audit.html
+bun run audit --html audit.html
 ```
 
 **An organisation running the API** — reads Anthropic's own usage report. The customer
@@ -83,8 +83,12 @@ curl https://api.anthropic.com/v1/organizations/usage_report/messages \
      --data-urlencode "group_by[]=workspace_id" \
      --data-urlencode "group_by[]=service_tier" > usage.json
 
-bun run src/cli.ts --admin usage.json --html audit.html
+bun run audit --admin usage.json --html audit.html
 ```
+
+`bun run audit --help` lists every flag. An unknown flag is refused rather than
+ignored, and a directory with no transcripts exits non-zero rather than reporting a
+confident `$0.00` — finding no input is not the same as finding no spend.
 
 Every flag, and how to prove the read-only property yourself, is in
 [`RUNNING.md`](RUNNING.md).
@@ -227,7 +231,8 @@ traffic. The example is the shape, not your bill.
 
 ```bash
 bun install                              # no runtime deps
-bun test                                 # 123 tests
+bun run test        # 130 tests
+bun run typecheck   # no type errors
 bun run src/cli.ts --dir ~/.claude/projects
 ```
 

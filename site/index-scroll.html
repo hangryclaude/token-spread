@@ -95,6 +95,9 @@
   .hero-act a[data-sc-capsule]{border:1px solid rgba(242,247,244,.34);color:var(--ink)}
   .hero-act a[data-sc-capsule]:hover{border-color:var(--acc);color:var(--acc)}
   .hero-act-note{font-size:.86rem;color:var(--ink-3)}
+  /* The in-flow twin of .hud-mark, and only ever one of the two is displayed. */
+  .hero-mark{display:none;position:relative;font-family:var(--mono);font-size:.78rem;
+    letter-spacing:.04em;color:var(--ink-2);text-decoration:none;margin-bottom:1.4rem}
 
   /* One column by default; the register sits under the claim on a phone, where it lands in
      the space the hero was already wasting. Two columns only once there is width for both. */
@@ -225,11 +228,15 @@
        either: it lives inside #hud, which is itself position:fixed inset:0, so `absolute`
        there is still viewport-pinned. The auditor's real complaint was the headline
        wrapping every sentence onto two lines, and that is fixable at the type instead. */
-    .act{padding-right:calc(var(--gutter) + 3.4rem)}
-    .foot{padding-right:calc(var(--gutter) + 3.4rem)}
+    /* Right lane stays — the rail measures 51px and sits in it. Left lane goes back to the
+       copy, which is only safe because .hud-mark is swapped for .hero-mark just below. */
+    .act{padding-left:var(--gutter);padding-right:calc(var(--gutter) + 3.4rem)}
+    .foot{padding-left:var(--gutter);padding-right:calc(var(--gutter) + 3.4rem)}
+    .hud-mark{display:none}
+    .hero-mark{display:block}
     /* The base clamp floors at 2.5rem, which never yields to 7.2vw on a phone: 40px type in
        a 239px column breaks "The same request." across two lines. 6.2vw ≈ 24px at 390px. */
-    #h1{font-size:clamp(1.5rem,6.2vw,2.4rem)}
+    #h1{font-size:clamp(1.6rem,7.4vw,2.9rem)}
     /* 18vh of an 844px phone is 152px of padding at each end. Narrowing the register to clear
        the rail made it taller, and that padding was what pushed its last line past the fold. */
     #act-hero{padding-block:clamp(3.5rem,9vh,5.5rem)}
@@ -267,6 +274,7 @@
 
   <!-- ══ ACT 1 · the thesis ══════════════════════════════════════════════════════ -->
   <section class="act" id="act-hero" aria-labelledby="h1" data-act>
+    <a class="hero-mark" href="index.html">Tokens&nbsp;Saved</a>
     <div id="hero-marquee" aria-hidden="true"></div>
     <div class="hero-grid">
     <div class="hero-say">

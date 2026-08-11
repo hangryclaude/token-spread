@@ -11,7 +11,9 @@
     "build:figures": "bun run ./bench/margin-model.ts --write",
     "check:page": "node site/tools/page-checks.mjs",
     "check:page:self": "node site/tools/page-checks.mjs --self-test",
-    "check:page:full": "node site/tools/page-checks.mjs --full"
+    "check:page:full": "node site/tools/page-checks.mjs --full",
+    "shoot:audit": "node site/tools/shoot-audit.mjs",
+    "shoot:audit:check": "node site/tools/shoot-audit.mjs --check"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.116.0",

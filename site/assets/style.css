@@ -392,3 +392,43 @@ footer small{font-size:.82rem;color:var(--ink-3);line-height:1.75;display:block;
 .term pre{padding:1.3rem;line-height:1.8;white-space:pre;overflow-x:auto;
   font-family:var(--mono);font-size:.84rem;color:var(--ink-2)}
 .term .g{color:var(--acc-text)} .term .r{color:var(--stop);font-weight:700} .term .d{color:var(--ink-3)}
+
+/* sample-audit shot — a link that looks like the thing it opens */
+.shot{display:block;position:relative;border:1px solid var(--line);border-radius:var(--r-20);
+  overflow:hidden;background:var(--bg-2);margin-top:2.4rem;text-decoration:none;
+  transition:border-color .2s ease,transform .2s cubic-bezier(.16,1,.3,1)}
+.shot:hover{border-color:var(--acc-fill);transform:translateY(-2px)}
+.shot img{display:block;width:100%;height:auto}
+/* the CTA sits above the fade; without the z-index the gradient washes it out */
+.shot-cta{position:absolute;z-index:2;right:1rem;bottom:1rem;background:var(--acc-fill);color:var(--acc-ink);
+  font-size:.86rem;font-weight:600;padding:.5rem .9rem;border-radius:999px;
+  box-shadow:0 2px 14px rgba(0,0,0,.14)}
+.shot::after{content:"";position:absolute;z-index:1;inset:auto 0 0 0;height:38%;
+  background:linear-gradient(to bottom,transparent,var(--bg));pointer-events:none}
+@media (prefers-reduced-motion:reduce){.shot,.shot:hover{transition:none;transform:none}}
+
+/* two terminals, one answer — the pitch, made watchable */
+.twin{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:2.4rem}
+.twin-pane{border:1px solid var(--line);border-radius:var(--r-20);background:var(--bg-2);
+  overflow:hidden;display:flex;flex-direction:column}
+.twin-bar{display:flex;align-items:center;gap:.7rem;padding:.75rem 1rem;
+  border-bottom:1px solid var(--line);flex-wrap:wrap}
+.twin-tag{font-family:var(--mono);font-size:.7rem;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;padding:.2rem .5rem;border-radius:.25rem}
+.twin-tag.cold{background:rgba(214,74,58,.12);color:#a5352a}
+.twin-tag.warm{background:var(--acc-soft,rgba(61,220,132,.14));color:var(--acc-text)}
+.twin-note{font-size:.8rem;color:var(--ink-3)}
+.twin-out{margin:0;padding:1.1rem;font-family:var(--mono);font-size:.8rem;line-height:1.65;
+  color:var(--ink-2);white-space:pre-wrap;min-height:11.5rem;flex:1}
+.twin-meter{display:flex;align-items:baseline;justify-content:space-between;
+  padding:.8rem 1rem;border-top:1px solid var(--line)}
+.twin-k{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.twin-v{font-family:var(--mono);font-size:1.35rem;font-weight:600;font-variant-numeric:tabular-nums}
+.twin-v.cold{color:#a5352a} .twin-v.warm{color:var(--acc-text)}
+.twin-done{margin-top:1.4rem;font-size:1rem;color:var(--ink-2)}
+.twin-done strong{color:var(--ink)}
+.twin-replay{margin-left:.6rem;font:inherit;font-size:.84rem;background:var(--bg-2);
+  border:1px solid var(--line);border-radius:999px;padding:.25rem .8rem;cursor:pointer;
+  color:var(--ink-2)}
+.twin-replay:hover{border-color:var(--acc-fill);color:var(--ink)}
+@media (max-width:720px){.twin{grid-template-columns:1fr}.twin-out{min-height:8rem}}

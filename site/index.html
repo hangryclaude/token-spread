@@ -96,6 +96,52 @@
   </div>
 </div></header>
 
+<section><div class="wrap stack reveal" data-twin>
+  <div class="head">
+    <p class="eyebrow">The whole idea, in one screen</p>
+    <h2>Same question. Same answer.<br>Seven times the price.</h2>
+    <p class="lede">Both panes run Claude Opus 5 on the identical prompt and stream the identical
+      response, at the identical speed. The only difference is whether the 40,000 tokens of
+      context in front of it were already in the cache.</p>
+  </div>
+
+  <div class="twin">
+    <div class="twin-pane">
+      <div class="twin-bar">
+        <span class="twin-tag cold">cache miss</span>
+        <span class="twin-note">40,000 tokens at full price</span>
+      </div>
+      <pre class="twin-out" data-twin-out aria-label="Response streamed without a cache hit"></pre>
+      <div class="twin-meter">
+        <span class="twin-k">this turn</span>
+        <span class="twin-v cold" data-twin-cost>$0.0000</span>
+      </div>
+    </div>
+
+    <div class="twin-pane">
+      <div class="twin-bar">
+        <span class="twin-tag warm">cache hit</span>
+        <span class="twin-note">the same 40,000 tokens at 0.1&times;</span>
+      </div>
+      <pre class="twin-out" data-twin-out aria-label="Response streamed with a cache hit"></pre>
+      <div class="twin-meter">
+        <span class="twin-k">this turn</span>
+        <span class="twin-v warm" data-twin-cost>$0.0000</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="twin-done" data-twin-done hidden>
+    <strong>Byte-identical output.</strong> $0.2075 against $0.0275 &mdash; the same answer,
+    <strong>7.55&times;</strong> cheaper. Over a thousand turns that is $207.50 against $27.50.
+    <button class="twin-replay" type="button" data-twin-replay>Replay</button>
+  </p>
+
+  <p class="note">Figures computed from the rate card in the tool itself: Opus 5 input $5/MTok,
+    cache read $0.50/MTok, output $25/MTok. Caching changes what a token costs, never what the
+    model reads &mdash; which is why the two panes can be identical.</p>
+</div></section>
+
 <section><div class="wrap stack reveal">
   <div class="head">
     <p class="eyebrow">The problem</p>
@@ -155,6 +201,38 @@
       <a class="btn sec" href="how.html">See where it breaks &rarr;</a>
     </div>
   </div>
+</div></section>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
+    <p class="eyebrow">What you get back</p>
+    <h2>A document, not a dashboard login.</h2>
+    <p class="lede">One file. It opens offline, it carries its own type, and every figure sits
+      next to the events and the dated rate card that produced it.</p>
+  </div>
+
+  <a class="shot" href="sample-audit.html">
+    <img src="assets/img/sample-audit.png" width="920" height="700" loading="lazy"
+      alt="A sample audit: $19,486.50 of measured spend, a 5% cache-hit rate, $10,563.68 recoverable, and a cache-write TTL exposure stated as exposure rather than as a saving">
+    <span class="shot-cta">Open the real one &rarr;</span>
+  </a>
+
+  <div class="grid g3 mt">
+    <div class="card"><h3>It shows its working</h3>
+      <p>A "how this was measured" table carries what was read, what was priced, and what was
+        excluded &mdash; malformed records, unknown models, unpriceable tiers. A number you
+        cannot trace is a number you should not believe.</p></div>
+    <div class="card"><h3>It says what it cannot measure</h3>
+      <p>The sample's 234M tokens of 1-hour cache writes appear as <em>exposure</em>, not as a
+        saving, because an aggregate report has no per-request timing. Reporting it as a saving
+        would have been the easy lie.</p></div>
+    <div class="card"><h3>It reports $0.00 when that is true</h3>
+      <p>Run it against a well-cached agent and it finds nothing, and says so. A tool that always
+        finds a saving is not measuring anything.</p></div>
+  </div>
+
+  <p class="note">The sample above is generated from synthetic usage, not a customer's. Yours is
+    computed the same way, from the file you produce yourself.</p>
 </div></section>
 
 <section><div class="wrap stack reveal">
@@ -244,6 +322,7 @@
 </div></footer>
 
 <script type="module" src="assets/fx.js"></script>
+<script type="module" src="assets/twin.js"></script>
 <script type="module">
 import { initOrbField } from "./assets/orbfield.js";
 import { modelSavings, usd } from "./assets/site.js";

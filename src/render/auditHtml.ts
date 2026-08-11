@@ -26,6 +26,8 @@ export function renderAuditHtml(r: Report): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- inline, like everything else here: the document must not request anything -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%233DDC84'/%3E%3C/svg%3E">
 <title>Token audit — ${esc(r.generatedAt.slice(0, 10))}</title>
 <style>
   /* IBM Plex, SIL OFL 1.1, carried as data URIs. A document that fetched its own type

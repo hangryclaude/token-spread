@@ -99,6 +99,7 @@ test("carries its own type rather than fetching it", () => {
   // is most likely to be opened on, and would break the promise the rest of the tool makes.
   const html = renderAuditHtml(report());
   expect(html).toContain("@font-face");
+  expect(html).toContain("rel=\"icon\" href=\"data:image/svg+xml");
   expect(html).toContain("url(data:font/woff2;base64,");
   expect(html).not.toMatch(/fonts\.googleapis|fonts\.gstatic|url\(['"]?https?:/);
 });

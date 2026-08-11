@@ -76,6 +76,13 @@
   .visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
     clip:rect(0 0 0 0);white-space:nowrap;border:0}
   :focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:4px}
+  /* Off-canvas rather than display:none — a hidden link is not focusable, and a skip link
+     that cannot take focus is the one thing a skip link must do. */
+  .skip{position:fixed;top:0;left:0;z-index:20;transform:translateY(-120%);
+    background:var(--acc);color:var(--acc-ink);font-weight:600;font-size:.9rem;
+    padding:.7rem 1.1rem;border-radius:0 0 10px 0;text-decoration:none}
+  .skip:focus{transform:translateY(0)}
+  #act-hero:focus{outline:none}
 
   /* ── act 1 · a real h1, with the marquee demoted to a ticker ─────────────────── */
   #act-hero{position:relative;min-height:100svh;display:flex;flex-direction:column;
@@ -86,6 +93,9 @@
      the headline three separate times — on a phone when the register was added, and again at
      1280x800 once the h1 got its full size back. An offset has to be re-tuned every time the
      content changes height; a row cannot overlap anything by construction. */
+  /* The engine appends a canvas; with no JS, or a mount that failed per CONTRACT §6, the
+     container stays empty and its two hairlines would frame nothing. :empty collapses it. */
+  #hero-marquee:empty{display:none}
   #hero-marquee{position:relative;height:2.6rem;pointer-events:none;opacity:.42;
     margin-bottom:clamp(1rem,3vh,2rem);
     border-block:1px solid var(--line-2);
@@ -288,6 +298,7 @@
 </style>
 </head>
 <body>
+<a class="skip" href="#act-hero">Skip to content</a>
 
 <!-- One ground for the whole document. caustic-field mounts here. -->
 <div id="ground" aria-hidden="true"></div>
@@ -303,7 +314,7 @@
 <main>
 
   <!-- ══ ACT 1 · the thesis ══════════════════════════════════════════════════════ -->
-  <section class="act" id="act-hero" aria-labelledby="h1" data-act>
+  <section class="act" id="act-hero" tabindex="-1" aria-labelledby="h1" data-act>
     <a class="hero-mark" href="index.html">Tokens&nbsp;Saved</a>
     <div id="hero-marquee" aria-hidden="true"></div>
     <h1 id="h1">The same request.<br>The same model.<br><span class="h1-turn">A smaller bill.</span></h1>

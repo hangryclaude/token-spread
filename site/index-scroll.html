@@ -84,7 +84,7 @@
      height, so a constant container is a constant cap height on every viewport. */
   #hero-marquee{position:absolute;left:0;right:0;top:clamp(4.2rem,13vh,7rem);
     height:2.6rem;pointer-events:none;opacity:.42}
-  #h1{position:relative;margin:0;font-size:clamp(2.5rem,7.2vw,5.4rem);font-weight:600;
+  #h1{position:relative;margin:0;font-size:clamp(2.2rem,5vw,4.2rem);font-weight:600;
     line-height:1.03;letter-spacing:-.03em;text-wrap:balance}
   .h1-turn{color:var(--acc)}
   .hero-sub{position:relative;margin-top:clamp(1.4rem,3.6vh,2.2rem);max-width:36rem}
@@ -95,6 +95,32 @@
   .hero-act a[data-sc-capsule]{border:1px solid rgba(242,247,244,.34);color:var(--ink)}
   .hero-act a[data-sc-capsule]:hover{border-color:var(--acc);color:var(--acc)}
   .hero-act-note{font-size:.86rem;color:var(--ink-3)}
+
+  /* One column by default; the register sits under the claim on a phone, where it lands in
+     the space the hero was already wasting. Two columns only once there is width for both. */
+  .hero-grid{position:relative;display:grid;gap:clamp(2rem,5vh,3.2rem)}
+  .hero-grid > *{min-width:0}
+  .reg{margin:0;padding:1.15rem 1.3rem;border:1px solid var(--line);border-radius:14px;
+    background:rgba(4,12,9,.74);backdrop-filter:blur(8px);max-width:26rem}
+  .reg-k{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--acc);margin:0 0 .35rem}
+  .reg-t{font-size:.95rem;color:var(--ink);margin:0 0 .95rem;max-width:none}
+  .reg-rows{margin:0;display:grid;gap:.4rem}
+  /* Label left, number right — the same ledger shape as the usage blocks in act 2, so the
+     two read as the same instrument rather than two unrelated boxes. */
+  .reg-row{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:.9rem;
+    padding-bottom:.4rem;border-bottom:1px solid var(--line-2)}
+  .reg-row:last-child{border-bottom:0;padding-bottom:0}
+  .reg-rows dt{color:var(--ink-2);font-size:.92rem}
+  .reg-rows dd{margin:0;font-size:1.5rem;font-weight:600;line-height:1;color:var(--ink)}
+  .reg-row:first-child dd{color:var(--acc)}
+  .reg-note{font-size:.8rem;color:var(--ink-3);margin:.95rem 0 0;max-width:none}
+
+  @media (min-width:1000px){
+    .hero-grid{grid-template-columns:minmax(0,1.06fr) minmax(0,.72fr);
+      align-items:center;gap:clamp(2rem,4vw,4rem)}
+    .reg{justify-self:end}
+  }
 
   /* ── act 3 · the twin terminals ──────────────────────────────────────────────── */
   .twin{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:2.6rem}
@@ -199,11 +225,25 @@
        either: it lives inside #hud, which is itself position:fixed inset:0, so `absolute`
        there is still viewport-pinned. The auditor's real complaint was the headline
        wrapping every sentence onto two lines, and that is fixable at the type instead. */
-    .act{padding-right:calc(var(--gutter) + 2.6rem)}
-    .foot{padding-right:calc(var(--gutter) + 2.6rem)}
+    .act{padding-right:calc(var(--gutter) + 3.4rem)}
+    .foot{padding-right:calc(var(--gutter) + 3.4rem)}
     /* The base clamp floors at 2.5rem, which never yields to 7.2vw on a phone: 40px type in
        a 239px column breaks "The same request." across two lines. 6.2vw ≈ 24px at 390px. */
     #h1{font-size:clamp(1.5rem,6.2vw,2.4rem)}
+    /* 18vh of an 844px phone is 152px of padding at each end. Narrowing the register to clear
+       the rail made it taller, and that padding was what pushed its last line past the fold. */
+    #act-hero{padding-block:clamp(3.5rem,9vh,5.5rem)}
+    /* With the register in it the hero now fills a phone, so there is no empty band for an
+       absolutely-positioned ticker to sit in — it painted straight through "A smaller bill."
+       In flow it takes its own row above the claim and cannot overlap anything by construction. */
+    #hero-marquee{position:relative;top:auto;margin-bottom:clamp(.8rem,2.5vh,1.4rem)}
+    /* The hero now carries five blocks on a phone. Its rhythm was authored against a hero of
+       three, and vh-based gaps compound: four of them cost 137px of a 740px screen. Tightened
+       so the register's numbers make the first view on a small phone as well as a large one. */
+    #act-hero{padding-block:clamp(2rem,5vh,4rem)}
+    .hero-grid{gap:clamp(1.2rem,3vh,2rem)}
+    .hero-sub{margin-top:clamp(1rem,2.4vh,1.5rem)}
+    .hero-act{margin-top:clamp(1.2rem,3vh,1.8rem)}
   }
   @media (prefers-reduced-motion:reduce){
     .shot{transition:none}
@@ -228,6 +268,8 @@
   <!-- ══ ACT 1 · the thesis ══════════════════════════════════════════════════════ -->
   <section class="act" id="act-hero" aria-labelledby="h1" data-act>
     <div id="hero-marquee" aria-hidden="true"></div>
+    <div class="hero-grid">
+    <div class="hero-say">
     <h1 id="h1">The same request.<br>The same model.<br><span class="h1-turn">A smaller bill.</span></h1>
     <p class="lede hero-sub">Most ways to cut an AI bill change what the model gives back.
       We only ship the ones that can't.</p>
@@ -239,6 +281,19 @@
       <a data-sc-capsule="navitem" href="#act-twin">See the same answer billed twice</a>
       <span class="hero-act-note">The audit is $0, and it writes 0 bytes to your files.</span>
     </p>
+    </div>
+
+    <figure class="reg" aria-labelledby="reg-t">
+      <p class="reg-k">The register</p>
+      <figcaption class="reg-t" id="reg-t">176 candidate techniques, adjudicated</figcaption>
+      <dl class="reg-rows">
+        <div class="reg-row"><dt>pass</dt><dd class="num">66</dd></div>
+        <div class="reg-row"><dt>rejected</dt><dd class="num">50</dd></div>
+        <div class="reg-row"><dt>unresolved</dt><dd class="num">36</dd></div>
+      </dl>
+      <p class="reg-note">Rejected means it changes what the model returns.</p>
+    </figure>
+    </div>
   </section>
 
   <!-- ══ ACT 2 · the problem ═════════════════════════════════════════════════════ -->

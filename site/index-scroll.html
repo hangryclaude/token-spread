@@ -81,10 +81,14 @@
   #act-hero{position:relative;min-height:100svh;display:flex;flex-direction:column;
     justify-content:center;padding-block:clamp(6rem,18vh,11rem)}
   /* A ticker, not the headline. Fixed height in rem: `size` is a fraction of CONTAINER
-     height, so a constant container is a constant cap height on every viewport. */
-  #hero-marquee{position:absolute;left:0;right:0;top:clamp(4.2rem,13vh,7rem);
-    height:2.6rem;pointer-events:none;opacity:.42}
-  #h1{position:relative;margin:0;font-size:clamp(2.2rem,5vw,4.2rem);font-weight:600;
+     height, so a constant container is a constant cap height on every viewport.
+     IN FLOW, at every width. It was absolutely positioned at a vh offset and collided with
+     the headline three separate times — on a phone when the register was added, and again at
+     1280x800 once the h1 got its full size back. An offset has to be re-tuned every time the
+     content changes height; a row cannot overlap anything by construction. */
+  #hero-marquee{position:relative;height:2.6rem;pointer-events:none;opacity:.42;
+    margin-bottom:clamp(1rem,3vh,2rem)}
+  #h1{position:relative;margin:0;font-size:clamp(2.2rem,min(6.4vw,8.4vh),5rem);font-weight:600;
     line-height:1.03;letter-spacing:-.03em;text-wrap:balance}
   .h1-turn{color:var(--acc)}
   .hero-sub{position:relative;margin-top:clamp(1.4rem,3.6vh,2.2rem);max-width:36rem}
@@ -101,7 +105,8 @@
 
   /* One column by default; the register sits under the claim on a phone, where it lands in
      the space the hero was already wasting. Two columns only once there is width for both. */
-  .hero-grid{position:relative;display:grid;gap:clamp(2rem,5vh,3.2rem)}
+  .hero-grid{position:relative;display:grid;gap:clamp(2rem,5vh,3.2rem);
+    margin-top:clamp(1.6rem,4vh,2.6rem)}
   .hero-grid > *{min-width:0}
   .reg{margin:0;padding:1.15rem 1.3rem;border:1px solid var(--line);border-radius:14px;
     background:rgba(4,12,9,.74);backdrop-filter:blur(8px);max-width:26rem}
@@ -120,9 +125,13 @@
   .reg-note{font-size:.8rem;color:var(--ink-3);margin:.95rem 0 0;max-width:none}
 
   @media (min-width:1000px){
-    .hero-grid{grid-template-columns:minmax(0,1.06fr) minmax(0,.72fr);
-      align-items:center;gap:clamp(2rem,4vw,4rem)}
+    /* start, not center: the register's top edge now meets the lede's, which is what makes
+       the pair read as one unit instead of a card floating beside a column. */
+    .hero-grid{grid-template-columns:minmax(0,1fr) minmax(0,.8fr);
+      align-items:start;gap:clamp(1.8rem,3.4vw,3.2rem)}
     .reg{justify-self:end}
+    /* The lede sets its own rhythm under the h1 above; inside the pair it starts at the top. */
+    .hero-grid .hero-sub{margin-top:0}
   }
 
   /* ── act 3 · the twin terminals ──────────────────────────────────────────────── */
@@ -150,7 +159,11 @@
   .twin-replay:hover{border-color:var(--acc);color:var(--ink)}
 
   /* ── act 5 · the two findings ────────────────────────────────────────────────── */
-  .finds{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1rem;margin-top:2.4rem}
+  /* minmax(19rem,…) is a hard 304px floor, and at 320px the column is 226px — the track
+     simply overflowed and put horizontal scroll on the document. min(19rem,100%) keeps the
+     19rem preference wherever it fits and yields to the column where it does not. */
+  .finds{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(19rem,100%),1fr));
+    gap:1rem;margin-top:2.4rem}
   .find{border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:12px;
     padding:1.4rem 1.5rem;background:var(--panel);backdrop-filter:blur(8px)}
   .find .big{display:block;font-family:var(--mono);font-size:2rem;font-weight:600;
@@ -240,10 +253,12 @@
     /* 18vh of an 844px phone is 152px of padding at each end. Narrowing the register to clear
        the rail made it taller, and that padding was what pushed its last line past the fold. */
     #act-hero{padding-block:clamp(3.5rem,9vh,5.5rem)}
-    /* With the register in it the hero now fills a phone, so there is no empty band for an
-       absolutely-positioned ticker to sit in — it painted straight through "A smaller bill."
-       In flow it takes its own row above the claim and cannot overlap anything by construction. */
-    #hero-marquee{position:relative;top:auto;margin-bottom:clamp(.8rem,2.5vh,1.4rem)}
+    #hero-marquee{margin-bottom:clamp(.8rem,2.5vh,1.4rem)}
+    /* capsule-controls ships white-space:nowrap. At 320px that made a 240px pill in a 226px
+       column and put 4px of horizontal scroll on the whole document. Allowed to wrap it fits,
+       and since it only wraps where it must, wider phones render identically. */
+    .hero-act a[data-sc-capsule]{white-space:normal;height:auto;
+      padding-block:.55rem;text-align:center;max-width:100%}
     /* The hero now carries five blocks on a phone. Its rhythm was authored against a hero of
        three, and vh-based gaps compound: four of them cost 137px of a 740px screen. Tightened
        so the register's numbers make the first view on a small phone as well as a large one. */
@@ -276,9 +291,9 @@
   <section class="act" id="act-hero" aria-labelledby="h1" data-act>
     <a class="hero-mark" href="index.html">Tokens&nbsp;Saved</a>
     <div id="hero-marquee" aria-hidden="true"></div>
+    <h1 id="h1">The same request.<br>The same model.<br><span class="h1-turn">A smaller bill.</span></h1>
     <div class="hero-grid">
     <div class="hero-say">
-    <h1 id="h1">The same request.<br>The same model.<br><span class="h1-turn">A smaller bill.</span></h1>
     <p class="lede hero-sub">Most ways to cut an AI bill change what the model gives back.
       We only ship the ones that can't.</p>
     <!-- Deliberately a navitem, not a second cta. capsule-controls asserts exactly one

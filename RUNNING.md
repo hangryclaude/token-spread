@@ -106,3 +106,27 @@ asserted by a test.
 bun run test        # 130 tests
 bunx tsc --noEmit   # no type errors
 ```
+
+## Verify the site
+
+`bun run test` covers the tool. The pages need a browser, so they have their own checker —
+six properties the three sitecraft gates are structurally blind to, run across all seven
+pages. Serve `site/` on port 8740 first (any static server; override with `SITE_ORIGIN`).
+
+```bash
+bun run check:page        # 8 viewports per page
+bun run check:page:full   # the full 15-viewport sweep
+bun run check:page:self   # run the controls — a check that cannot fail is not a check
+```
+
+Each check knows whether it applies. One that does not prints `– SKIPPED` with the reason
+and is counted apart from the passes, because a suite that skips quietly ends up certifying
+what it never looked at. The viewport line also names how many overlap pairs exist on that
+page, so a green result cannot imply coverage it did not have.
+
+What these found that the gates did not: seven sections of the homepage invisible without
+JavaScript, no focus ring on the spend input, no way past the navigation on any page, a
+2px horizontal scroll at 320px, and a link that landed on a heading held at opacity 0.
+
+They do not cover real-device touch, a real screen reader, real-GPU performance, or anything
+a human has to judge. Those gaps are gaps, and the run prints them.

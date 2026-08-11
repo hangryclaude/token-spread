@@ -44,7 +44,7 @@
   .bar .tr i{display:block;height:100%;background:var(--acc-text);border-radius:var(--r-full);
     transition:width .3s cubic-bezier(.4,0,.2,1)}
   .bar .amt{text-align:right;color:var(--ink-2);font-variant-numeric:tabular-nums}
-  .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1.1rem}
+  .tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(15rem,100%),1fr));gap:1.1rem}
   .tier{background:var(--bg-2);border-radius:var(--r-20);
     padding:1.7rem 1.6rem;display:flex;flex-direction:column;gap:.6rem}
   .tier.feat{border-color:var(--acc-line)}

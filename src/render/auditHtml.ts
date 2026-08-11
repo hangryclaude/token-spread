@@ -63,7 +63,7 @@ export function renderAuditHtml(r: Report): string {
     color:var(--ink3);font-weight:600;margin:2.8rem 0 1rem;padding-bottom:.6rem;
     border-bottom:1px solid var(--line)}
   p{margin:0 0 1rem}
-  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:1px;
+  .figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(9rem,100%),1fr));gap:1px;
     background:var(--line);border:1px solid var(--line);border-radius:.6rem;overflow:hidden}
   .fig{background:var(--bg);padding:1.1rem 1.2rem}
   .fig .k{display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}

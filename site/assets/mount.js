@@ -217,6 +217,17 @@ async function mountAll() {
   // exactly what puts a seam between acts. Breaths give the silence instead.
   safe('act-breaks', () => initActBreaks(document.querySelector('main'), { backdrops: null }));
 
+  // A hash present at LOAD never fires hashchange, so the listener above cannot see it, and
+  // the browser has already restored the scroll before act-breaks mounted. Measured: loading
+  // #act-twin, #act-bar or #act-close landed with the heading and eyebrow both at opacity 0.
+  // That is the shared-link case — the first thing someone sees when the page is passed on —
+  // so it is the one where an invisible heading costs the most.
+  // getElementById, not querySelector: a hash like #1 is a valid fragment and an invalid
+  // selector, and would throw here.
+  if (location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1)))) {
+    settleReveals();
+  }
+
   // ── the one clock ─────────────────────────────────────────────────────────────
   let last = -1;
   const tick = () => {

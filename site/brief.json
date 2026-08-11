@@ -1,0 +1,36 @@
+{
+  "_note": "Interview record for sitecraft's independent auditor. Every answer marked source 'answered' is traceable to BRIEF.md or to a verbatim instruction in the working session. Answers the client never gave are recorded as not asked rather than invented — inflating this file would corrupt the one check the builder does not control.",
+  "site": "Tokens Saved",
+  "url": "index-scroll.html",
+  "purpose": "Explain a technical argument to an engineering-plus-finance buyer, then get one action.",
+  "thesis": "Most ways to cut an AI bill change what the model gives back. We only ship the ones that cannot.",
+  "audience": "Companies with a large Anthropic API bill. Engineers who will check the claims, finance who will sign.",
+  "answers": {
+    "R2.1": {
+      "value": "Send a usage.json file and get an audit back. One CTA on the page, mailto angus@angusbuilds.com. The audit itself is $0.",
+      "source": "answered"
+    },
+    "R13.1": {
+      "value": "Claiming a saving that changes what the model returns. The product's whole guarantee is that the model reads the same bytes, the same model answers, and the same amount of thinking happens — a page that oversells past that has failed even if it converts. Second failure: any customer name, logo, testimonial, case study or customer metric appearing anywhere. None exist.",
+      "source": "answered"
+    },
+    "R8.1": {
+      "value": "Motion is wanted and specifically requested: 'type in motion' for the hero, 'sections arrive as you scroll', and an explicit ask for two terminals streaming the same answer at the same time with different prices. No 0-5 number was ever given — recording one here would be inventing it.",
+      "source": "answered"
+    },
+    "R8.11": {
+      "value": "Not asked. The only hard motion rule in force is the sitecraft CONTRACT's: autonomous motion stops under prefers-reduced-motion while response to visitor input continues.",
+      "source": "default"
+    },
+    "R7.3": {
+      "value": "Not asked. No anti-references were ever recorded.",
+      "source": "default"
+    },
+    "type_voice": { "value": "IBM Plex Sans and Mono, self-hosted. Established, not chosen for this page.", "source": "answered" },
+    "ground": { "value": "Dark. A light build was measured at 24 contrast failures between 1.87 and 2.73:1.", "source": "answered" },
+    "imagery": { "value": "None. The product's own artifacts are the imagery — there is no product to photograph and generating one would break the truth rules.", "source": "answered" },
+    "content": { "value": "Real client, real content. Every figure on the page is traceable to BRIEF.md; the $19,486.50 sample audit is synthetic and the page says so wherever it appears.", "source": "answered" }
+  },
+  "must_not_contain": "Any customer name, logo, testimonial, case study or customer metric. None exist. Any claim not present in BRIEF.md.",
+  "constraints": ["mobile-first", "WCAG 2.2 AA", "dark register", "six acts", "one CTA", "no invented facts"]
+}

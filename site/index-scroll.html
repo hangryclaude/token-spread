@@ -192,8 +192,18 @@
        ordinary flow and needs no opaque plate to scroll behind. */
     .usage-pair{gap:.9rem;height:auto}
     .usage-b{font-size:.72rem}
+    /* The left chrome lane STAYS. Reclaiming it looked free — the rail is on the right
+       below 760px — and FAILED gate 2 with 3 occlusions: the lane also holds the fixed
+       wordmark, which then painted into "Waste we cannot see", "100%" and the terminal
+       output as they scrolled through its box. Unpinning the wordmark is not available
+       either: it lives inside #hud, which is itself position:fixed inset:0, so `absolute`
+       there is still viewport-pinned. The auditor's real complaint was the headline
+       wrapping every sentence onto two lines, and that is fixable at the type instead. */
     .act{padding-right:calc(var(--gutter) + 2.6rem)}
     .foot{padding-right:calc(var(--gutter) + 2.6rem)}
+    /* The base clamp floors at 2.5rem, which never yields to 7.2vw on a phone: 40px type in
+       a 239px column breaks "The same request." across two lines. 6.2vw ≈ 24px at 390px. */
+    #h1{font-size:clamp(1.5rem,6.2vw,2.4rem)}
   }
   @media (prefers-reduced-motion:reduce){
     .shot{transition:none}

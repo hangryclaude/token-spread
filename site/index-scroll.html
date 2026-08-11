@@ -345,10 +345,11 @@
       <figcaption class="reg-t" id="reg-t">176 candidate techniques, adjudicated</figcaption>
       <dl class="reg-rows">
         <div class="reg-row"><dt>pass</dt><dd class="num">66</dd></div>
+        <div class="reg-row"><dt>provider's word only</dt><dd class="num">24</dd></div>
         <div class="reg-row"><dt>rejected</dt><dd class="num">50</dd></div>
         <div class="reg-row"><dt>unresolved</dt><dd class="num">36</dd></div>
       </dl>
-      <p class="reg-note">Rejected means it changes what the model returns.</p>
+      <p class="reg-note">Rejected means it changes what the model returns. The four add to 176.</p>
     </figure>
     </div>
   </section>
@@ -460,14 +461,16 @@ Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
         <h3>of cache writes ran at the 1-hour TTL</h3>
         <p>7,454 deduped requests, 40.4M write tokens, zero at five minutes. A 1-hour write bills at
           2&times; base input; five minutes bills at 1.25&times; and refreshes on every read.
-          <strong>95% of them were re-read inside five minutes.</strong></p>
+          <strong>Which one is cheaper depends on how fast the turns come back</strong> &mdash; a
+          distribution nobody had measured.</p>
       </div>
       <div class="find">
         <span class="big num">8.6&times;</span>
         <h3>under-reported by compaction</h3>
-        <p>Anthropic's own worked example shows <code class="num">usage.input_tokens: 23,000</code>
-          against <strong>207,500</strong> tokens actually billed. Their words: the top-level fields
-          <em>do not include compaction iteration usage</em>. Most tooling reads the top level.</p>
+        <p>Anthropic's own worked example reports <code class="num">23,000</code> input and
+          <code class="num">1,000</code> output tokens &mdash; 24,000 in all &mdash; against
+          <strong>207,500</strong> actually billed. Their words: the top-level fields <em>do not
+          include compaction iteration usage</em>. Most tooling reads the top level.</p>
       </div>
     </div>
   </section>

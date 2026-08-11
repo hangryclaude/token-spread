@@ -107,14 +107,17 @@
       <h3>What the adjudication found</h3>
       <ul class="t">
         <li><strong>66</strong> pass the bar</li>
+        <li><strong>24</strong> pass on the provider's word alone</li>
         <li><strong>50</strong> rejected outright</li>
         <li><strong>36</strong> unresolved — stated as unresolved, never counted as savings</li>
       </ul>
-      <p>Each survivor is graded by what can actually be proven about it, strongest first:
-        nothing on the wire changed · only a field the model never reads changed · only
-        <em>when</em> the request was sent changed · a stored response hash-matches a
-        byte-identical repeat · the provider documents neutrality but execution moved. That last
-        class ships opt-in and never by default.</p>
+      <p>Those four add to 176. Nothing is uncounted, because a register that quietly drops a
+        category is doing the thing it exists to prevent.</p>
+      <p>Each of the 66 is graded by what can be proven about it, strongest first: nothing on the
+        wire changed · only a field the model never reads changed · only <em>when</em> the request
+        was sent changed · a stored response hash-matches a byte-identical repeat. The other 24
+        have only the provider's documentation that nothing changed, and no way for us to verify
+        it from outside — so they ship opt-in and never by default.</p>
     </div>
     <div class="box hold">
       <h3>What stays in the audit</h3>

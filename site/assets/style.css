@@ -395,6 +395,10 @@ footer small{font-size:.82rem;color:var(--ink-3);line-height:1.75;display:block;
    them the 256px inter-section gaps here read as an unfinished page. */
 .split{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(1.5rem,4vw,3rem);
   align-items:center}
+/* Centering is right for copy beside an image, and wrong for two bordered boxes — an uneven
+   pair floats the shorter one off the shared top edge. Browsers without :has() keep the old
+   centred behaviour, which is untidy rather than broken. */
+.split:has(.box){align-items:start}
 @media(max-width:860px){.split{grid-template-columns:1fr}}
 .media{border-radius:var(--r-32);overflow:hidden;background:var(--bg-2);
   aspect-ratio:16/9;display:block}

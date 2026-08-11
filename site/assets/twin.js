@@ -5,6 +5,12 @@
  * point, and the reason the typing is driven by a single loop writing to both rather than
  * two loops that could drift. Only the meter differs.
  *
+ * The answer is authored as PARAGRAPHS, not hard-wrapped lines. It was wrapped at ~72
+ * characters into a pane that fits ~61 on desktop and ~40 on a phone, so every authored
+ * line spilled a short remnant — "including the", "so the same", "times." — and the
+ * comparison read as ragged noise at every width. pre-wrap reflows paragraphs correctly
+ * at any width; a streamed response is prose, not a source file.
+ *
  * The numbers are not decorative. They come from the rate card in src/rates.ts:
  * Opus 5 input $5/MTok, cache read $0.50/MTok (0.1x), output $25/MTok. A turn carrying
  * 40,000 tokens of context and generating 300 costs $0.2075 cold and $0.0275 warm.
@@ -19,9 +25,7 @@ const WARM = CONTEXT_TOKENS * USD.cacheRead + OUTPUT_TOKENS * USD.output; // 0.0
 const ANSWER = [
   "The retry wrapper is the bug.",
   "",
-  "`withRetry` re-invokes the operation on any thrown error, including the",
-  "422 from `validate()`. A validation failure is not transient, so the same",
-  "invalid payload is submitted three times and billed three times.",
+  "`withRetry` re-invokes the operation on any thrown error, including the 422 from `validate()`. A validation failure is not transient, so the same invalid payload is submitted three times and billed three times.",
   "",
   "Narrow the catch to 429 and 5xx, and let 4xx propagate.",
 ].join("\n");

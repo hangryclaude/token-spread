@@ -124,7 +124,7 @@
   .hero-grid > *{min-width:0}
   .reg{margin:0;padding:1.15rem 1.3rem;border:1px solid var(--line);border-radius:14px;
     background:rgba(4,12,9,.74);backdrop-filter:blur(8px);max-width:26rem}
-  .reg-k{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+  .reg-k{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
     color:var(--acc);margin:0 0 .35rem}
   .reg-t{font-size:.95rem;color:var(--ink);margin:0 0 .95rem;max-width:none}
   .reg-rows{margin:0;display:grid;gap:.4rem}
@@ -137,6 +137,14 @@
   .reg-rows dd{margin:0;font-size:1.5rem;font-weight:600;line-height:1;color:var(--ink)}
   .reg-row:first-child dd{color:var(--acc)}
   .reg-note{font-size:.8rem;color:var(--ink-3);margin:.95rem 0 0;max-width:none}
+  /* card-grammar sizes cards at clamp(11.6px,3.5cqw,15.5px) and its ledger label at .8em of
+     the entries block, which lands at 9.28px — under any legibility floor, and the "tiny
+     capitals" both audits named. #refusals (0,1,1) beats the engine's (0,2,0) attribute pair.
+     The label gets an absolute size so it no longer inherits a shrinking em base. Measured:
+     the card floor below only binds under a ~357px container, i.e. a 320px phone, where it
+     buys 12.5px over the engine's 11.6px; everywhere else the container query already wins. */
+  #refusals [data-sc-part="card"]{font-size:clamp(12.5px,3.5cqw,15.5px)}
+  #refusals [data-sc-part="entry-label"]{font-size:.72rem;letter-spacing:.1em}
 
   @media (min-width:761px){
     /* start, not center: the register's top edge now meets the lede's, which is what makes
@@ -154,7 +162,7 @@
     overflow:hidden;display:flex;flex-direction:column;backdrop-filter:blur(8px)}
   .twin-bar{display:flex;align-items:center;gap:.7rem;padding:.75rem 1rem;
     border-bottom:1px solid var(--line-2);flex-wrap:wrap}
-  .twin-tag{font-family:var(--mono);font-size:.68rem;font-weight:600;letter-spacing:.07em;
+  .twin-tag{font-family:var(--mono);font-size:.72rem;font-weight:600;letter-spacing:.07em;
     text-transform:uppercase;padding:.2rem .5rem;border-radius:5px}
   .twin-tag.cold{background:rgba(255,107,87,.16);color:#ffb0a2}
   .twin-tag.warm{background:rgba(61,220,132,.15);color:var(--acc)}
@@ -163,7 +171,7 @@
     color:var(--ink-2);white-space:pre-wrap;min-height:12rem;flex:1}
   .twin-meter{display:flex;align-items:baseline;justify-content:space-between;
     padding:.8rem 1rem;border-top:1px solid var(--line-2)}
-  .twin-k{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  .twin-k{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
   .twin-v{font-family:var(--mono);font-size:1.4rem;font-weight:600;font-variant-numeric:tabular-nums}
   .twin-v.cold{color:#ff8f7d} .twin-v.warm{color:var(--acc)}
   .twin-done{margin-top:1.5rem;max-width:44rem}
@@ -287,7 +295,7 @@
      window the hero cannot both fit and clear that band, which is the reg/rail collision at
      900x600. Where height is the scarce axis the rail goes vertical, into the lane the acts
      already hold open, where it cannot overlap anything by construction. */
-  @media (min-width:761px) and (max-height:760px){
+  @media (min-width:761px){
     .hud-rail{flex-direction:column;bottom:auto;top:50%;transform:translateY(-50%);
       right:.5rem;gap:.3rem}
   }
@@ -400,9 +408,7 @@
         </div>
         <pre class="twin-out" data-twin-out aria-label="Response streamed without a cache hit">The retry wrapper is the bug.
 
-`withRetry` re-invokes the operation on any thrown error, including the
-422 from `validate()`. A validation failure is not transient, so the same
-invalid payload is submitted three times and billed three times.
+`withRetry` re-invokes the operation on any thrown error, including the 422 from `validate()`. A validation failure is not transient, so the same invalid payload is submitted three times and billed three times.
 
 Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
         <div class="twin-meter">
@@ -417,9 +423,7 @@ Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
         </div>
         <pre class="twin-out" data-twin-out aria-label="Response streamed with a cache hit">The retry wrapper is the bug.
 
-`withRetry` re-invokes the operation on any thrown error, including the
-422 from `validate()`. A validation failure is not transient, so the same
-invalid payload is submitted three times and billed three times.
+`withRetry` re-invokes the operation on any thrown error, including the 422 from `validate()`. A validation failure is not transient, so the same invalid payload is submitted three times and billed three times.
 
 Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
         <div class="twin-meter">

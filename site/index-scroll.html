@@ -79,7 +79,7 @@
 
   /* ── act 1 · a real h1, with the marquee demoted to a ticker ─────────────────── */
   #act-hero{position:relative;min-height:100svh;display:flex;flex-direction:column;
-    justify-content:center;padding-block:clamp(6rem,18vh,11rem)}
+    justify-content:center;padding-block:clamp(3.5rem,8vh,7rem)}
   /* A ticker, not the headline. Fixed height in rem: `size` is a fraction of CONTAINER
      height, so a constant container is a constant cap height on every viewport.
      IN FLOW, at every width. It was absolutely positioned at a vh offset and collided with
@@ -87,7 +87,10 @@
      1280x800 once the h1 got its full size back. An offset has to be re-tuned every time the
      content changes height; a row cannot overlap anything by construction. */
   #hero-marquee{position:relative;height:2.6rem;pointer-events:none;opacity:.42;
-    margin-bottom:clamp(1rem,3vh,2rem)}
+    margin-bottom:clamp(1rem,3vh,2rem);
+    border-block:1px solid var(--line-2);
+    -webkit-mask-image:linear-gradient(to right,transparent,#000 9%,#000 91%,transparent);
+    mask-image:linear-gradient(to right,transparent,#000 9%,#000 91%,transparent)}
   #h1{position:relative;margin:0;font-size:clamp(2.2rem,min(6.4vw,8.4vh),5rem);font-weight:600;
     line-height:1.03;letter-spacing:-.03em;text-wrap:balance}
   .h1-turn{color:var(--acc)}
@@ -106,7 +109,8 @@
   /* One column by default; the register sits under the claim on a phone, where it lands in
      the space the hero was already wasting. Two columns only once there is width for both. */
   .hero-grid{position:relative;display:grid;gap:clamp(2rem,5vh,3.2rem);
-    margin-top:clamp(1.6rem,4vh,2.6rem)}
+    margin-top:clamp(1.6rem,4vh,2.6rem);
+    border-top:1px solid var(--line-2);padding-top:clamp(1.4rem,3.5vh,2.2rem)}
   .hero-grid > *{min-width:0}
   .reg{margin:0;padding:1.15rem 1.3rem;border:1px solid var(--line);border-radius:14px;
     background:rgba(4,12,9,.74);backdrop-filter:blur(8px);max-width:26rem}
@@ -124,7 +128,7 @@
   .reg-row:first-child dd{color:var(--acc)}
   .reg-note{font-size:.8rem;color:var(--ink-3);margin:.95rem 0 0;max-width:none}
 
-  @media (min-width:1000px){
+  @media (min-width:761px){
     /* start, not center: the register's top edge now meets the lede's, which is what makes
        the pair read as one unit instead of a card floating beside a column. */
     .hero-grid{grid-template-columns:minmax(0,1fr) minmax(0,.8fr);
@@ -267,6 +271,17 @@
     .hero-sub{margin-top:clamp(1rem,2.4vh,1.5rem)}
     .hero-act{margin-top:clamp(1.2rem,3vh,1.8rem)}
   }
+  /* A horizontal rail pinned to the bottom edge claims a ~345px-wide band of the bottom of
+     every screen, and .act only reserves a 3.5rem lane for it — fine while every act was
+     left-aligned, wrong as soon as the hero gained a right-aligned register. On a short
+     window the hero cannot both fit and clear that band, which is the reg/rail collision at
+     900x600. Where height is the scarce axis the rail goes vertical, into the lane the acts
+     already hold open, where it cannot overlap anything by construction. */
+  @media (min-width:761px) and (max-height:760px){
+    .hud-rail{flex-direction:column;bottom:auto;top:50%;transform:translateY(-50%);
+      right:.5rem;gap:.3rem}
+  }
+
   @media (prefers-reduced-motion:reduce){
     .shot{transition:none}
   }

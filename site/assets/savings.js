@@ -30,11 +30,20 @@ export function modelSavings({ spend, hit, inputShare, batchable, dupRate }) {
            pct: spend > 0 ? ((spend - final) / spend) * 100 : 0 };
 }
 
+/**
+ * The published tiers — and, above Scale, the honest absence of one.
+ *
+ * Until 2026-08-12 the last line read `{ name: "Enterprise", fee: 15000 }`. That $15,000 appears
+ * on no card on the pricing page and in no line of BRIEF.md: it was invented here and quoted by
+ * the calculator to every visitor with more than $120k/mo of spend — precisely the buyer this
+ * product exists for. `fee: null` means "not published", and callers must render it as such
+ * rather than printing a number. A price is a fact; this one had no source.
+ */
 export function tierFor(spend) {
   if (spend <= 10000) return { name: "Starter", fee: 499 };
   if (spend <= 35000) return { name: "Growth", fee: 1999 };
   if (spend <= 120000) return { name: "Scale", fee: 5999 };
-  return { name: "Enterprise", fee: 15000 };
+  return { name: "Above Scale", fee: null };
 }
 
 export const usd = (n) => "$" + Math.round(n).toLocaleString("en-US");

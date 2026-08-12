@@ -54,6 +54,10 @@
   .tier .nm{font-size:.86rem;color:var(--ink-2)}
   .tier .pr{font-family:var(--mono);font-size:2rem;font-weight:650;letter-spacing:-.04em;line-height:1}
   .tier .pr small{font-size:.8rem;color:var(--ink-3);font-weight:400;letter-spacing:0}
+  /* An unsupplied price is not a price. Rendered at display size it wraps mid-phrase and reads
+     as a broken number rather than as the deliberate absence of one. */
+  [data-sc-tbd]{font-size:1rem!important;font-weight:500;letter-spacing:0;color:var(--ink-3);
+    font-family:var(--mono);white-space:nowrap}
   .tier .cap{font-size:.85rem;color:var(--ink-2)}
   .tier ul{list-style:none;display:flex;flex-direction:column;gap:.4rem;margin-top:.5rem}
   .tier li{font-size:.85rem;color:var(--ink-2);padding-left:1.2rem;position:relative}
@@ -208,6 +212,10 @@ jq <span class="g">'.data[0].results[0]'</span> usage.json
     <div class="tier"><span class="nm">Scale</span><span class="pr">$5,999<small>/mo</small></span>
       <p class="cap">Up to $120k/mo under management</p>
       <ul><li>Everything in Growth</li><li>SSO and audit log</li><li>Self-hosted deployment</li><li>Quarterly realisation review</li></ul></div>
+    <div class="tier"><span class="nm">Above Scale</span>
+      <span class="pr" data-sc-tbd>&mdash; to supply &mdash;</span>
+      <p class="cap">Over $120k/mo under management</p>
+      <ul><li>Everything in Scale</li><li>Agreed against your own audit, not a list price</li><li>We will not quote before we have read your usage</li></ul></div>
   </div>
   <p class="note"><strong>If the audit finds under 20% on the table, we'll tell you and leave.</strong>
     A vendor whose fee exceeds your saving is a vendor who cost you money.</p>
@@ -249,23 +257,34 @@ function render(){
 
   const r = modelSavings({ spend:st.spend, hit:st.hit, inputShare:st.ins,
                            batchable:st.bat, dupRate:st.dup });
-  const t = tierFor(st.spend), net = r.saved - t.fee;
+  // Above Scale there is no published fee, so there is no net either. null propagates on purpose:
+  // every branch below has to decide what to say instead of quietly formatting a NaN.
+  const t = tierFor(st.spend), net = t.fee === null ? null : r.saved - t.fee;
 
   $("o-save").textContent = usd(r.saved);
   $("o-pct").textContent  = r.pct.toFixed(1) + "% of your bill";
   $("o-new").textContent  = usd(r.final);
   $("o-old").textContent  = usd(r.spend);
-  $("o-fee").textContent  = usd(t.fee);
-  $("o-tier").textContent = t.name + " · flat/mo";
-  $("o-net").textContent  = usd(net);
-  $("o-roi").textContent  = (r.saved / t.fee).toFixed(1) + "× return";
-  $("o-net").className = "v " + (net > 0 ? "acc" : "bad");
+  $("o-fee").textContent  = t.fee === null ? "— to supply —" : usd(t.fee);
+  $("o-fee").toggleAttribute("data-sc-tbd", t.fee === null);
+  $("o-tier").textContent = t.fee === null ? "above Scale · priced individually" : t.name + " · flat/mo";
+  $("o-net").textContent  = net === null ? "—" : usd(net);
+  $("o-roi").textContent  = net === null ? "no fee published at this size"
+                                         : (r.saved / t.fee).toFixed(1) + "× return";
+  $("o-net").className = "v " + (net === null ? "dim" : net > 0 ? "acc" : "bad");
 
   const mx = Math.max(r.cache, r.batch, r.dedup, 1);
   setBar("b-cache", r.cache, mx); setBar("b-batch", r.batch, mx); setBar("b-dedup", r.dedup, mx);
 
   const v = $("vd");
-  if (net <= 0) {
+  // Must come first: `null <= 0` is true in JS, so an unpublished fee would otherwise be read
+  // as a fee that exceeds the saving and the page would advise against buying at $400k/mo.
+  if (net === null) {
+    v.className = "note"; v.innerHTML =
+      "<strong>Above the published tiers.</strong> At " + usd(r.spend) +
+      "/mo the fee is agreed, not listed, so this shows the saving before us. Anyone quoting " +
+      "you a monthly number at this size without reading your usage first is guessing.";
+  } else if (net <= 0) {
     v.className = "note"; v.innerHTML =
       "<strong>We'd tell you not to buy.</strong> You'd save " + usd(r.saved) +
       " and pay us " + usd(t.fee) + ". That's a vendor who cost you money.";

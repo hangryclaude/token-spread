@@ -11,13 +11,15 @@ zero margin). By serving the **same request to the same model** more cheaply tha
 customer can buy it direct. That gap is the business — and it survives scrutiny only
 because nothing about the request changes.
 
-`145 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
+`157 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
 
 </div>
 
 ---
 
 ## The bar
+
+<img src="docs/media/cards/bar.jpg" alt="The bar: does the model read a different sequence of tokens, does a different model answer, or does a different amount of thinking happen?" width="820">
 
 One question decides whether a saving is real:
 
@@ -106,6 +108,8 @@ Every flag, and how to prove the read-only property yourself, is in
 ---
 
 ## It only reads
+
+<img src="docs/media/cards/reads.jpg" alt="What it reads: token counts, model names, workspaces and tiers, timestamps. What it never reads: prompt text, completions, message.content, anything over the network." width="820">
 
 Not a claim — a property the suite defends. Five tests in
 [`tests/readOnly.test.ts`](tests/readOnly.test.ts) spawn the real CLI against a temporary
@@ -267,6 +271,8 @@ A tool that always finds a saving is not measuring anything.
 
 ## Verified vs. assumed
 
+<img src="docs/media/cards/gate.jpg" alt="A gate is not finished until something has failed it. Every check ships with the control that proves it can fail." width="820">
+
 | Claim | Status |
 |---|---|
 | Pricing exact (integer micro-cents, no float) | ✅ hand-verified |
@@ -304,11 +310,20 @@ docs/specs/              the design spec (+ a rendered HTML copy)
 
 ## Research
 
+<img src="docs/media/cards/register.jpg" alt="176 techniques adjudicated: 66 pass the bar, 24 pass on the provider's word alone, 50 rejected outright, 36 unresolved and stated as unresolved." width="820">
+
 | Document | |
 |---|---|
 | [Strict identity register](docs/research/2026-08-10-strict-identity-register.md) | 176 techniques adjudicated, 66 pass, six dated errata |
 | [Context survival register](docs/research/2026-08-11-context-survival-register.md) | the behaviour-affecting tier, measured and kept separate |
 | [Optical compression bench](bench/optical/README.md) | 2.07× at 93.9% blind recall, against 20–100× from delegation |
+
+The explainer cards above are composed by [`docs/media/cards.mjs`](docs/media/cards.mjs): the
+backdrops are generated with fal ([`docs/media/fal.mjs`](docs/media/fal.mjs), prompts and seeds
+recorded in `docs/media/art/provenance.json`), and every word and figure on top is real HTML.
+The split is deliberate — a diffusion model cannot be trusted with a number, and the counts are
+read out of the register at compose time rather than typed, so a card cannot drift from the data
+the way three hand-maintained copies of the same tally already did.
 
 ## Roadmap
 

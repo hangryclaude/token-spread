@@ -78,7 +78,27 @@ test("tier boundaries are inclusive at the top of each band", () => {
   expect(tierFor(35000).name).toBe("Growth");
   expect(tierFor(35001).name).toBe("Scale");
   expect(tierFor(120000).name).toBe("Scale");
-  expect(tierFor(120001).name).toBe("Enterprise");
+  expect(tierFor(120001).name).toBe("Above Scale");
+});
+
+test("no fee is quoted above the highest published tier", () => {
+  /* The band above Scale carried an invented $15,000/mo until 2026-08-12 — a figure on no card
+     and in no brief, shown to exactly the buyer the product is built for. Every published tier
+     must have a number and the unpublished one must not, or the calculator is making prices up. */
+  for (const spend of [5000, 10000, 35000, 120000]) {
+    expect(tierFor(spend).fee, `${spend} has no published fee`).toBeGreaterThan(0);
+  }
+  for (const spend of [120001, 250000, 400000]) {
+    expect(tierFor(spend).fee, `${spend} quotes a fee nobody published`).toBeNull();
+  }
+});
+
+test("an unpublished fee cannot be arithmetic'd into a net figure", () => {
+  // `null <= 0` is true and `saved - null` is `saved`, so a caller that forgets the null check
+  // silently prints the gross saving as if it were net, or advises against buying. Pin both.
+  const fee = tierFor(400000).fee;
+  expect(fee).toBeNull();
+  expect(fee === null ? null : 1 - fee).toBeNull();
 });
 
 test("the fee never exceeds the saving it is quoted against on the homepage default", () => {

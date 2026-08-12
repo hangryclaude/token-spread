@@ -30,9 +30,12 @@ Truth rules, not the budget.
 ## Facts the page may state
 
 ### The bar
-- 184 candidate techniques adjudicated. **70 pass, 27 pass on the provider's word alone,
-  51 rejected, 36 unresolved.** Those four add to 184 — the brief carried only three of them
+- 184 candidate techniques adjudicated. **66 pass, 27 pass on the provider's word alone,
+  51 rejected, 40 unresolved.** Those four add to 184 — the brief carried only three of them
   until 2026-08-12, which is how the pages came to publish a breakdown summing to 152.
+- The pass count FELL from 70 to 66 on 2026-08-12: four entries (ids 13, 15, 16, 18) were
+  downgraded when review found their cited tools were zero-star vanity repos, one unlocatable.
+  The page may state this openly; a register that only ever grows its pass count is advertising.
 - Two cohorts: the original 176 in `2026-08-10-verdicts-final.json`, plus 8 in
   `2026-08-12-addendum.json` from nine later sweeps. The page states the combined tally; the
   files stay separate so which process produced which verdict is never lost.
@@ -77,7 +80,7 @@ Truth rules, not the budget.
   iteration usage."*
 
 ### The tool itself
-- **170 tests**, **0 bytes written** to any input, **0 prompts read**, no runtime dependencies.
+- **175 tests**, **0 bytes written** to any input, **0 prompts read**, no runtime dependencies.
 - Five tests spawn the real CLI and assert every input file is byte-identical afterwards.
 - Reads local Claude Code transcripts at every depth, **or** an organisation's Admin usage report.
 

@@ -19,7 +19,11 @@ import { PLEX_MONO_400, PLEX_MONO_600, PLEX_SANS_VAR } from "./fonts";
  */
 export function renderAuditHtml(r: Report): string {
   const pctSaved = r.savingsPct.combined;
-  const sources = [...new Set(Object.keys(r.byProject).length ? ["admin_usage_report"] : [])];
+  // From the report itself, never inferred. The old line guessed from byProject's presence —
+  // which every non-empty report has — so a local-transcript audit stamped its provenance
+  // footer "admin_usage_report". The one test covering this line only ever built admin-origin
+  // fixtures, so it passed identically whether the label was derived or hardcoded.
+  const sources = r.dataSources;
 
   return `<!doctype html>
 <html lang="en">
@@ -180,7 +184,7 @@ ${r.warnings.map((w) => `<div class="warn">${esc(w)}</div>`).join("\n")}` : ""}
     <tr><td>Unpriceable service tier, excluded</td><td class="n">${num(r.provenance.skipped.unknown_tier)}</td></tr>
   </tbody>
 </table></div>
-<p class="note">Source: <code>${esc(sources[0] ?? "claude_code")}</code>. Rate card captured
+<p class="note">Source: ${sources.length ? sources.map((s) => `<code>${esc(s)}</code>`).join(", ") : "<em>no priced events</em>"}. Rate card captured
   ${esc(r.rateCard.capturedAt)}. ${esc(r.rateCard.notes.join(" "))}</p>
 
 <footer>

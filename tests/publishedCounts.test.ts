@@ -71,6 +71,12 @@ const READERS: Record<string, Record<string, RegExp>> = {
     contractual: /<strong>(\d+)<\/strong>\s*pass on the provider's word/,
     rejected: /<strong>(\d+)<\/strong>\s*rejected/,
     unresolved: /<strong>(\d+)<\/strong>\s*unresolved/,
+    /* The page ALSO states two counts in running prose — "Each of the 66 is graded…", "The other
+       27 have only…" — and that paragraph drifted invisibly for a day: it still said 66/24 while
+       the structured list above it said 70/27, because this gate only parsed the markup. Prose
+       restates the same facts, so prose joins the reconciliation. */
+    passProse: /Each of the (\d+) is graded/,
+    contractualProse: /The other (\d+)\s*have only the provider's documentation/,
   },
   /* index.html is the canonical, sitemap-listed homepage and carried no register at all until
      2026-08-12 — the product's central claim was reachable only from an orphan page. Now that it
@@ -120,5 +126,10 @@ for (const [page, reader] of Object.entries(READERS)) {
     expect(found.contractual, `${page} contractual-only`).toBe(counts.contractual);
     expect(found.rejected, `${page} rejected`).toBe(counts.rejected);
     expect(found.unresolved, `${page} unresolved`).toBe(counts.unresolved);
+    // Prose restatements, where a page has them, reconcile to the same figures as the markup.
+    if ("passProse" in reader) expect(found.passProse, `${page} pass (prose)`).toBe(counts.pass);
+    if ("contractualProse" in reader) {
+      expect(found.contractualProse, `${page} contractual-only (prose)`).toBe(counts.contractual);
+    }
   });
 }

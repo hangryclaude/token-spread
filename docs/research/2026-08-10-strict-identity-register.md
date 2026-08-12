@@ -2,7 +2,13 @@
 
 **Every way to cut LLM cost without changing what the model does.**
 
-Date: 2026-08-10 · 176 candidate techniques adjudicated · 66 pass · 50 rejected · 36 unresolved
+Date: 2026-08-10 · this cohort: 176 adjudicated · **62 pass · 24 provider's word · 50 rejected · 40 unresolved** (as corrected through 2026-08-12)
+Combined with the [2026-08-12 addendum](2026-08-12-addendum.json): **184 · 66 · 27 · 51 · 40** — the figures the site publishes.
+
+> This headline itself carried the register's oldest defect until 2026-08-12: it read
+> "66 pass · 50 rejected · 36 unresolved", omitting the 24 CONTRACTUAL_ONLY entries so the three
+> numbers summed to 152 of 176 — the exact drop-a-category failure the published tally tests were
+> built to prevent, surviving in the source document they were built from.
 
 > **Errata, 2026-08-11.** A primary-doc re-verification pass found **nine** entries below that are
 > now wrong or incomplete. Each is marked inline with `⚠ CORRECTED 2026-08-11`. Three of them —
@@ -284,6 +290,7 @@ caching is explicitly unsupported with batch inference.**
 | 5 | **Code execution has a free tier** — absent entirely | **1,550 free container-hours per org per month**, then $0.05/hour; **free entirely** alongside web search or web fetch. Files in the request bill execution time *even if the tool is never called* |
 | 6 | **Entry 22 attributes an algorithm to code that does not contain it** — added 2026-08-12 | msglm's `core.py`, read via the GitHub API: zero matches for the described "system=1, last-tool=1, shrinking window" budget logic. What exists is `cache_last_ckpt_only`, a simpler toggle. The entry's verdict was already INSUFFICIENT_EVIDENCE; the correction is to the *attribution*, which a buyer might otherwise repeat as fact |
 | 7 | **Entry 17's source fails this register's own quality bar** — added 2026-08-12 | prompt-pillar exists (MIT) and has **zero stars**; code search for `find_stable_prefix` resolves to NousResearch/hermes-agent instead. Provenance claimed *primary-doc* for a personal README. The diagnostic idea stands — the citation must not be quoted as authority |
+| 8 | **Four PASSES expelled: the vanity-repo family** — added 2026-08-12, and this one moved the published tally | Entries 13, 15, 16, 18 (prompt-cache-key, cachebench, bedrockcache, prompt-cache-doctor) all downgraded to INSUFFICIENT_EVIDENCE. GitHub API checks: zero stars, zero stars, zero stars, **404**. Three cite the same account as entries 17's and 22's corrections. 18 was PASS_ABSOLUTE — the register's strongest verdict — for a tool that cannot be found. Pass count fell 70 → 66; the four moved to unresolved, 36 → 40. Rows 6–8 exist because an adversarial review checked the entries nobody suspected; the two that were caught earlier were caught by a crosscheck that never ran on these |
 
 Entries 1 and 2 move in opposite directions and both were being priced wrong. A customer who
 "just upgraded to 4.7" saw a ~30% bill rise from the tokenizer alone — which will be misread as

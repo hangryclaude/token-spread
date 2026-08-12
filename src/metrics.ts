@@ -24,6 +24,13 @@ export interface Metrics {
   skipped: { unknown_model: number; malformed: number; unknown_tier: number };
   /** Sorted, deduped model ids absent from the rate card — a count alone is not actionable. */
   unknownModels: string[];
+  /**
+   * Sorted, deduped `UsageEvent.source` values actually priced into this report. The HTML
+   * renderer used to GUESS the source from whether byProject was populated — which it always
+   * is — so every local-transcript audit labelled itself `admin_usage_report`. A provenance
+   * fact belongs in the type, computed once from the events, not inferred from a neighbour.
+   */
+  sources: string[];
 }
 
 const empty = (): Totals => ({
@@ -50,6 +57,7 @@ export function computeMetrics(events: UsageEvent[], card: RateCard): Metrics {
   const byAccount: Record<string, Totals> = {};
   const skipped = { unknown_model: 0, malformed: 0, unknown_tier: 0 };
   const unknown = new Set<string>();
+  const sources = new Set<string>();
 
   for (const e of events) {
     const priced = costOfEvent(e, card);
@@ -58,6 +66,7 @@ export function computeMetrics(events: UsageEvent[], card: RateCard): Metrics {
       if (priced.reason === "unknown_model") unknown.add(e.model);
       continue;
     }
+    sources.add(e.source);
 
     byModel[e.model] ??= empty();
     byProject[e.projectId] ??= empty();
@@ -74,6 +83,7 @@ export function computeMetrics(events: UsageEvent[], card: RateCard): Metrics {
   return {
     overall, byModel, byProject, byAccount, cacheHitRate, skipped,
     unknownModels: [...unknown].sort(),
+    sources: [...sources].sort(),
   };
 }
 

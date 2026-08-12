@@ -51,7 +51,8 @@ This is the act that has to land. It is the whole argument in one screen.
 
 ## Act 4 · The bar — `card-grammar` as ledgers
 
-> **176 techniques. 66 survive.**
+> **184 techniques. 66 survive.** <!-- act copy tracks the live tally; BRIEF.md is the source.
+> 176→184 on 2026-08-12 (addendum), 70→66 the same day (four passes expelled on source checks). -->
 >
 > One question decides it: does the model read a different sequence of tokens, does a different
 > model answer, or does a different amount of thinking happen?

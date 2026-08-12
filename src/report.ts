@@ -43,6 +43,13 @@ export interface AssumptionNote {
 export interface Report {
   generatedAt: string;
   rateCard: RateCard;
+  /**
+   * The `UsageEvent.source` values actually priced in, verbatim from metrics. The HTML document
+   * prints this as its provenance line; until 2026-08-12 the renderer inferred it from whether
+   * byProject was populated — always — so every local-transcript audit stamped itself
+   * `admin_usage_report`. A buyer-facing provenance claim is a fact, and facts ride the type.
+   */
+  dataSources: string[];
   currentCost: Money;
   cacheHitRate: number;
   byModel: Record<string, Money>;
@@ -137,8 +144,10 @@ export function buildReport(input: {
     // figure is right. What the source cannot answer is how much of that output was thinking, and
     // on reasoning-heavy traffic that is the question worth asking. Said out loud rather than left
     // as an absence the reader has to notice.
+    // "imported", not "priced" — the two differ whenever pricing skips events, and this warning
+    // once said "1 priced records" beside a summary reading "0 priced events".
     warnings.push(
-      `none of the ${provenance.imported.toLocaleString("en-US")} priced records carried ` +
+      `none of the ${provenance.imported.toLocaleString("en-US")} imported records carried ` +
       `usage.output_tokens_details, so the extended-thinking share of output cannot be separated ` +
       `here — the totals are unaffected, the thinking-vs-answer split is simply not in this source`,
     );
@@ -157,6 +166,24 @@ export function buildReport(input: {
     warnings.push(
       `${metrics.skipped.unknown_model} events used a model absent from the rate card and were excluded: ` +
       metrics.unknownModels.join(", "),
+    );
+  }
+  /* Three skip reasons exist and only unknown_model warned, which left the other two SILENT: a
+     customer entirely on the priority tier imported cleanly, priced nothing, and got a confident
+     "$0.00 across 0 priced events" with an empty warnings array. Found by an adversarial review
+     on 2026-08-12 and reproduced before fixing. Every reason an event leaves the report now has
+     a voice, because an exclusion the reader cannot see is indistinguishable from spend that
+     does not exist. */
+  if (metrics.skipped.unknown_tier > 0) {
+    warnings.push(
+      `${metrics.skipped.unknown_tier} events used a service tier this card cannot price ` +
+      `(priority/flex have no published multiplier) and were excluded — the real total is higher`,
+    );
+  }
+  if (metrics.skipped.malformed > 0) {
+    warnings.push(
+      `${metrics.skipped.malformed} events imported but failed pricing (inconsistent token ` +
+      `fields) and were excluded — the real total is higher`,
     );
   }
 
@@ -200,6 +227,7 @@ export function buildReport(input: {
   return {
     generatedAt: generatedAt.toISOString(),
     rateCard: card,
+    dataSources: metrics.sources,
     currentCost: money(metrics.overall.microCents),
     cacheHitRate: metrics.cacheHitRate,
     byModel: mapMoney(metrics.byModel),

@@ -517,7 +517,8 @@
  {
   "id": 13,
   "name": "prompt-cache-key / prompt-cache-key-rs \u2014 canonical hash of cacheable scope for worker routing",
-  "strictVerdict": "PASS_SCHEDULING",
+  "strictVerdict": "INSUFFICIENT_EVIDENCE",
+  "correction2026_08_12": "DOWNGRADED from PASS_SCHEDULING. The cited source is MukundaKatta/prompt-cache-key \u2014 checked via the GitHub API on 2026-08-12: zero stars, and the entry's provenance called a personal README 'primary-doc'. The mechanism analysis (a client-side routing hash never reaches the provider) is sound as DESIGN reasoning and is retained below, but no credible artifact demonstrates it working; the same account produced prompt-pillar (entry 17, corrected earlier today) and bedrockcache (entry 16). A pass may not rest on an unverifiable vanity repo.",
   "reasoning": "Verified via direct fetch of the README: the hash is a purely local computation (model + system-blocks-up-to-breakpoint + tools, canonicalized then SHA-256'd) that is never transmitted to Anthropic \u2014 'the library itself has zero integration with Anthropic's API.' It only informs a router's choice of WHICH warm worker/instance handles a request. The outbound request to Anthropic is byte-for-byte unaffected; this is instance-affinity clustering of same-prefix requests, a scheduling-layer decision, not a content mutation.",
   "savings": "UNQUANTIFIED \u2014 no dollar figure in source; the benefit is entirely a function of how much the routing clustering raises Anthropic's own native server-side cache-hit rate, which the source does not measure.",
   "provenance": "primary-doc",
@@ -754,7 +755,8 @@
  {
   "id": 18,
   "name": "prompt-cache-doctor \u2014 byte-level diff detector for silent invalidators",
-  "strictVerdict": "PASS_ABSOLUTE",
+  "strictVerdict": "INSUFFICIENT_EVIDENCE",
+  "correction2026_08_12": "DOWNGRADED from PASS_ABSOLUTE \u2014 the strongest verdict in the register, resting on a 'v0.1 README' of a tool that cannot be found. GitHub API 2026-08-12: 404 under the account this family's other entries cite; the only repos of that name anywhere carry one star. An offline diff detector genuinely cannot change what a model reads \u2014 the MECHANISM would pass \u2014 but a register entry is a claim that a thing exists and works, and PASS_ABSOLUTE for a tool with no locatable artifact is indistinguishable from fiction. This is the entry the register's own bar exists to catch.",
   "reasoning": "This is an offline diagnostic that diffs already-sent request bytes across consecutive calls after the fact and correlates against cache-miss events; it does not modify, delay, reorder, resend, or otherwise touch production requests. Zero bytes on the wire change as a result of running it.",
   "savings": "UNQUANTIFIED \u2014 it is a detection tool; savings only materialize if a human subsequently fixes what it finds (a separate technique to adjudicate on its own).",
   "provenance": "primary-doc",
@@ -997,7 +999,8 @@
  {
   "id": 15,
   "name": "cachebench / cachebench-rs \u2014 per-call hit-ratio + cost + regression-alert instrumentation",
-  "strictVerdict": "PASS_METADATA",
+  "strictVerdict": "INSUFFICIENT_EVIDENCE",
+  "correction2026_08_12": "DOWNGRADED from PASS_METADATA. Carried no verifiedAgainst field at all, quoted a CachePolicy.miss_aware() method from 'its own README', and named -rs twins \u2014 the exact shape of entries 17 and 22, which an adversarial crosscheck caught while this one was never checked. GitHub search 2026-08-12: the only cachebench under the same account has zero stars; nothing at any star count documents the quoted API. Instrumentation-only tooling is plausibly identity-preserving as a CLASS; this specific tool cannot be shown to exist as described.",
   "reasoning": "The core instrument only reads existing response metadata (cache_read_input_tokens, cache_creation_input_tokens, provider equivalents) that the model never treats as prompt content, and computes hit-ratio/cost from configured pricing \u2014 it never adds, removes, or reorders anything in the request itself. Caveat: the bundled CachePolicy.miss_aware() retry-after-delay feature is a separate, speculative add-on (its own README flags the 'eventual-consistency window' claim as unverified) that issues a genuine extra model call rather than a stored replay \u2014 that piece is not a savings mechanism and should not be graded PASS by association.",
   "savings": "UNQUANTIFIED \u2014 correctly framed by the source as an observation tool, not a lever itself.",
   "provenance": "primary-doc",
@@ -1265,7 +1268,8 @@
  {
   "id": 16,
   "name": "bedrockcache -- 6-layer breakpoint/threshold audit across Bedrock abstraction stacks",
-  "strictVerdict": "PASS_METADATA",
+  "strictVerdict": "INSUFFICIENT_EVIDENCE",
+  "correction2026_08_12": "DOWNGRADED from PASS_METADATA. No verifiedAgainst field; the claimed '6-layer audit' appears in no documentation anywhere. GitHub API 2026-08-12: MukundaKatta/bedrockcache exists with zero stars — the third entry in this register resting on the same account's vanity repos (with prompt-pillar and prompt-cache-key). The underlying idea, auditing breakpoint dialect translation across Bedrock abstraction layers, is real and is covered with proper sourcing by the separate Bedrock cache-dialect entry; this tool-specific claim cannot stand.",
   "reasoning": "This is a static auditor that checks whether cache_control/cachePoint breakpoint metadata is correctly placed and translated across six SDK layers en route to Bedrock -- it inspects and validates non-content directive fields (segment-length minimum, 4-breakpoint cap), never touches message/tool/system content. Running the audit changes nothing about any live request; it only flags misconfiguration so a human fixes the metadata. No model-visible bytes change as a result of running the tool itself.",
   "savings": "UNQUANTIFIED (source gives none) -- accurately reported as such.",
   "provenance": "primary-doc",

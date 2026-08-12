@@ -39,7 +39,15 @@ for (const a of process.argv.slice(2)) {
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
-  return i === -1 ? fallback : process.argv[i + 1];
+  if (i === -1) return fallback;
+  const v = process.argv[i + 1];
+  // `--cache-target --json` used to hand "--json" to Number() and die with a raw stack trace —
+  // the one validation path in the file that didn't produce a clean one-line refusal.
+  if (v === undefined || v.startsWith("--")) {
+    console.error(`--${name} needs a value\nrun with --help to see what is accepted`);
+    process.exit(2);
+  }
+  return v;
 }
 const flag = (name: string) => process.argv.includes(`--${name}`);
 
@@ -165,6 +173,21 @@ if (events.length === 0) {
 }
 
 const metrics = computeMetrics(events, CARD);
+
+if (metrics.overall.events === 0) {
+  // The guard above catches "found nothing to import". This catches the hole an adversarial
+  // review found on 2026-08-12: everything imported and NOTHING priced — a directory entirely on
+  // the priority tier sailed past the import guard and printed "$0.00 across 0 priced events"
+  // with exit 0. Refuse rather than reassure applies to every layer that can empty the report,
+  // not just the first one.
+  const s = metrics.skipped;
+  console.error(
+    `no priceable events: ${events.length.toLocaleString()} imported, every one excluded ` +
+    `(${s.unknown_model} unknown model, ${s.unknown_tier} unpriceable service tier, ${s.malformed} failed pricing).\n` +
+    `a $0.00 report over zero priced events is not an audit — fix the exclusions and rerun.`);
+  process.exit(1);
+}
+
 const observedPct = Math.round(metrics.cacheHitRate * 100);
 
 // Prefer the measured write overhead over the spec's 5% default — deleting operator-set

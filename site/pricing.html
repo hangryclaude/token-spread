@@ -223,7 +223,10 @@ jq <span class="g">'.data[0].results[0]'</span> usage.json
     <div class="tier feat"><span class="badge">Most teams</span><span class="nm">Growth</span>
       <span class="pr">$1,999<small>/mo</small></span>
       <p class="cap">Up to $35k/mo under management</p>
-      <ul><li>Everything in Starter</li><li>Per-project attribution</li><li>Break diagnosis, one break so far</li><li>Batch routing for async work <span class="soon">planned</span></li></ul></div>
+      <ul><li>Everything in Starter</li><li>Per-project attribution</li><!-- Was "Break diagnosis, one break so far" — which read as a customer-usage tally, and
+     BRIEF.md's no-customer-metrics rule is categorical because no customers exist. The one
+     break is the tool's own TTL finding, so say that. -->
+<li>Break diagnosis &mdash; the 1-hour TTL finding is the shipped example</li><li>Batch routing for async work <span class="soon">planned</span></li></ul></div>
     <div class="tier"><span class="nm">Scale</span><span class="pr">$5,999<small>/mo</small></span>
       <p class="cap">Up to $120k/mo under management</p>
       <ul><li>Everything in Growth</li><li>Runs entirely on your own machines</li><li>Quarterly realisation review</li><li>SSO and audit log <span class="soon">planned</span></li></ul></div>

@@ -98,10 +98,23 @@ test("the card announces no price change that has been called off", () => {
 });
 
 test("covers every model seen in real Claude Code transcripts", () => {
-  // Measured 2026-08-08 across ~/.claude/projects. <synthetic> is not a billable
-  // model and is deliberately absent — it must stay in the unknown_model bucket.
-  for (const model of ["claude-opus-5", "claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5-20251001"]) {
+  // Measured 2026-08-08 across ~/.claude/projects; claude-fable-5 first appeared 2026-08-12.
+  // <synthetic> is not a billable model and is deliberately absent — it must stay in the
+  // unknown_model bucket.
+  for (const model of ["claude-opus-5", "claude-opus-4-8", "claude-sonnet-5", "claude-fable-5", "claude-haiku-4-5-20251001"]) {
     expect(CARD.rates[model], `${model} missing from rate card`).toBeDefined();
   }
   expect(CARD.rates["<synthetic>"]).toBeUndefined();
+});
+
+test("fable 5 is priced at exactly five times sonnet 5, on every field", () => {
+  // $10/$50 against $2/$10, read from the pricing page 2026-08-12. Asserting the RATIO as well
+  // as the absolute pins both models: if either moves and the other does not, this fails and
+  // forces a re-read of the source rather than a one-sided edit.
+  const f = CARD.rates["claude-fable-5"], s = CARD.rates["claude-sonnet-5"];
+  expect(f.input).toBe(1000);
+  expect(f.output).toBe(5000);
+  for (const k of ["input", "output", "cacheRead", "cacheWrite", "cacheWrite1h"] as const) {
+    expect(f[k], `fable ${k} is not 5x sonnet`).toBe(5 * s[k]);
+  }
 });

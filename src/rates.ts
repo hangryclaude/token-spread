@@ -39,6 +39,11 @@ export const RATE_CARD_2026_08_08: RateCard = {
     // once-scheduled $3/$15 here (as this card did until 2026-08-11) over-states Sonnet 5
     // cost by 50% and therefore over-states every saving measured against it.
     "claude-sonnet-5":  { input: 200, output: 1000, cacheRead: 20, cacheWrite: 250, cacheWrite1h: 400 },
+    // $10/$50, read from the pricing page 2026-08-12 and added the same day — the first
+    // fable-5 events appeared in this machine's transcripts that morning (15 of them, all
+    // dropped as unknown_model until this entry). Cache read $1, 5m write $12.50, 1h $20:
+    // the standard 0.1x / 1.25x / 2x ladder at a base of $10.
+    "claude-fable-5":   { input: 1000, output: 5000, cacheRead: 100, cacheWrite: 1250, cacheWrite1h: 2000 },
     "claude-haiku-4-5": { input: 100, output:  500, cacheRead: 10, cacheWrite: 125, cacheWrite1h: 200 },
     // Transcripts carry the dated Haiku id, not the alias. Same model, same price —
     // without this entry every Haiku event is silently dropped as unknown_model.
@@ -46,6 +51,7 @@ export const RATE_CARD_2026_08_08: RateCard = {
   },
   notes: [
     "claude-sonnet-5 is priced at $2/$10 per MTok. Announced as introductory pricing through 2026-08-31, this is now the standard price (corrected 2026-08-12).",
+    "claude-fable-5 ($10/$50) was added 2026-08-12 from the pricing page read that day; the card's other rates were captured 2026-08-08 and are unchanged.",
     "claude-haiku-4-5-20251001 is the dated id for claude-haiku-4-5; both are priced identically.",
   ],
   /*

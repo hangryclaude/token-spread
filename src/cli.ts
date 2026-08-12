@@ -108,6 +108,11 @@ const events: UsageEvent[] = [];
 const provenance: ImportProvenance = {
   linesSeen: 0, imported: 0, malformed: 0, deduped: 0, synthesizedKeys: 0, skippedNonAssistant: 0,
   compactionEvents: 0, hiddenInputTokens: 0, hiddenOutputTokens: 0, unknownTtlWrites: 0,
+  // Every field must be listed here: the merge below iterates Object.keys(provenance), so a
+  // counter missing from this literal is silently never accumulated and reads as undefined
+  // downstream. thinkingDetailRecords did exactly that until 2026-08-12 — the tests passed and
+  // the real run stayed quiet, which is the worst combination available.
+  thinkingDetailRecords: 0,
 };
 
 // One dedup set for the whole run: the same requestId can appear in two files, and the

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync, readFileSync } from "node:fs";
+import { importClaudeCodeJsonl } from "../src/importers/claudeCode";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -77,4 +78,20 @@ test("an unknown flag is refused rather than silently ignored", async () => {
   const { code, stderr } = await run(["--htlm", "out.html"]);
   expect(code).toBe(2);
   expect(stderr).toContain("--htlm");
+});
+
+test("the CLI's provenance literal carries every counter the importer keeps", () => {
+  /* cli.ts seeds its own ImportProvenance object and merges each file's counts with
+     `for (const k of Object.keys(provenance))`. A counter the importer maintains but that literal
+     omits is therefore never accumulated: it reads as undefined downstream, every comparison
+     against it is false, and the feature that depends on it goes quiet.
+
+     thinkingDetailRecords did exactly this on 2026-08-12. Unit tests passed — they call the
+     importer directly — and the real run said nothing, which is the worst pair of symptoms
+     available. ImportProvenance is a type and erased at runtime, so the importer's own initialised
+     object is the only honest list of keys; compare the source against it. */
+  const { provenance } = importClaudeCodeJsonl([], { projectId: "p", seen: new Set() });
+  const source = readFileSync(join(import.meta.dir, "..", "src", "cli.ts"), "utf8");
+  const missing = Object.keys(provenance).filter((k) => !source.includes(`${k}:`));
+  expect(missing, `cli.ts never accumulates: ${missing.join(", ")}`).toEqual([]);
 });

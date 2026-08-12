@@ -132,6 +132,17 @@ export function buildReport(input: {
       `billed here at the 5-minute rate (1.25x); if they were 1-hour writes (2x) the real cost is higher`,
     );
   }
+  if (provenance.imported > 0 && provenance.thinkingDetailRecords === 0) {
+    // Not a caveat about the total — extended thinking bills as output either way, so the dollar
+    // figure is right. What the source cannot answer is how much of that output was thinking, and
+    // on reasoning-heavy traffic that is the question worth asking. Said out loud rather than left
+    // as an absence the reader has to notice.
+    warnings.push(
+      `none of the ${provenance.imported.toLocaleString("en-US")} priced records carried ` +
+      `usage.output_tokens_details, so the extended-thinking share of output cannot be separated ` +
+      `here — the totals are unaffected, the thinking-vs-answer split is simply not in this source`,
+    );
+  }
   if (provenance.compactionEvents > 0) {
     // Not a caveat about our numbers — a finding about theirs. Anything reading the
     // top-level usage fields is short by exactly this much on this traffic.

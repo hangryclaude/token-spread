@@ -22,6 +22,17 @@ export interface ImportProvenance {
   /** Tokens a reader of the top-level `usage` fields alone would have missed. */
   hiddenInputTokens: number;
   hiddenOutputTokens: number;
+  /**
+   * Records carrying `usage.output_tokens_details` — the only place the extended-thinking
+   * share of output is reported.
+   *
+   * Measured 2026-08-12 across this machine: 0 of 108,042 usage records in 1,661 transcripts
+   * carried it. Extended thinking still bills as output, so the TOTAL cost here is right; what
+   * cannot be answered from this source is how much of that output was thinking. Counted rather
+   * than assumed, because "we did not look" and "we looked and it is never there" are different
+   * claims and only one of them belongs in a report that sells traceability.
+   */
+  thinkingDetailRecords: number;
 }
 
 export interface ImportResult {
@@ -156,7 +167,7 @@ export function importClaudeCodeJsonl(
     linesSeen: 0, imported: 0, malformed: 0,
     deduped: 0, synthesizedKeys: 0, skippedNonAssistant: 0,
     compactionEvents: 0, hiddenInputTokens: 0, hiddenOutputTokens: 0,
-    unknownTtlWrites: 0,
+    unknownTtlWrites: 0, thinkingDetailRecords: 0,
   };
 
   for (const line of lines) {
@@ -221,6 +232,9 @@ export function importClaudeCodeJsonl(
       compactionInputTokens, compactionOutputTokens,
     });
     if (ttlUnknown(u)) p.unknownTtlWrites += cacheCreationTokens;
+    if (u && typeof u.output_tokens_details === "object" && u.output_tokens_details !== null) {
+      p.thinkingDetailRecords++;
+    }
     p.imported++;
     if (compactionInputTokens > 0 || compactionOutputTokens > 0) {
       p.compactionEvents++;

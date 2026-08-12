@@ -172,6 +172,8 @@ deterministic, self-auditing object → `cli` prints it.
 
 ## What slice 1 reports
 
+<img src="docs/media/cards/bands.jpg" alt="Three numbers, three grades of proof: 3.9% measured on our own machine at 100% cache-hit; 59% published by ProjectDiscovery; ~60% modelled for broken-cache agent traffic with assumptions stated." width="820">
+
 > *Here's what your traffic costs today, and what it would cost under caching you're
 > not yet using — with the model, the prompt and the answer all unchanged.*
 

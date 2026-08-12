@@ -50,6 +50,10 @@ const CARDS = [
     slug: "gate",
     prompt: `${HOUSE}, a single closed horizontal barrier across an otherwise empty field with one mark stopped hard against it, the emerald accent used only at the point of contact`,
   },
+  {
+    slug: "bands",
+    prompt: `${HOUSE}, three broad horizontal strata of visibly different particle density stacked in one dark field, the sparsest at the top and the densest at the bottom, a thin hairline separating each, geological and calm`,
+  },
 ];
 
 const env = Object.fromEntries(

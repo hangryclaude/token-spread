@@ -26,5 +26,12 @@
     "seed": 1523702993,
     "width": 1280,
     "height": 720
+  },
+  "bands": {
+    "model": "fal-ai/flux/dev",
+    "prompt": "abstract non-representational technical illustration, no text, no letters, no numbers, no logos, no user interface, deep near-black background #0b0f0d, a single restrained emerald green accent #0a7d45, fine hairline geometry, generous empty space, matte, calm, editorial, flat depth, no lens flare, no 3d render sheen, three broad horizontal strata of visibly different particle density stacked in one dark field, the sparsest at the top and the densest at the bottom, a thin hairline separating each, geological and calm",
+    "seed": 704777087,
+    "width": 1280,
+    "height": 720
   }
 }

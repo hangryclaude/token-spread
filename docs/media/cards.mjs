@@ -143,6 +143,19 @@ const CARDS = [
       <div class="foot">tests/readOnly.test.ts &middot; every input byte-identical after a full run, canary planted and not found</div>`,
   },
   {
+    slug: "bands",
+    html: `<p class="eyebrow">What the audit finds</p>
+      <h1>Three numbers, three grades of proof.</h1>
+      <div class="rows" style="max-width:900px">
+        <div class="row"><span class="n">3.9%</span><span class="bar"><i style="width:6%"></i></span><span class="l"><strong>measured</strong> &mdash; our own machine, 100% cache-hit already</span></div>
+        <div class="row dim"><span class="n">59%</span><span class="bar"><i style="width:59%"></i></span><span class="l"><strong>published</strong> &mdash; ProjectDiscovery, 7%&rarr;84% hit rate</span></div>
+        <div class="row dim"><span class="n">~60%</span><span class="bar"><i style="width:62%"></i></span><span class="l"><strong>modelled</strong> &mdash; broken cache, assumptions stated</span></div>
+      </div>
+      <p style="max-width:52ch">The audit's whole job is telling you which of the three you are
+        before you pay anyone &mdash; including us.</p>
+      <div class="foot">a saving quoted without its evidence grade is the thing this register exists to catch</div>`,
+  },
+  {
     slug: "gate",
     html: `<p class="eyebrow">How it is checked</p>
       <h1>A gate is not finished until something has failed it.</h1>

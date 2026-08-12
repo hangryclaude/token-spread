@@ -86,6 +86,23 @@ Truth rules, not the budget.
 - Five tests spawn the real CLI and assert every input file is byte-identical afterwards.
 - Reads local Claude Code transcripts at every depth, **or** an organisation's Admin usage report.
 
+### What the audit finds — three evidence grades (added 2026-08-12)
+The page may present savings ONLY in these three grades, each labelled with its grade:
+- **MEASURED — the author's own machine, 2026-08-12, the only real audit run to date:**
+  **$4,675.36** audited across **43,658** priced events · cache-hit rate **100%** · cache
+  headroom **$0.00** · TTL right-sizing **$182.26 = 3.9%** of the bill. The page may say this
+  proudly: the tool found almost nothing to save because Claude Code already caches — a tool
+  that reports $182 instead of inventing thousands is the product working.
+- **PUBLISHED — ProjectDiscovery** (already authorised above): 7%→84% hit rate, **59%** off.
+- **MODELLED — the three bands, on $1,000/mo of input-heavy agent traffic** (stated assumptions:
+  ~85% of spend input-side, target hit 90-95%, ~5% write overhead; formula
+  `saving ≈ input-share × 0.9 × (target-hit − current-hit) − write overhead`):
+  - Cache broken (~5% hit): save **~$550-650/mo**
+  - Cache mediocre (~50% hit): save **~$300-350/mo**
+  - Already cached (Claude Code shops): save **~$0-40/mo** — and we say so and leave.
+  The bands are a model and the page must call them a model. One number quoted without its
+  grade is the defect this site exists to prevent.
+
 ### The sample audit (synthetic usage, labelled as such on the page)
 - **$19,486.50** of measured spend · **5%** cache-hit rate · **$10,563.68** recoverable ·
   **$2.05 / MTok** blended.

@@ -13,7 +13,19 @@ because nothing about the request changes.
 
 `175 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
 
+<sub>Code **MIT** · the register **CC BY 4.0** — quote any verdict, credit the source, so a
+correction can reach you. [Licence](LICENSE) · [How to cite](CITATION.cff)</sub>
+
 </div>
+
+```bash
+git clone https://github.com/hangryclaude/token-spread.git && cd token-spread
+bun install && bun run audit
+```
+
+Reads `~/.claude/projects`. Writes nothing. Sends nothing. Prints your real cache-hit rate and
+what — if anything — is actually recoverable. On a machine that already caches well the honest
+answer is a small number, and you should get a small number.
 
 ---
 

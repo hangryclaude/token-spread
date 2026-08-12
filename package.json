@@ -1,8 +1,13 @@
 {
   "name": "token-spread",
   "version": "0.1.0",
-  "private": true,
+  "description": "A read-only audit of what your LLM usage costs, and a register of 187 cost techniques adjudicated against one question: does the model read the same bytes?",
   "type": "module",
+  "bin": {
+    "token-spread": "./src/cli.ts"
+  },
+  "license": "MIT AND CC-BY-4.0",
+  "private": true,
   "scripts": {
     "audit": "bun run src/cli.ts",
     "test": "bun test",
@@ -22,10 +27,6 @@
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.116.0",
     "@types/bun": "^1.3.14"
-  },
-  "description": "A read-only audit of what your Claude usage actually costs, and which savings survive the test that the model must read the same bytes.",
-  "bin": {
-    "token-spread": "./src/cli.ts"
   },
   "files": [
     "src",

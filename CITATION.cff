@@ -1,0 +1,28 @@
+# Makes the register citable: GitHub renders a "Cite this repository" button from this file,
+# and anyone quoting a verdict can point at a specific dated version rather than "some repo".
+# That matters more here than for most projects — this register has been publicly wrong four
+# times and corrected itself each time, and a correction only reaches people who can be found.
+cff-version: 1.2.0
+title: "token-spread: the strict identity register"
+message: "If you cite a verdict from this register, please cite it as below."
+type: dataset
+authors:
+  - given-names: Angus
+    alias: hangryclaude
+repository-code: "https://github.com/hangryclaude/token-spread"
+abstract: >-
+  187 LLM cost-reduction techniques adjudicated against a single question — does the model read a
+  different sequence of tokens, does a different model answer, or does a different amount of
+  thinking happen? 67 pass, 28 pass on the provider's word alone, 52 are rejected, and 40 are
+  unresolved and published as unresolved. The register publishes what it rejected, what it could
+  not settle, and its own dated errata, including four entries expelled from the passing column
+  when their cited sources failed verification.
+keywords:
+  - llm
+  - inference-cost
+  - prompt-caching
+  - adjudication
+  - reproducibility
+license: CC-BY-4.0
+date-released: "2026-08-13"
+version: "2026.08.13"

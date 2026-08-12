@@ -30,14 +30,16 @@ Truth rules, not the budget.
 ## Facts the page may state
 
 ### The bar
-- 186 candidate techniques adjudicated. **67 pass, 28 pass on the provider's word alone,
-  51 rejected, 40 unresolved.** Those four add to 186 — the brief carried only three of them
+- 187 candidate techniques adjudicated. **67 pass, 28 pass on the provider's word alone,
+  52 rejected, 40 unresolved.** Those four add to 187 — the brief carried only three of them
   until 2026-08-12, which is how the pages came to publish a breakdown summing to 152.
-  (184→186 late on 2026-08-12: the Claude Code TTL-flip entry and DeepSeek's disk cache, both
-  from the final gap sweep, both verified at source.)
+  (176→187 across 2026-08-12, in four dated steps: the 8-entry addendum, then the TTL-flip and
+  DeepSeek's disk cache from the gap sweep, then the read-path-dedup negative from the
+  context-window sweep. Every one verified at its primary source by hand.)
 - The pass count FELL from 70 to 66 on 2026-08-12: four entries (ids 13, 15, 16, 18) were
   downgraded when review found their cited tools were zero-star vanity repos, one unlocatable.
-  The page may state this openly; a register that only ever grows its pass count is advertising.
+  It is 67 now only because a later entry earned it. The page may state this openly; a register
+  that only ever grows its pass count is advertising.
 - Two cohorts: the original 176 in `2026-08-10-verdicts-final.json`, plus 8 in
   `2026-08-12-addendum.json` from nine later sweeps. The page states the combined tally; the
   files stay separate so which process produced which verdict is never lost.
@@ -94,6 +96,12 @@ The page may present savings ONLY in these three grades, each labelled with its 
   proudly: the tool found almost nothing to save because Claude Code already caches — a tool
   that reports $182 instead of inventing thousands is the product working.
 - **PUBLISHED — ProjectDiscovery** (already authorised above): 7%→84% hit rate, **59%** off.
+- **THE NEGATIVE, and the page may use it** — an independent benchmark (NORTHTEKDevs/
+  lossless-context-mcp, BENCHMARK.md, read 2026-08-12) built read-path deduplication for Claude
+  Code and measured it at **−1.4% over 1,839 transcripts / 16,823 reads / 64 MB** — it made the
+  bill *worse* — because "only 7–8% of reads are re-reads, the median session re-reads 0% of its
+  files". Someone else's data, someone else's traffic, arriving where our own machine arrived:
+  on Claude Code the cache-shaped opportunity is already gone.
 - **MODELLED — the three bands, on $1,000/mo of input-heavy agent traffic** (stated assumptions:
   ~85% of spend input-side, target hit 90-95%, ~5% write overhead; formula
   `saving ≈ input-share × 0.9 × (target-hit − current-hit) − write overhead`):

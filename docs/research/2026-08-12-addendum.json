@@ -128,5 +128,18 @@
    "deepseek"
   ],
   "verifiedAgainst": "api-docs.deepseek.com/guides/kv_cache and /quick_start/pricing"
+ },
+ {
+  "id": 186,
+  "name": "Read-path deduplication in Claude Code sessions measures NEGATIVE: an independent benchmark over 1,839 real transcripts",
+  "strictVerdict": "FAIL",
+  "reasoning": "NORTHTEKDevs/lossless-context-mcp (2 stars, MIT, pushed 2026-08-12 — cited as the SUBJECT of the finding, not as authority) built read-path deduplication for Claude Code — replace a repeated file read with a marker or a diff — then benchmarked it against real traffic and published the result against its own interest. From its BENCHMARK.md, read via the GitHub API on 2026-08-12: \"-1.4% over 1,839 transcripts / 16,823 reads / 64 MB: only 7-8% of reads are re-reads, the median session re-reads 0% of its files, and a unified diff can exceed the file it patches\", with a per-task variant measured \"19.6% worse than baseline\" and the theoretical ceiling for the whole technique put at \"about 0.2%\". It FAILS the bar anyway — a marker is a different token sequence than the text it replaces, however reconstructable — but the reason to register it is the measurement, not the verdict. This is the strongest INDEPENDENT corroboration of this project's own central finding: on Claude Code traffic the cache-shaped opportunity is already gone, and a technique designed to capture it makes the bill worse. Our own machine measured 100% cache-hit and $0.00 of cache headroom across 43,658 events; this is someone else, on 1,839 other transcripts, arriving at the same place by a different route and publishing the negative.",
+  "savings": "Negative. Measured -1.4% to -2.6%; theoretical ceiling ~0.2%.",
+  "provenance": "third-party benchmark, read via GitHub API 2026-08-12",
+  "telemetrySignal": "re-read rate per session — 7-8% of reads, median session 0%",
+  "providers": [
+   "anthropic"
+  ],
+  "verifiedAgainst": "github.com/NORTHTEKDevs/lossless-context-mcp BENCHMARK.md"
  }
 ]

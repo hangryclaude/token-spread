@@ -327,7 +327,11 @@ Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
     <div class="card"><h3>59% &mdash; published</h3>
       <p>ProjectDiscovery, in their own write-up: a 7% &rarr; 84% cache-hit rate on raw-API
         agent traffic, <strong>59%</strong> off the bill &mdash; 70% in the final ten days.
-        Their measurement, their traffic, linked from this site.</p></div>
+        Their measurement, their traffic, linked from this site.</p>
+      <p class="fine">And the negative, which we publish too: an independent team built read-path
+        deduplication for Claude Code and measured it at <strong>&minus;1.4%</strong> across 1,839
+        transcripts &mdash; it made the bill worse, because only 7&ndash;8% of reads are re-reads.
+        Their data, arriving where ours did.</p></div>
     <div class="card"><h3>~55&ndash;65% &mdash; modelled</h3>
       <p>On $1,000/mo of input-heavy agent traffic with a broken cache (~5% hit):
         <strong>~$550&ndash;650/mo</strong>, same model, same answers, same speed. At a 50% hit
@@ -341,7 +345,7 @@ Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
 <section><div class="wrap stack reveal">
   <div class="head">
     <p class="eyebrow">The register</p>
-    <h2>186 candidates. 67 survive the question.</h2>
+    <h2>187 candidates. 67 survive the question.</h2>
     <p class="lede">Every technique anyone sells was put to one test: does the model read a
       different sequence of tokens, does a different model answer, or does a different amount of
       thinking happen? The count below is read from the verdict file, not typed.</p>
@@ -354,14 +358,14 @@ Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
     <div class="card"><h3>28 on the provider's word</h3>
       <p>The provider asserts the output is unchanged and we cannot verify it. Opt-in, never
         default &mdash; the batch API is the one you have heard of.</p></div>
-    <div class="card"><h3>51 rejected</h3>
+    <div class="card"><h3>52 rejected</h3>
       <p>Cheaper, and a different product. Model routing, summarisation, prompt compression.</p></div>
     <div class="card"><h3>40 unresolved</h3>
       <p>We could not settle them, so they are counted as unsettled rather than quietly dropped.
         Four arrived here on 2026-08-12, expelled from the pass column when their sources failed
         checking.</p></div>
   </div>
-  <p class="note">Those four add to 186. A register that drops a category is doing the thing it
+  <p class="note">Those four add to 187. A register that drops a category is doing the thing it
     exists to prevent. <a href="index-scroll.html">Read the long version →</a></p>
 </div></section>
 

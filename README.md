@@ -53,6 +53,19 @@ the provider's word alone**, **52 rejected**, **40 unresolved**. Those four add 
 register that quietly drops a category is doing the thing it exists to prevent. The working is in
 [`docs/research/2026-08-10-strict-identity-register.md`](docs/research/2026-08-10-strict-identity-register.md).
 
+**Take the whole thing.** The register is two JSON files at stable paths, CC BY 4.0 — no API, no
+signup, no rate limit:
+
+```bash
+curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-10-verdicts-final.json
+curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-12-addendum.json
+```
+
+The format is documented in [`SCHEMA.md`](docs/research/SCHEMA.md) and enforced by
+[`tests/registerSchema.test.ts`](tests/registerSchema.test.ts) on every run. Verdicts carry a
+`corrections` array — dated, typed, appended and never edited away — so a claim you quoted last
+month can be checked against what it says today.
+
 <div align="center">
 
 <img src="docs/media/register.gif" alt="The question, then 187 candidates sorting into 67 that pass the bar, 28 that pass on the provider's word alone, 51 rejected and 40 unresolved" width="820">
@@ -339,6 +352,29 @@ recorded in `docs/media/art/provenance.json`), and every word and figure on top 
 The split is deliberate — a diffusion model cannot be trusted with a number, and the counts are
 read out of the register at compose time rather than typed, so a card cannot drift from the data
 the way three hand-maintained copies of the same tally already did.
+
+## Where this sits
+
+Honest version, with the numbers that are not flattering:
+
+| | stars | what it does |
+|---|---|---|
+| [ccusage](https://github.com/ccusage/ccusage) | **17,882** | reads the same transcripts, shows you the spend. Free, excellent, and further along than this |
+| [claude-mem](https://github.com/thedotmack/claude-mem) | **90,542** | adjacent problem — memory across sessions |
+| **token-spread** | **0** | adjudicates whether a saving is real, and publishes what it rejected |
+
+Star counts read from the GitHub API on 2026-08-13. If you want a spend dashboard today, ccusage
+is the better answer and you should use it.
+
+What is here and nowhere else: **a register that publishes its rejections, its unresolved bucket,
+and its own errata.** A competitor teardown checked fourteen companies and two OSS projects and
+found no equivalent — no published rejection list, no unresolved count, no errata. On 2026-08-12
+this register expelled four entries from its own passing column when their cited tools turned out
+to be zero-star repositories and one could not be found at all; the published pass count fell
+from 70 to 66 and the site said so on the page.
+
+That is the whole claim, and it is deliberately narrow. It is not "best audit tool". It is: when
+this tells you a saving is real, you can check why, and when it is wrong you can watch it say so.
 
 ## Roadmap
 

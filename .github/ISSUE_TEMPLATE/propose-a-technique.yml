@@ -1,0 +1,50 @@
+name: Propose a technique
+description: A cost-reduction method the register does not yet hold.
+title: "technique: <name>"
+labels: ["technique"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Roughly a third of what fourteen research sweeps proposed died on verification — most
+        often because a cited tool could not be found, or a quote was inflated into a stronger
+        claim than its source made. Expect the same scrutiny, and bring the source.
+
+        **Techniques that change what the model reads are welcome.** They go in the
+        changes-results tier, honestly labelled. "Better and cheaper" is a good trade — it is
+        just not the trade this register certifies.
+  - type: textarea
+    id: mechanism
+    attributes:
+      label: The mechanism
+      description: How the money is saved, concretely. Two to four sentences.
+    validations:
+      required: true
+  - type: dropdown
+    id: identity
+    attributes:
+      label: Does the model read the same tokens?
+      options:
+        - "Yes — same tokens, same model, same thinking, smaller bill"
+        - "No — it changes what the model reads (changes-results tier)"
+        - "No — a different model answers"
+        - "Only the provider says so, and I cannot verify it"
+        - "I do not know, and that is my question"
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: The source, quoted
+      description: >-
+        The sentence, the URL, the date. If it is a repo, include the star count and last push —
+        this register expelled four of its own entries for resting on zero-star repositories.
+    validations:
+      required: true
+  - type: textarea
+    id: prize
+    attributes:
+      label: Size of the prize
+      description: A figure only if a source states one. Otherwise write "unquantified" — that is a real answer.
+    validations:
+      required: true

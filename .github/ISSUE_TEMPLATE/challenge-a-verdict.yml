@@ -1,0 +1,64 @@
+name: Challenge a verdict
+description: Prove an entry in the register is wrong. This is the most valuable thing you can send.
+title: "challenge: <id> <name>"
+labels: ["challenge"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A register that can only grow its pass count is advertising. If you can make the number
+        go down, you have done the most useful possible thing here.
+
+        Four verdicts have already been withdrawn this way — see the `corrections` arrays in
+        [the register](../../docs/research/2026-08-10-verdicts-final.json).
+  - type: input
+    id: entry
+    attributes:
+      label: Entry id
+      description: The `id` field of the entry you are challenging.
+      placeholder: "18"
+    validations:
+      required: true
+  - type: dropdown
+    id: clause
+    attributes:
+      label: Which clause of the bar was misapplied?
+      description: The bar is one question with three clauses.
+      options:
+        - The model reads a different sequence of tokens
+        - A different model answers
+        - A different amount of thinking happens
+        - None — the mechanism is fine, the evidence is not
+        - The cited source does not exist or does not say this
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: The source, quoted
+      description: >-
+        The sentence you are relying on — not a summary of it — plus the URL and the date you
+        read it. A paraphrase inflated into a stronger claim than the source makes is the single
+        most common way a finding dies here.
+      placeholder: |
+        "the exact sentence"
+        https://…
+        read 2026-08-13
+    validations:
+      required: true
+  - type: textarea
+    id: argument
+    attributes:
+      label: Why the current verdict is wrong
+      description: What the verdict should be, and what changes if you are right.
+    validations:
+      required: true
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: Before you file
+      options:
+        - label: I have read the entry's own `reasoning` field, not just its verdict.
+          required: true
+        - label: My source is a primary one — provider docs, real code, or a measurement — not a blog summarising one.
+          required: true

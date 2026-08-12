@@ -1,10 +1,4 @@
-token-spread is dual-licensed. The software is MIT. The register is CC BY 4.0.
-
-────────────────────────────────────────────────────────────────────────────────
-THE SOFTWARE — MIT License
-Applies to: src/, tests/, site/, bench/, fixtures/, docs/media/*.mjs, and every
-other file in this repository EXCEPT those listed under "The register" below.
-────────────────────────────────────────────────────────────────────────────────
+MIT License
 
 Copyright (c) 2026 Angus
 
@@ -26,32 +20,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-────────────────────────────────────────────────────────────────────────────────
-THE REGISTER — Creative Commons Attribution 4.0 International (CC BY 4.0)
-Applies to: docs/research/ in its entirety — the adjudicated register
-(2026-08-10-verdicts-final.json, 2026-08-12-addendum.json), the strict identity
-register and its errata, the context-survival register, the exhaustion
-statement, and every other document in that directory.
-────────────────────────────────────────────────────────────────────────────────
+---
 
-Copyright (c) 2026 Angus
-
-This work is licensed under the Creative Commons Attribution 4.0 International
-License. You are free to share and adapt it for any purpose, including
-commercially, provided you give appropriate credit, link to the licence, and
-indicate if changes were made.
-
-  Full licence: https://creativecommons.org/licenses/by/4.0/legalcode
-  Summary:      https://creativecommons.org/licenses/by/4.0/
-
-Suggested attribution:
-
-  token-spread strict identity register — https://github.com/hangryclaude/token-spread
-  187 techniques adjudicated, 67 pass. CC BY 4.0.
-
-Why the register is licensed differently from the code: the code is meant to be
-taken and run by anyone, with no strings. The register is a claim about what is
-true, and a claim that travels without its source becomes a rumour. Attribution
-is not a toll — it is the mechanism by which a corrected entry reaches everyone
-who repeated it. This register has already been wrong in public four times and
-said so; that only works if the people quoting it can be found again.
+NOTE ON SCOPE: the MIT terms above cover the software in this repository.
+The adjudicated register in docs/research/ is licensed separately under
+Creative Commons Attribution 4.0 International (CC BY 4.0) — see
+docs/research/LICENSE. Quoting a verdict requires credit; running the code
+does not.

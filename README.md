@@ -13,8 +13,8 @@ because nothing about the request changes.
 
 `175 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
 
-<sub>Code **MIT** · the register **CC BY 4.0** — quote any verdict, credit the source, so a
-correction can reach you. [Licence](LICENSE) · [How to cite](CITATION.cff)</sub>
+<sub>Code **[MIT](LICENSE)** · the register **[CC BY 4.0](docs/research/LICENSE)** — quote any
+verdict, credit the source, so a correction can reach you. [How to cite](CITATION.cff)</sub>
 
 </div>
 

@@ -1,0 +1,36 @@
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+Copyright (c) 2026 Angus
+
+Everything in this directory — the adjudicated register
+(2026-08-10-verdicts-final.json, 2026-08-12-addendum.json), the strict identity
+register and its errata, the context-survival register, the exhaustion
+statement, and the supporting sweep data — is licensed under CC BY 4.0.
+
+You are free to share and adapt this work for any purpose, including
+commercially, provided you give appropriate credit, link to the licence, and
+indicate if changes were made.
+
+  Full licence: https://creativecommons.org/licenses/by/4.0/legalcode
+  Summary:      https://creativecommons.org/licenses/by/4.0/
+
+Suggested attribution:
+
+  token-spread strict identity register — https://github.com/hangryclaude/token-spread
+  187 techniques adjudicated, 67 pass. CC BY 4.0.
+
+WHY THIS DIRECTORY IS LICENSED DIFFERENTLY FROM THE CODE
+
+The code is MIT: take it, run it, sell something built on it, no strings. The
+point of an audit tool is that people run it.
+
+The register is a claim about what is true, and a claim that travels without its
+source becomes a rumour. Attribution is not a toll here — it is the mechanism by
+which a corrected entry reaches everyone who repeated it. This register has been
+publicly wrong four times in three days: four entries were expelled from the
+passing column on 2026-08-12 when their cited tools turned out to be zero-star
+repositories and one could not be found at all, and an erratum written on
+2026-08-11 was itself wrong, calling a price rise urgent one day after it had
+been cancelled. Every one of those corrections is published and dated. That
+discipline only means anything if the people quoting a verdict can be found
+again when it changes.

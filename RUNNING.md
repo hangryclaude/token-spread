@@ -30,6 +30,13 @@ bun install          # the tool imports only Node builtins; these are dev deps
 Requires `bun`. Nothing else. `src/` imports `node:crypto`, `node:fs` and `node:path` and
 nothing further — there is no runtime dependency to audit, vendor or trust.
 
+That sentence is about **imports**, and it is exact. It is not a claim that the tool runs on
+Node: `src/cli.ts` uses the `Bun.file` and `Bun.write` globals at three call sites, so Bun is
+required, not merely convenient. The distinction is worth stating because an adversarial review
+on 2026-08-13 read the sentence as claiming Node portability and filed it as a falsehood — it
+isn't one, but a sentence that can be misread into a stronger claim than it makes is worth
+sharpening in a document whose whole subject is not overstating things.
+
 ## Run it
 
 ```bash

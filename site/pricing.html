@@ -62,6 +62,10 @@
   .tier ul{list-style:none;display:flex;flex-direction:column;gap:.4rem;margin-top:.5rem}
   .tier li{font-size:.85rem;color:var(--ink-2);padding-left:1.2rem;position:relative}
   .tier li::before{content:"→";position:absolute;left:0;color:var(--acc-text);font-family:var(--mono);font-size:.8rem}
+  /* Not built yet, and said so on the card rather than in a footnote nobody reads. */
+  .soon{font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-3);border:1px solid var(--line);border-radius:4px;padding:.05rem .3rem;
+    white-space:nowrap;vertical-align:.08em}
   @media(max-width:820px){.calc{grid-template-columns:1fr}}
 </style>
 </head>
@@ -204,19 +208,22 @@ jq <span class="g">'.data[0].results[0]'</span> usage.json
       <ul><li>No integration</li><li>No traffic through us</li><li>Token counts only, never prompt text</li><li>Yours to keep either way</li></ul></div>
     <div class="tier"><span class="nm">Starter</span><span class="pr">$499<small>/mo</small></span>
       <p class="cap">Up to $10k/mo under management</p>
-      <ul><li>Continuous hit-rate monitoring</li><li>Regression alerts</li><li>Identity-preserving levers only</li></ul></div>
+      <ul><li>Identity-preserving levers only</li><li>Continuous hit-rate monitoring <span class="soon">planned</span></li><li>Regression alerts <span class="soon">planned</span></li></ul></div>
     <div class="tier feat"><span class="badge">Most teams</span><span class="nm">Growth</span>
       <span class="pr">$1,999<small>/mo</small></span>
       <p class="cap">Up to $35k/mo under management</p>
-      <ul><li>Everything in Starter</li><li>Per-project attribution</li><li>Batch routing for async work</li><li>Break diagnosis with fixes</li></ul></div>
+      <ul><li>Everything in Starter</li><li>Per-project attribution</li><li>Break diagnosis, one break so far</li><li>Batch routing for async work <span class="soon">planned</span></li></ul></div>
     <div class="tier"><span class="nm">Scale</span><span class="pr">$5,999<small>/mo</small></span>
       <p class="cap">Up to $120k/mo under management</p>
-      <ul><li>Everything in Growth</li><li>SSO and audit log</li><li>Self-hosted deployment</li><li>Quarterly realisation review</li></ul></div>
+      <ul><li>Everything in Growth</li><li>Runs entirely on your own machines</li><li>Quarterly realisation review</li><li>SSO and audit log <span class="soon">planned</span></li></ul></div>
     <div class="tier"><span class="nm">Above Scale</span>
       <span class="pr" data-sc-tbd>&mdash; to supply &mdash;</span>
       <p class="cap">Over $120k/mo under management</p>
       <ul><li>Everything in Scale</li><li>Agreed against your own audit, not a list price</li><li>We will not quote before we have read your usage</li></ul></div>
   </div>
+  <p class="note"><strong><span class="soon">planned</span> means not built yet.</strong> Everything
+    unmarked runs today and you can read the code that does it. A tool that sells you a number it
+    cannot support has no business selling you a roadmap it has not built either.</p>
   <p class="note"><strong>If the audit finds under 20% on the table, we'll tell you and leave.</strong>
     A vendor whose fee exceeds your saving is a vendor who cost you money.</p>
 </div></section>

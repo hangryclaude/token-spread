@@ -16,7 +16,17 @@ import { readFileSync } from "node:fs";
 
 const CHILD = "TOKEN_SPREAD_COUNTING_TESTS";
 
-test.skipIf(process.env[CHILD] === "1")("the README's test count is the number the suite actually runs", async () => {
+/* Four places publish this number and three had drifted apart: README banner 157, README
+   quick-start 140, RUNNING.md 140, BRIEF.md 130 — while the suite ran 157. Checking only the
+   banner would have left a reader running `bun run test` against a comment promising 140. */
+const PUBLISHED: Record<string, RegExp> = {
+  "README.md": /`(\d+) tests`/,
+  "README.md#quickstart": /bun run test\s+# (\d+) tests/,
+  "RUNNING.md": /bun run test\s+# (\d+) tests/,
+  "site/BRIEF.md": /\*\*(\d+) tests\*\*/,
+};
+
+test.skipIf(process.env[CHILD] === "1")("every published test count is the number the suite actually runs", async () => {
   const proc = Bun.spawnSync(["bun", "test"], {
     env: { ...process.env, [CHILD]: "1" },
     stdout: "pipe",
@@ -31,8 +41,13 @@ test.skipIf(process.env[CHILD] === "1")("the README's test count is the number t
   // The child skips this test, so it runs exactly one fewer than the parent will.
   const actual = Number(ran![1]) + 1;
 
-  const badge = readFileSync("README.md", "utf8").match(/`(\d+) tests`/);
-  expect(badge, "the README no longer carries an `N tests` badge — fix the regex or drop this test").not.toBeNull();
-
-  expect(Number(badge![1]), `README says ${badge![1]} tests, the suite runs ${actual}`).toBe(actual);
+  const wrong: string[] = [];
+  for (const [where, re] of Object.entries(PUBLISHED)) {
+    const found = readFileSync(where.split("#")[0], "utf8").match(re);
+    // A regex that stops matching proves nothing about the number it was watching, so an
+    // unmatched pattern is a failure here rather than a silent pass.
+    if (!found) { wrong.push(`${where}: no test count found — the wording changed, fix the regex`); continue; }
+    if (Number(found[1]) !== actual) wrong.push(`${where}: says ${found[1]}, suite runs ${actual}`);
+  }
+  expect(wrong, `published test counts disagree with the suite:\n  ${wrong.join("\n  ")}`).toEqual([]);
 });

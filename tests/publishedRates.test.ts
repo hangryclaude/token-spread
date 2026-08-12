@@ -30,6 +30,20 @@ const PAGES = [
   "site/BRIEF.md",
 ];
 
+/* The cancelled-rise check runs over more files than the rate reconciliation does.
+   The research registers turned out to be wrong too, in the worst possible way: the errata table
+   that exists to catch stale prices called this rise "the most time-boxed item in the register" on
+   2026-08-11, one day AFTER Anthropic's release notes cancelled it — the document whose job is
+   correcting staleness was the stalest thing in the repo.
+   They are NOT pair-reconciled, though, and must not be: they document Fast mode at $10/$50, geo
+   multipliers, tokenizer boundaries and other providers' rates on purpose. Reconciling every
+   "$A/$B" in them against the standard card would fail on facts that are correct. */
+const CANCELLED_RISE_WATCH = [
+  ...PAGES,
+  "docs/research/2026-08-10-strict-identity-register.md",
+  "docs/research/2026-08-11-context-survival-register.md",
+];
+
 /** $ per MTok, from the card's micro-cents per token: 500 µ¢/tok == 500 ¢/MTok == $5/MTok. */
 const perMTok = (microCents: number) => microCents / 100;
 
@@ -89,7 +103,7 @@ test("no page advertises the cancelled Sonnet 5 increase", () => {
   const RETRACTS = /will not occur|standard price|cancelled|canceled|corrected/i;
 
   const offenders: string[] = [];
-  for (const page of PAGES) {
+  for (const page of CANCELLED_RISE_WATCH) {
     const lines = readFileSync(page, "utf8").split("\n");
     lines.forEach((line, i) => {
       if (!MENTIONS.test(line)) return;

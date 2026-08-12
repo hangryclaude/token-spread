@@ -110,7 +110,7 @@ asserted by a test.
 ## Verify the build
 
 ```bash
-bun run test        # 175 tests
+bun run test        # 181 tests
 bunx tsc --noEmit   # no type errors
 ```
 

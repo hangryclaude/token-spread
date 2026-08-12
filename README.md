@@ -11,7 +11,7 @@ zero margin). By serving the **same request to the same model** more cheaply tha
 customer can buy it direct. That gap is the business — and it survives scrutiny only
 because nothing about the request changes.
 
-`175 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
+`181 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
 
 <sub>Code **[MIT](LICENSE)** · the register **[CC BY 4.0](docs/research/LICENSE)** — quote any
 verdict, credit the source, so a correction can reach you. [How to cite](CITATION.cff)</sub>
@@ -259,7 +259,7 @@ traffic. The example is the shape, not your bill.
 
 ```bash
 bun install                              # no runtime deps
-bun run test        # 175 tests
+bun run test        # 181 tests
 bun run typecheck   # no type errors
 bun run src/cli.ts --dir ~/.claude/projects
 ```

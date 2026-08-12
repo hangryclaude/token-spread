@@ -55,6 +55,16 @@ const READERS: Record<string, Record<string, RegExp>> = {
     rejected: /<strong>(\d+)<\/strong>\s*rejected/,
     unresolved: /<strong>(\d+)<\/strong>\s*unresolved/,
   },
+  /* index.html is the canonical, sitemap-listed homepage and carried no register at all until
+     2026-08-12 — the product's central claim was reachable only from an orphan page. Now that it
+     publishes the tally it joins the reconciliation, or it becomes the fourth copy to drift. */
+  "site/index.html": {
+    total: /<h2>(\d+) candidates/,
+    pass: /<h3>(\d+) pass<\/h3>/,
+    contractual: /<h3>(\d+) on the provider's word<\/h3>/,
+    rejected: /<h3>(\d+) rejected<\/h3>/,
+    unresolved: /<h3>(\d+) unresolved<\/h3>/,
+  },
   "site/index-scroll.html": {
     total: /<figcaption[^>]*>(\d+) candidate techniques/,
     pass: /<dt>pass<\/dt><dd[^>]*>(\d+)</,

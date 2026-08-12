@@ -179,7 +179,7 @@ async function mountAll() {
   // ── chrome · the way back ─────────────────────────────────────────────────────
   // Mandatory past ~5 viewports. The engine NEVER scrolls anything itself — a chip
   // click fires onSelect and moves the page 0px — so onSelect has to do the work.
-  safe('fixed-hud', () =>
+  const hud = safe('fixed-hud', () =>
     initFixedHud($('#hud'), {
       accent: '#3ddc84',   // default is #ff6a1f; this page is green
       // Defaults to true and paints rulers, crosshairs and X/Y readouts over the page.
@@ -203,6 +203,11 @@ async function mountAll() {
         settleReveals();
       },
     }));
+  // The return value was discarded until 2026-08-12, so the hud never joined `driven` and
+  // setProgress never reached it: the chapter rail and the progress hairline sat frozen at
+  // chapter 01 for the whole document, on the one piece of chrome whose entire job is telling
+  // the reader where they are.
+  if (hud?.setProgress) driven.push(hud);
 
   safe('capsule-controls', () => initCapsuleControls(document.body));
 

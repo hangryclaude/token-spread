@@ -71,10 +71,13 @@
       <ul class="t">
         <li>Prompt caching, text and images</li>
         <li>Exact-match response cache</li>
-        <li>In-flight request dedup</li>
         <li>Billing-path selection</li>
         <li>Cache-write TTL right-sizing</li>
       </ul>
+      <p class="fine">In-flight request dedup used to sit on this list. Our own register rejects
+        it: collapsing N concurrent identical calls onto one forward pass means the second caller
+        receives the first caller's sample rather than an independent draw. Free, and not
+        identical. It was removed on 2026-08-12.</p>
     </div>
     <div class="box hold">
       <h3>Off unless you ask</h3>
@@ -199,7 +202,8 @@
   </div>
   <small>Savings percentages are per-method ceilings against an unoptimised baseline,<br>
     not a promise for your workload. Your figure comes from measuring your traffic.<br><br>
-    Contact <a href="mailto:angus@angusbuilds.com">angus@angusbuilds.com</a></small>
+    Contact <a href="mailto:angus@angusbuilds.com">angus@angusbuilds.com</a><br>
+    <span data-sc-tbd>&mdash; to supply &mdash;</span> legal entity &middot; terms &middot; privacy policy &middot; data processing agreement</small>
 </div></footer>
 
 <script type="module" src="assets/fx.js"></script>

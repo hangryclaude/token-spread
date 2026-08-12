@@ -107,10 +107,12 @@
 
 <section><div class="wrap stack reveal">
   <div class="head">
-    <p class="eyebrow">What good looks like</p>
-    <h2>The fix is structural, not clever.</h2>
+    <p class="eyebrow">What the published fix looks like</p>
+    <h2>Structural, not clever &mdash; and not all of it clears our bar.</h2>
     <p class="lede">ProjectDiscovery published exactly how they went from 7% to 84%. Every move is
-      the same shape: keep the stable things stable, and push everything that changes to the tail.</p>
+      the same shape: keep the stable things stable, and push everything that changes to the tail.
+      Two of the four keep the model's input identical. The one that moves content does not, and we
+      say so below rather than quietly borrowing their number.</p>
   </div>
   <div class="grid g2">
     <div class="card"><h3>Three breakpoints, deliberately placed</h3>
@@ -121,9 +123,16 @@
         five minutes costs 1.25&times; and refreshes on every read. Measure your own gap between
         turns &mdash; that distribution, not a rule of thumb, decides which TTL is cheaper for
         you, and it is the figure almost nobody has.</p></div>
-    <div class="card"><h3>The relocation trick</h3>
+    <div class="card"><h3>The relocation trick &mdash; and why we won't ship it</h3>
       <p>Working memory, skills and runtime context moved out of the prefix and into a single
-        message at the tail. That one change took them from <strong>7% to 74%</strong>.</p></div>
+        message at the tail. That one change took them from <strong>7% to 74%</strong>. It is the
+        single most effective move in their write-up.</p>
+      <p class="fine">It also fails our bar, and our own adversarial review is what caught it. The
+        model now reads the same words in a different order, and order is not neutral &mdash; where
+        instructions sit relative to tool state changes behaviour. Their write-up measured the
+        cache-hit rate, which went up; nobody measured whether the answers stayed the same. So we
+        will show you this one and we will not turn it on. That is the difference between a
+        cheaper bill and the same product.</p></div>
     <div class="card"><h3>Placeholders over values</h3>
       <p>Template variables rendered as <code>[provided in Runtime Context]</code> rather than the
         actual value, so the same prefix is cacheable across every user instead of once per user.</p></div>
@@ -177,7 +186,8 @@
     <a href="pricing.html">Pricing</a>
   </div>
   <small>Same model. Same tokens. Same output.<br>
-    Contact <a href="mailto:angus@angusbuilds.com">angus@angusbuilds.com</a><br><br>
+    Contact <a href="mailto:angus@angusbuilds.com">angus@angusbuilds.com</a><br>
+    <span data-sc-tbd>&mdash; to supply &mdash;</span> legal entity &middot; terms &middot; privacy policy &middot; data processing agreement<br><br>
     Cache read 0.1× · write 1.25× (5m) / 2× (1h) · batch 50%.<br>
     Minimum cacheable prefix and lookback limits are Anthropic's, and current as of August 2026.</small>
 </div></footer>

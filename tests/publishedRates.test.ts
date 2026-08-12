@@ -24,6 +24,10 @@ const PAGES = [
   "site/methods.html",
   "site/sample-audit.html",
   "README.md",
+  /* The brief is the site's source of truth, and it was the LAST place still carrying the
+     cancelled rise — every page had been corrected while the document they are all written from
+     still said the increase was coming. A gate that watches only the output misses that. */
+  "site/BRIEF.md",
 ];
 
 /** $ per MTok, from the card's micro-cents per token: 500 µ¢/tok == 500 ¢/MTok == $5/MTok. */
@@ -77,14 +81,21 @@ test("no page advertises the cancelled Sonnet 5 increase", () => {
   /* Belt and braces for the exact defect that shipped. The reconciliation above catches a wrong
      PAIR next to a model label; this catches the rise stated as a future event in prose, where
      no current rate is being quoted at all — "rises to $3/$15", "intro pricing through 31 Aug". */
+  /* Naming the rise is allowed; presenting it as something still coming is not. So a mention is
+     an offence only when nothing nearby says it was called off. The window is three lines because
+     BRIEF.md's correction is a wrapped sentence, and a strictly per-line rule read its own
+     retraction as the offence it was retracting. */
+  const MENTIONS = /\$3\s*\/\s*\$15|intro(ductory)?\b/i;
+  const RETRACTS = /will not occur|standard price|cancelled|canceled|corrected/i;
+
   const offenders: string[] = [];
   for (const page of PAGES) {
-    for (const line of readFileSync(page, "utf8").split("\n")) {
-      // "introductory" survives in one place on purpose: the card note that records the
-      // correction. It is only a defect when it is still describing the price as temporary.
-      const stale = /\$3\/\$15/.test(line) || (/intro(ductory)?\b/i.test(line) && !/standard price/i.test(line));
-      if (stale) offenders.push(`${page}: ${line.trim().slice(0, 120)}`);
-    }
+    const lines = readFileSync(page, "utf8").split("\n");
+    lines.forEach((line, i) => {
+      if (!MENTIONS.test(line)) return;
+      const window = lines.slice(Math.max(0, i - 1), i + 3).join(" ");
+      if (!RETRACTS.test(window)) offenders.push(`${page}:${i + 1}: ${line.trim().slice(0, 120)}`);
+    });
   }
   expect(offenders, `pages still selling a price change that will not occur:\n${offenders.join("\n")}`)
     .toEqual([]);

@@ -409,6 +409,9 @@ footer small{font-size:.82rem;color:var(--ink-3);line-height:1.75;display:block;
    pair floats the shorter one off the shared top edge. Browsers without :has() keep the old
    centred behaviour, which is untidy rather than broken. */
 .split:has(.box){align-items:start}
+/* The convention for a fact nobody has supplied yet. Defined once here so every page renders an
+   absence the same way — the footers name a missing legal entity, pricing.html a missing price. */
+[data-sc-tbd]{font-family:var(--mono);color:var(--ink-3);letter-spacing:0;white-space:nowrap}
 @media(max-width:860px){.split{grid-template-columns:1fr}}
 .media{border-radius:var(--r-32);overflow:hidden;background:var(--bg-2);
   aspect-ratio:16/9;display:block}

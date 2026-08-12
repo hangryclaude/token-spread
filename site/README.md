@@ -82,9 +82,16 @@ node ~/.claude/skills/sitecraft/assets/gates/contrast-check.mjs http://localhost
 
 ## Where the claims come from
 
-`../docs/research/2026-08-09-method-register.md` is the source for every lever named on
-`methods.html` — 94 methods that survived an adversarial verification pass, sorted into
-ship-by-default / byte-identical-only / off-unless-you-ask, plus 47 catalogued dead ends.
+`../docs/research/2026-08-10-verdicts-final.json` is the source for every lever named on
+`methods.html` — 176 candidates adjudicated against the strict identity bar: **66 pass, 24 pass
+on the provider's word alone, 50 rejected, 36 unresolved**, sorted on the page into
+ship-by-default / off-unless-you-ask. `tests/publishedCounts.test.ts` reconciles those four
+figures against the JSON on every run, across `index.html`, `index-scroll.html`, `methods.html`
+and the root `README.md`.
+
+This paragraph described the superseded `2026-08-09-method-register.md` (94 survivors, 47 dead
+ends) until 2026-08-12 — a fifth stale copy of a tally, in the document that tells the next
+person where the truth lives.
 The dead-ends table on `methods.html` is drawn straight from it. `2026-08-09-completeness-gaps.md`
 is the critic pass: what the sweep still has not answered.
 

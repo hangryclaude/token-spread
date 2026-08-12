@@ -30,7 +30,9 @@ Truth rules, not the budget.
 ## Facts the page may state
 
 ### The bar
-- 176 candidate techniques adjudicated. **66 pass, 50 rejected, 36 unresolved.**
+- 176 candidate techniques adjudicated. **66 pass, 24 pass on the provider's word alone,
+  50 rejected, 36 unresolved.** Those four add to 176 — the brief carried only three of them
+  until 2026-08-12, which is how the pages came to publish a breakdown summing to 152.
 - The question: does the model read a different sequence of tokens, does a different model answer,
   or does a different amount of thinking happen?
 - Model routing is **rejected** — a different model writes different words.
@@ -38,10 +40,21 @@ Truth rules, not the budget.
 
 ### Rates (rate card captured 2026-08-08, `src/rates.ts`)
 - Opus 5 / 4.8 / 4.7: **$5 / MTok input, $25 / MTok output**
-- Sonnet 5: **$2 / $10** introductory, **through 2026-08-31**, then $3 / $15
+- Sonnet 5: **$2 / $10**. Announced as introductory through 2026-08-31; Anthropic's pricing page
+  now states this is the standard price and that the scheduled rise to $3 / $15 on 2026-09-01
+  "will not occur" (read 2026-08-12). The page may not state a future Sonnet 5 increase.
 - Haiku 4.5: **$1 / $5**
 - Cache read: **0.1×** input · 5-minute write: **1.25×** · 1-hour write: **2×**
 - Batch: **50%** off input and output
+
+### Anthropic cache mechanics (public API behaviour, in the register)
+- **4 cache breakpoints, maximum** — register entry *"4-breakpoint budget algorithm
+  (system=1, last-tool=1, message window shrinks to fit remainder)"*.
+- **20-block lookback** from a breakpoint — register entry *"20-block cache lookback limit and its
+  interaction with tool-heavy turns"*.
+- **Minimum cacheable prefix is model-specific**: 512 tokens on Opus 5, longer on older and smaller
+  models — register entry *"Model-specific minimum-cacheable-prefix-length awareness"*. Any page
+  stating 512 must carry the model qualifier; a bare "512 tokens" is wrong for Haiku.
 
 ### The twin terminals
 - A turn carrying 40,000 tokens of context and generating 300 output tokens, on Opus 5:
@@ -61,7 +74,7 @@ Truth rules, not the budget.
   iteration usage."*
 
 ### The tool itself
-- **160 tests**, **0 bytes written** to any input, **0 prompts read**, no runtime dependencies.
+- **162 tests**, **0 bytes written** to any input, **0 prompts read**, no runtime dependencies.
 - Five tests spawn the real CLI and assert every input file is byte-identical afterwards.
 - Reads local Claude Code transcripts at every depth, **or** an organisation's Admin usage report.
 
@@ -70,8 +83,22 @@ Truth rules, not the budget.
   **$2.05 / MTok** blended.
 
 ### Third-party, published, cited
-- ProjectDiscovery went from a **7%** to an **84%** cache-hit rate.
-  https://projectdiscovery.io/blog/how-we-cut-llm-cost-with-prompt-caching
+ProjectDiscovery, *How We Cut LLM Costs by 59% With Prompt Caching*.
+https://projectdiscovery.io/blog/how-we-cut-llm-cost-with-prompt-caching
+Every figure below was re-read from the post itself on **2026-08-12**; the pages had been
+quoting most of them while this brief authorised only the first line.
+- Cache-hit rate **7% → 84%**.
+- The relocation trick alone: **7% → 74%** in a single deployment ("overnight").
+- Overall cost saving **59%**; post-optimisation **66%**; last ten days **70%**.
+- **9.8 billion** tokens served from cache.
+- A task at a 2% cache rate cost **roughly 60×** what the same task costs optimised.
+- Three deliberate breakpoints; intermediate marks every eighteen blocks against the
+  twenty-block lookback.
+
+The relocation trick **fails our own bar** and the page must say so where it appears: moving
+dynamic content out of the prefix changes the order the model reads, and their write-up measured
+the hit rate, not whether the answers held. Source: the adversarial demotion recorded in
+`docs/research/2026-08-10-sweep-per-modality.json`.
 
 ### Contact and plans (already live on the site)
 - angus@angusbuilds.com

@@ -215,6 +215,18 @@
   #hud .sc-hud-chip{background:rgba(3,12,8,.93);border-color:rgba(255,255,255,.22)}
   #hud .sc-hud-num{color:#f2f7f4}
   #hud .sc-hud-chip[aria-current="true"]{background:rgba(2,9,6,.96)}
+  /* The chapter rail is ~143px of fixed chrome pinned to the right edge at EVERY width. Above
+     ~1300px the content column clears it; below that it lands on top of the register figure and
+     the notes — page-checks caught it at 1024, 900, 390, 360 and 320.
+     The label is 81px of that 143px, so dropping the label and keeping the numbered chip takes the
+     rail to ~62px and the collision goes away at every width down to 320. Hiding the whole rail
+     also fixes the overlap and is wrong: page-checks clicks every chip at 390x844 to prove the
+     chapters actually navigate, and a display:none chip is not clickable. The numbers stay, the
+     words go. */
+  @media (max-width:1299px){
+    #hud .sc-hud-lab{display:none}
+    #hud .sc-hud-chip{padding-inline:.5rem}
+  }
 
   /* act 2 · the two usage blocks in the pinned pane */
   /* The pane owns its own stacking so a restack cannot put both figures in one place. */

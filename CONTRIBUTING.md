@@ -39,7 +39,7 @@ that is always false.
 ## Code
 
 ```bash
-bun install && bun test        # 181 tests
+bun install && bun test        # 186 tests
 node site/tools/page-checks.mjs   # needs a local server on :8740
 ```
 

@@ -114,8 +114,10 @@ export function renderAuditHtml(r: Report): string {
     <span class="n">${num(r.provenance.imported)} events</span></div>
   <div class="fig"><span class="k">Cache-hit rate</span><span class="v">${Math.round(r.cacheHitRate * 100)}%</span>
     <span class="n">reads ÷ (reads + fresh)</span></div>
-  <div class="fig"><span class="k">Recoverable</span><span class="v acc">${esc(money(r.savings.combined))}</span>
-    <span class="n">${pctSaved}% of the bill</span></div>
+  <!-- allMeasured, not combined: this tile is the first figure a buyer reads, and fed with
+       cache headroom alone it printed "$0.00" directly above a priced finding worth $374.93. -->
+  <div class="fig"><span class="k">Recoverable</span><span class="v acc">${esc(money(r.savings.allMeasured))}</span>
+    <span class="n">${(r.savings.allMeasured.cents / Math.max(1, r.currentCost.cents) * 100).toFixed(1)}% of the bill</span></div>
   <div class="fig"><span class="k">Blended rate</span><span class="v">${esc(money(r.effectiveRatePerMTok.before))}</span>
     <span class="n">per MTok today</span></div>
 </div>

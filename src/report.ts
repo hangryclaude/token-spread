@@ -56,7 +56,8 @@ export interface Report {
   byProject: Record<string, Money>;
   byAccount: Record<string, Money>;
   tokens: TokenTotals;
-  savings: { cacheOnly: Money; wasteOnly: Unquantified; combined: Money };
+  /** `combined` is cache headroom alone; `allMeasured` includes every priced finding. */
+  savings: { cacheOnly: Money; wasteOnly: Unquantified; combined: Money; allMeasured: Money };
   savingsPct: SavingsPct;
   /** Blended cost per million tokens, before and after the measured levers. */
   effectiveRatePerMTok: { before: Money; after: Money };
@@ -245,6 +246,23 @@ export function buildReport(input: {
       cacheOnly: money(sim.attribution.cacheOnlySavedMicroCents),
       wasteOnly: sim.attribution.wasteOnly,
       combined: money(sim.attribution.combinedSavedMicroCents),
+      /**
+       * Every measured lever, not just the cache one.
+       *
+       * The audit document leads with a figure labelled "Recoverable" and it was fed
+       * `combined` — which is cache headroom ALONE. On a machine already at a 100% hit rate
+       * that tile read "$0.00, 0% of the bill" directly above a finding worth $374.93. The
+       * first number a buyer reads contradicted the body of the same page.
+       *
+       * These two levers may be added rather than compounded, and that is a claim about the
+       * token classes rather than a convenience: cache headroom re-prices FRESH INPUT tokens
+       * into cache reads; TTL right-sizing re-prices CACHE-WRITE tokens from 2x to 1.25x. The
+       * sets are disjoint, so no token is discounted twice and the sum is exact. Any future
+       * finding that touches fresh input must compound here instead — the register's own rule
+       * is that levers multiply and a sum overstates. tests/recoverable.test.ts pins both the
+       * arithmetic and the disjointness assumption.
+       */
+      allMeasured: money(sim.attribution.combinedSavedMicroCents + Math.max(0, ttl.recoverableMicroCents)),
     },
     savingsPct: {
       cacheOnly: pct1(sim.attribution.cacheOnlySavedMicroCents, baseline),

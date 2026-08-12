@@ -95,6 +95,26 @@
         <li>Output truncation via <code>stop_sequences</code></li>
       </ul>
     </div>
+    <div class="box hold">
+      <h3>Changes the results &mdash; the third tier</h3>
+      <p>Techniques that save tokens <em>by changing what the model reads</em>. Some are excellent
+        &mdash; the change is usually the point &mdash; but they are a different product, so they
+        live here and are never counted as savings. "Better and cheaper" is a great trade; it is
+        just not the trade this register certifies.</p>
+      <ul class="t">
+        <li>Repo maps &mdash; Aider's tree-sitter digest, prepended to every prompt (48,131&#9733;)</li>
+        <li>Symbol tools &mdash; Serena returns ~12 lines where a full read returns 600 (27,879&#9733;)</li>
+        <li>Dependency maps at session start &mdash; the honest one marks partial coverage as partial (658&#9733;)</li>
+        <li>Embedding indexes &mdash; summaries in place of raw file dumps</li>
+        <li>Context editing &mdash; deleting old tool results from the window</li>
+      </ul>
+      <p class="fine">The pattern to refuse: one tool in this class advertises <em>"Same reasoning.
+        Same conclusions. ~83% fewer tokens."</em> A model reading 17% of the tokens cannot be
+        guaranteed the same reasoning chain &mdash; the figures are self-reported and unaudited,
+        and claiming better <strong>and</strong> unchanged is the one combination that is always
+        false. Tools in this tier that claim better and admit different are welcome here; that is
+        what the tier is for.</p>
+    </div>
   </div>
 </div></section>
 

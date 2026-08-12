@@ -106,6 +106,30 @@ dynamic content out of the prefix changes the order the model reads, and their w
 the hit rate, not whether the answers held. Source: the adversarial demotion recorded in
 `docs/research/2026-08-10-sweep-per-modality.json`.
 
+### Changes the results — the third tier (repo-map adjudication, 2026-08-12)
+Techniques that save tokens BY changing what the model reads. They may be excellent — the change
+is usually the point — but they are a different product, so they get their own tier and are never
+counted as savings. Named tools, every quote re-fetched from the tool's own repo/docs on
+2026-08-12, stars via the GitHub API the same day:
+- **Aider repo-map** (48,131★, Apache-2.0): a tree-sitter + PageRank symbol digest prepended to
+  every prompt, default budget 1k tokens. Claims better, never identical.
+- **Serena** (27,879★, MIT): LSP symbol tools — a `find_symbol` call returns ~12 lines where a
+  full-file read returns 600; the other 588 never enter context. Claims "much more
+  token-efficient", never identical.
+- **codemap — JordanCoin** (658★, MIT): a session-start dependency map; its own README: *"every
+  dependency answer carries a coverage status, so a partial graph never reads as a complete
+  one."* The most honest tool in the class.
+- **Cursor codebase indexing** (proprietary): embeddings + summaries in place of raw file dumps.
+  Silent on identity either way.
+- **The cautionary case — codemap, AZidan** (71★): README tagline *"Same reasoning. Same
+  conclusions. ~83% fewer tokens."* An identity claim bolted onto an admitted 83% content
+  reduction — the model cannot be guaranteed the same reasoning chain over a fraction of the
+  tokens. The page may quote this as the pattern to refuse, without naming it a lie: the figures
+  are self-reported and unaudited, which is the point.
+- The tier's rule, which the page may state: **"better and cheaper" is a great trade — it is just
+  not the trade this register certifies.** Claiming better AND unchanged is the one combination
+  that is always false.
+
 ### Contact and plans (already live on the site)
 - angus@angusbuilds.com
 - Audit **$0** · Starter **$499/mo** · Growth **$1,999/mo** · Scale **$5,999/mo**

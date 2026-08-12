@@ -36,14 +36,14 @@ out the largest number anyone can put on a slide. What is left is smaller, and t
 | Compaction accounting | `PASS_ABSOLUTE` | nothing — it corrects a mis-read bill |
 | Batch tier | `CONTRACTUAL_ONLY` | when the work runs. Off by default |
 
-184 candidate techniques were adjudicated against that question — **66 pass**, **27 pass on
-the provider's word alone**, **51 rejected**, **40 unresolved**. Those four add to 184; a
+186 candidate techniques were adjudicated against that question — **67 pass**, **28 pass on
+the provider's word alone**, **51 rejected**, **40 unresolved**. Those four add to 186; a
 register that quietly drops a category is doing the thing it exists to prevent. The working is in
 [`docs/research/2026-08-10-strict-identity-register.md`](docs/research/2026-08-10-strict-identity-register.md).
 
 <div align="center">
 
-<img src="docs/media/register.gif" alt="The question, then 184 candidates sorting into 66 that pass the bar, 27 that pass on the provider's word alone, 51 rejected and 40 unresolved" width="820">
+<img src="docs/media/register.gif" alt="The question, then 186 candidates sorting into 67 that pass the bar, 28 that pass on the provider's word alone, 51 rejected and 40 unresolved" width="820">
 
 <sub>Rendered by <a href="docs/media/render.mjs"><code>docs/media/render.mjs</code></a> — the four
 counts are read from the verdict file at render time, never typed into the film.</sub>
@@ -310,7 +310,7 @@ docs/specs/              the design spec (+ a rendered HTML copy)
 
 ## Research
 
-<img src="docs/media/cards/register.jpg" alt="184 techniques adjudicated: 66 pass the bar, 27 pass on the provider's word alone, 51 rejected outright, 40 unresolved and stated as unresolved." width="820">
+<img src="docs/media/cards/register.jpg" alt="186 techniques adjudicated: 67 pass the bar, 28 pass on the provider's word alone, 51 rejected outright, 40 unresolved and stated as unresolved." width="820">
 
 | Document | |
 |---|---|

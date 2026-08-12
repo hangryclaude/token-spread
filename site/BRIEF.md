@@ -30,9 +30,11 @@ Truth rules, not the budget.
 ## Facts the page may state
 
 ### The bar
-- 184 candidate techniques adjudicated. **66 pass, 27 pass on the provider's word alone,
-  51 rejected, 40 unresolved.** Those four add to 184 — the brief carried only three of them
+- 186 candidate techniques adjudicated. **67 pass, 28 pass on the provider's word alone,
+  51 rejected, 40 unresolved.** Those four add to 186 — the brief carried only three of them
   until 2026-08-12, which is how the pages came to publish a breakdown summing to 152.
+  (184→186 late on 2026-08-12: the Claude Code TTL-flip entry and DeepSeek's disk cache, both
+  from the final gap sweep, both verified at source.)
 - The pass count FELL from 70 to 66 on 2026-08-12: four entries (ids 13, 15, 16, 18) were
   downgraded when review found their cited tools were zero-star vanity repos, one unlocatable.
   The page may state this openly; a register that only ever grows its pass count is advertising.

@@ -24,7 +24,12 @@ const ROOT = join(HERE, "..", "..");
 const ART = join(HERE, "art");
 const OUT = join(HERE, "cards");
 
-const entries = JSON.parse(readFileSync(join(ROOT, "docs/research/2026-08-10-verdicts-final.json"), "utf8"));
+/* Both cohorts, same list the site publishes and tests/publishedCounts.test.ts reconciles.
+   Reading only the first file rendered a card that disagreed with every page around it. */
+const entries = [
+  "docs/research/2026-08-10-verdicts-final.json",
+  "docs/research/2026-08-12-addendum.json",
+].flatMap((f) => JSON.parse(readFileSync(join(ROOT, f), "utf8")));
 const tally = (v) => entries.filter((e) => e.strictVerdict === v).length;
 const PASSING = ["PASS_ABSOLUTE", "PASS_METADATA", "PASS_SCHEDULING", "PASS_REPLAY"];
 const N = {

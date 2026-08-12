@@ -12,9 +12,26 @@ import { readFileSync } from "node:fs";
  * not less, as the register grows — every new candidate moves all five figures.
  */
 
-const VERDICTS = "docs/research/2026-08-10-verdicts-final.json";
+/* Two cohorts, kept in separate files on purpose. The 176 were adjudicated by one process in
+   August; the addendum is what nine later sweeps produced, each entry re-verified against its
+   primary source by hand before being written down. Merging them into one file would lose which
+   process produced which verdict, and that provenance is the thing being sold. Merging them for
+   the published TALLY is right, because a reader counting techniques does not care which week
+   they were judged in — but the ids must not collide, which is what the test below enforces. */
+const COHORTS = [
+  "docs/research/2026-08-10-verdicts-final.json",
+  "docs/research/2026-08-12-addendum.json",
+];
 type Entry = { id: number; strictVerdict: string; name: string };
-const entries: Entry[] = JSON.parse(readFileSync(VERDICTS, "utf8"));
+const entries: Entry[] = COHORTS.flatMap((f) => JSON.parse(readFileSync(f, "utf8")) as Entry[]);
+
+test("no two register entries share an id", () => {
+  // Two cohorts numbered independently would silently double-count or overwrite on any future
+  // merge, and the published total is derived from length rather than from max(id).
+  const ids = entries.map((e) => e.id);
+  const dupes = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
+  expect(dupes, `duplicate register ids across cohorts: ${dupes.join(", ")}`).toEqual([]);
+});
 
 const tally = (v: string) => entries.filter((e) => e.strictVerdict === v).length;
 /* "Pass the bar" is the four classes where identity is demonstrable. CONTRACTUAL_ONLY is

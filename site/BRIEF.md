@@ -30,9 +30,12 @@ Truth rules, not the budget.
 ## Facts the page may state
 
 ### The bar
-- 176 candidate techniques adjudicated. **66 pass, 24 pass on the provider's word alone,
-  50 rejected, 36 unresolved.** Those four add to 176 — the brief carried only three of them
+- 184 candidate techniques adjudicated. **70 pass, 27 pass on the provider's word alone,
+  51 rejected, 36 unresolved.** Those four add to 184 — the brief carried only three of them
   until 2026-08-12, which is how the pages came to publish a breakdown summing to 152.
+- Two cohorts: the original 176 in `2026-08-10-verdicts-final.json`, plus 8 in
+  `2026-08-12-addendum.json` from nine later sweeps. The page states the combined tally; the
+  files stay separate so which process produced which verdict is never lost.
 - The question: does the model read a different sequence of tokens, does a different model answer,
   or does a different amount of thinking happen?
 - Model routing is **rejected** — a different model writes different words.
@@ -74,7 +77,7 @@ Truth rules, not the budget.
   iteration usage."*
 
 ### The tool itself
-- **168 tests**, **0 bytes written** to any input, **0 prompts read**, no runtime dependencies.
+- **169 tests**, **0 bytes written** to any input, **0 prompts read**, no runtime dependencies.
 - Five tests spawn the real CLI and assert every input file is byte-identical afterwards.
 - Reads local Claude Code transcripts at every depth, **or** an organisation's Admin usage report.
 

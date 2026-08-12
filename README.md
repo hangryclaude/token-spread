@@ -11,7 +11,7 @@ zero margin). By serving the **same request to the same model** more cheaply tha
 customer can buy it direct. That gap is the business — and it survives scrutiny only
 because nothing about the request changes.
 
-`168 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
+`169 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
 
 </div>
 
@@ -36,14 +36,14 @@ out the largest number anyone can put on a slide. What is left is smaller, and t
 | Compaction accounting | `PASS_ABSOLUTE` | nothing — it corrects a mis-read bill |
 | Batch tier | `CONTRACTUAL_ONLY` | when the work runs. Off by default |
 
-176 candidate techniques were adjudicated against that question — **66 pass**, **24 pass on
-the provider's word alone**, **50 rejected**, **36 unresolved**. Those four add to 176; a
+184 candidate techniques were adjudicated against that question — **70 pass**, **27 pass on
+the provider's word alone**, **51 rejected**, **36 unresolved**. Those four add to 184; a
 register that quietly drops a category is doing the thing it exists to prevent. The working is in
 [`docs/research/2026-08-10-strict-identity-register.md`](docs/research/2026-08-10-strict-identity-register.md).
 
 <div align="center">
 
-<img src="docs/media/register.gif" alt="The question, then 176 candidates sorting into 66 that pass the bar, 24 that pass on the provider's word alone, 50 rejected and 36 unresolved" width="820">
+<img src="docs/media/register.gif" alt="The question, then 184 candidates sorting into 70 that pass the bar, 27 that pass on the provider's word alone, 51 rejected and 36 unresolved" width="820">
 
 <sub>Rendered by <a href="docs/media/render.mjs"><code>docs/media/render.mjs</code></a> — the four
 counts are read from the verdict file at render time, never typed into the film.</sub>
@@ -245,7 +245,7 @@ traffic. The example is the shape, not your bill.
 
 ```bash
 bun install                              # no runtime deps
-bun run test        # 168 tests
+bun run test        # 169 tests
 bun run typecheck   # no type errors
 bun run src/cli.ts --dir ~/.claude/projects
 ```
@@ -314,7 +314,8 @@ docs/specs/              the design spec (+ a rendered HTML copy)
 
 | Document | |
 |---|---|
-| [Strict identity register](docs/research/2026-08-10-strict-identity-register.md) | 176 techniques adjudicated, 66 pass, six dated errata |
+| [Strict identity register](docs/research/2026-08-10-strict-identity-register.md) | the first 176, 66 passing, six dated errata — one of which was itself wrong |
+| [Addendum, 2026-08-12](docs/research/2026-08-12-addendum.json) | 8 more from nine adversarial sweeps, each re-verified against its primary source by hand |
 | [Context survival register](docs/research/2026-08-11-context-survival-register.md) | the behaviour-affecting tier, measured and kept separate |
 | [Optical compression bench](bench/optical/README.md) | 2.07× at 93.9% blind recall, against 20–100× from delegation |
 

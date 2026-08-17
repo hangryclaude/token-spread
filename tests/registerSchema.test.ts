@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { loadRegister, type Entry } from "../src/register/load";
 
 /**
  * The register's format, enforced.
@@ -12,12 +12,7 @@ import { readFileSync } from "node:fs";
  * docs/research/SCHEMA.md is the contract. This is the enforcement.
  */
 
-const COHORTS = [
-  "docs/research/2026-08-10-verdicts-final.json",
-  "docs/research/2026-08-12-addendum.json",
-];
-type Entry = Record<string, unknown> & { id: number; name: string; strictVerdict: string };
-const entries: Entry[] = COHORTS.flatMap((f) => JSON.parse(readFileSync(f, "utf8")) as Entry[]);
+const entries: Entry[] = loadRegister();
 
 const REQUIRED = ["id", "name", "strictVerdict", "reasoning", "savings", "provenance", "telemetrySignal", "providers"];
 const VERDICTS = new Set([

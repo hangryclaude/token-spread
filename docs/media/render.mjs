@@ -40,13 +40,12 @@ const CHECK = process.argv.includes('--check');
    where identity is demonstrable; CONTRACTUAL_ONLY deliberately is not one of them, which is
    exactly why it needs its own column instead of being folded in or dropped. */
 const PASSING = ['PASS_ABSOLUTE', 'PASS_METADATA', 'PASS_SCHEDULING', 'PASS_REPLAY'];
-/* Both cohorts. The film's whole claim is that its counts are read from the register at render
-   time rather than typed into the animation — which stops being true the moment it reads only
-   half the register. */
-const entries = [
-  'docs/research/2026-08-10-verdicts-final.json',
-  'docs/research/2026-08-12-addendum.json',
-].flatMap((f) => JSON.parse(readFileSync(join(ROOT, f), 'utf8')));
+/* Every cohort, from the manifest the schema test and the CLI read too. The film's whole claim
+   is that its counts are read from the register at render time rather than typed into the
+   animation — which stops being true the moment it reads only half the register, and a
+   hardcoded list here is exactly how that happens on the day a cohort is added. */
+const entries = JSON.parse(readFileSync(join(ROOT, 'docs/research/cohorts.json'), 'utf8'))
+  .flatMap((f) => JSON.parse(readFileSync(join(ROOT, 'docs/research', f), 'utf8')));
 const count = (fn) => entries.filter(fn).length;
 const groups = [
   { key: 'pass', label: 'pass the bar', color: '#3ddc84', n: count((e) => PASSING.includes(e.strictVerdict)) },

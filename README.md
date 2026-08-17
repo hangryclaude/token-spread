@@ -11,7 +11,7 @@ zero margin). By serving the **same request to the same model** more cheaply tha
 customer can buy it direct. That gap is the business — and it survives scrutiny only
 because nothing about the request changes.
 
-`186 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
+`194 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
 
 <sub>Code **[MIT](LICENSE)** · the register **[CC BY 4.0](docs/research/LICENSE)** — quote any
 verdict, credit the source, so a correction can reach you. [How to cite](CITATION.cff)</sub>
@@ -68,7 +68,7 @@ month can be checked against what it says today.
 
 <div align="center">
 
-<img src="docs/media/register.gif" alt="The question, then 187 candidates sorting into 67 that pass the bar, 28 that pass on the provider's word alone, 51 rejected and 40 unresolved" width="820">
+<img src="docs/media/register.gif" alt="The question, then 187 candidates sorting into 67 that pass the bar, 28 that pass on the provider's word alone, 52 rejected and 40 unresolved" width="820">
 
 <sub>Rendered by <a href="docs/media/render.mjs"><code>docs/media/render.mjs</code></a> — the four
 counts are read from the verdict file at render time, never typed into the film.</sub>
@@ -272,7 +272,7 @@ traffic. The example is the shape, not your bill.
 
 ```bash
 bun install                              # no runtime deps
-bun run test        # 186 tests
+bun run test        # 194 tests
 bun run typecheck   # no type errors
 bun run src/cli.ts --dir ~/.claude/projects
 ```
@@ -337,7 +337,7 @@ docs/specs/              the design spec (+ a rendered HTML copy)
 
 ## Research
 
-<img src="docs/media/cards/register.jpg" alt="187 techniques adjudicated: 67 pass the bar, 28 pass on the provider's word alone, 51 rejected outright, 40 unresolved and stated as unresolved." width="820">
+<img src="docs/media/cards/register.jpg" alt="187 techniques adjudicated: 67 pass the bar, 28 pass on the provider's word alone, 52 rejected outright, 40 unresolved and stated as unresolved." width="820">
 
 | Document | |
 |---|---|

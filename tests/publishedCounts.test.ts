@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { loadRegister, tally } from "../src/register/load";
+import { cohortFiles, loadRegister, tally } from "../src/register/load";
 import { duplicateIds } from "../src/register/ids";
 
 /**
@@ -189,4 +189,17 @@ test("no published file states a register number that is no longer one", () => {
     }
   }
   expect([...wrong], `published copy carries stale register numbers:\n  ${[...wrong].join("\n  ")}`).toEqual([]);
+});
+
+test("the README hands out every cohort file, and only files that exist", () => {
+  /* The README used to say "two JSON files" and print two curl lines. Both were true on the day
+     they were written and neither knew about a third cohort. A reader who takes the register at
+     its word gets a silently partial copy — worse than a broken link, because it looks complete
+     and its tally will not match the site's. */
+  const readme = readFileSync("README.md", "utf8");
+  const published = [...readme.matchAll(/raw\.githubusercontent\.com\/[^\s]*?\/docs\/research\/([^\s`]+\.json)/g)]
+    .map((m) => m[1]!);
+  const expected = cohortFiles();
+  expect([...published].sort(), `README publishes ${published.length} cohort URLs, cohorts.json lists ${expected.length}`)
+    .toEqual([...expected].sort());
 });

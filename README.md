@@ -11,7 +11,7 @@ zero margin). By serving the **same request to the same model** more cheaply tha
 customer can buy it direct. That gap is the business — and it survives scrutiny only
 because nothing about the request changes.
 
-`207 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
+`208 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
 
 <sub>Code **[MIT](LICENSE)** · the register **[CC BY 4.0](docs/research/LICENSE)** — quote any
 verdict, credit the source, so a correction can reach you. [How to cite](CITATION.cff)</sub>
@@ -53,8 +53,9 @@ the provider's word alone**, **52 rejected**, **40 unresolved**. Those four add 
 register that quietly drops a category is doing the thing it exists to prevent. The working is in
 [`docs/research/2026-08-10-strict-identity-register.md`](docs/research/2026-08-10-strict-identity-register.md).
 
-**Take the whole thing.** The register is two JSON files at stable paths, CC BY 4.0 — no API, no
-signup, no rate limit:
+**Take the whole thing.** The register is plain JSON at stable paths, CC BY 4.0 — no API, no
+signup, no rate limit. One file per adjudication cohort, listed in
+[`cohorts.json`](docs/research/cohorts.json):
 
 ```bash
 curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-10-verdicts-final.json
@@ -272,7 +273,7 @@ traffic. The example is the shape, not your bill.
 
 ```bash
 bun install                              # no runtime deps
-bun run test        # 207 tests
+bun run test        # 208 tests
 bun run typecheck   # no type errors
 bun run src/cli.ts --dir ~/.claude/projects
 ```

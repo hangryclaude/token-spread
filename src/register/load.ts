@@ -36,10 +36,26 @@ export function cohortFiles(): string[] {
   return JSON.parse(readFileSync(join(RESEARCH_DIR, "cohorts.json"), "utf8")) as string[];
 }
 
+/**
+ * The register, still grouped by the file each entry came from. Which cohort an entry belongs
+ * to is evidence in its own right: the filename carries the date that cohort was adjudicated,
+ * and for the 89 entries whose `verifiedAgainst` says "this session" and nothing more, that
+ * filename is the only date anyone can still recover.
+ */
+export interface Cohort {
+  file: string;
+  entries: Entry[];
+}
+
+export function loadCohorts(): Cohort[] {
+  return cohortFiles().map((file) => ({
+    file,
+    entries: JSON.parse(readFileSync(join(RESEARCH_DIR, file), "utf8")) as Entry[],
+  }));
+}
+
 export function loadRegister(): Entry[] {
-  return cohortFiles().flatMap(
-    (f) => JSON.parse(readFileSync(join(RESEARCH_DIR, f), "utf8")) as Entry[],
-  );
+  return loadCohorts().flatMap((c) => c.entries);
 }
 
 /** The four buckets the site publishes. Derived here so nothing downstream counts by hand. */

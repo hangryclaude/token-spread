@@ -15,7 +15,7 @@
  *   node docs/media/render.mjs --check    fail if the film's counts no longer match the data
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, readFileSync, existsSync, statSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
@@ -62,11 +62,28 @@ if (total !== entries.length) {
 }
 console.log(`${entries.length} candidates: ${groups.map((g) => `${g.n} ${g.key}`).join(' · ')}`);
 
+/* What the film on disk was rendered from. Without this, --check could confirm the buckets sum
+   and the file exists and still be looking at an animation of a register two cohorts out of
+   date — which is exactly what it did on 2026-08-17, printing "counts reconcile" on both sides
+   of a re-render that changed the file. The advice line below used to be the whole guarantee. */
+const STAMP = join(ROOT, 'docs/media/register.counts.json');
+const stamp = JSON.stringify(Object.fromEntries([['total', entries.length], ...groups.map((g) => [g.key, g.n])]));
+
 if (CHECK) {
   const out = join(ROOT, 'docs/media/register.mp4');
   if (!existsSync(out)) { console.error('✗ register.mp4 has never been rendered'); process.exit(1); }
-  console.log(`register.mp4 present (${(statSync(out).size / 1024).toFixed(0)}KB). Counts reconcile: ${total} = ${entries.length}.`);
-  console.log('Re-render with `node docs/media/render.mjs` whenever the verdict file changes.');
+  if (!existsSync(STAMP)) {
+    console.error('✗ register.counts.json is missing — the film on disk cannot be matched to any register.');
+    console.error('  Re-render with `node docs/media/render.mjs`.');
+    process.exit(1);
+  }
+  const was = readFileSync(STAMP, 'utf8').trim();
+  if (was !== stamp) {
+    console.error(`✗ the film is stale.\n  rendered from: ${was}\n  register now:  ${stamp}`);
+    console.error('  Re-render with `node docs/media/render.mjs`.');
+    process.exit(1);
+  }
+  console.log(`register.mp4 present (${(statSync(out).size / 1024).toFixed(0)}KB), rendered from ${stamp}.`);
   process.exit(0);
 }
 
@@ -103,4 +120,5 @@ ff(['-framerate', String(FPS), '-i', join(dir, 'f_%04d.png'), '-i', pal,
   '-lavfi', 'fps=12,scale=640:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=3', gif]);
 
 rmSync(dir, { recursive: true, force: true });
+writeFileSync(STAMP, stamp + '\n');
 for (const f of [mp4, gif]) console.log(`  ${f.replace(ROOT, '')}  ${(statSync(f).size / 1024).toFixed(0)}KB`);

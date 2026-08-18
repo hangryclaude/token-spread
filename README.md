@@ -48,8 +48,8 @@ out the largest number anyone can put on a slide. What is left is smaller, and t
 | Compaction accounting | `PASS_ABSOLUTE` | nothing — it corrects a mis-read bill |
 | Batch tier | `CONTRACTUAL_ONLY` | when the work runs. Off by default |
 
-201 candidate techniques were adjudicated against that question — **69 pass**, **32 pass on
-the provider's word alone**, **58 rejected**, **42 unresolved**. Those four add to 201; a
+226 candidate techniques were adjudicated against that question — **71 pass**, **43 pass on
+the provider's word alone**, **66 rejected**, **46 unresolved**. Those four add to 226; a
 register that quietly drops a category is doing the thing it exists to prevent. The working is in
 [`docs/research/2026-08-10-strict-identity-register.md`](docs/research/2026-08-10-strict-identity-register.md).
 
@@ -61,6 +61,7 @@ signup, no rate limit. One file per adjudication cohort, listed in
 curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-10-verdicts-final.json
 curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-12-addendum.json
 curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-17-sweep-12-recovered.json
+curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-17-sweep-13.json
 ```
 
 The format is documented in [`SCHEMA.md`](docs/research/SCHEMA.md) and enforced by
@@ -70,7 +71,7 @@ month can be checked against what it says today.
 
 <div align="center">
 
-<img src="docs/media/register.gif" alt="The question, then 201 candidates sorting into 69 that pass the bar, 32 that pass on the provider's word alone, 58 rejected and 42 unresolved" width="820">
+<img src="docs/media/register.gif" alt="The question, then 226 candidates sorting into 71 that pass the bar, 43 that pass on the provider's word alone, 66 rejected and 46 unresolved" width="820">
 
 <sub>Rendered by <a href="docs/media/render.mjs"><code>docs/media/render.mjs</code></a> — the four
 counts are read from the verdict file at render time, never typed into the film.</sub>
@@ -339,7 +340,7 @@ docs/specs/              the design spec (+ a rendered HTML copy)
 
 ## Research
 
-<img src="docs/media/cards/register.jpg" alt="201 techniques adjudicated: 69 pass the bar, 32 pass on the provider's word alone, 58 rejected outright, 42 unresolved and stated as unresolved." width="820">
+<img src="docs/media/cards/register.jpg" alt="226 techniques adjudicated: 71 pass the bar, 43 pass on the provider's word alone, 66 rejected outright, 46 unresolved and stated as unresolved." width="820">
 
 | Document | |
 |---|---|

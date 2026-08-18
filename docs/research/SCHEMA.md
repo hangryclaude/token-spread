@@ -1,7 +1,7 @@
 # The verdict format
 
 Every entry in the register is one JSON object. This document is the contract, and
-`tests/registerSchema.test.ts` enforces it against all 201 entries on every run — a register
+`tests/registerSchema.test.ts` enforces it against all 226 entries on every run — a register
 whose shape is only described in prose is a register whose shape can drift.
 
 The reason this file exists: the project's one verified differentiator is that it publishes its

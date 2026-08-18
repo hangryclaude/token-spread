@@ -56,9 +56,11 @@ adversarial pass overruled the first adjudication).
 
 `kind` is one of `withdrawn-from-passing`, `verdict-changed`, `source-corrected`,
 `superseded`. Corrections are **appended, never edited away**, and the original reasoning stays
-in place above them. Four entries carry one today: ids 13, 15, 16 and 18 were expelled from the
-passing column on 2026-08-12 when their cited tools turned out to be zero-star repositories and
-one could not be found at all. The pass count fell from 70 to 66 that day and the site said so.
+in place above them. Twenty-six entries carry one today. The first four were ids 13, 15, 16 and
+18, expelled on 2026-08-12 when their cited tools turned out to be zero-star repositories and one
+could not be found at all; the pass count fell from 70 to 66 that day and the site said so. The
+rest arrived on 2026-08-18, when the passing column was adversarially audited for the first time
+and the pass count fell again, from 71 to 59.
 
 A register that can only grow its pass count is advertising. The `corrections` array is how this
 one proves it is not.

@@ -1,8 +1,14 @@
 <!-- The first time this register was pointed at its own passing column. -->
 
-# The passing column, audited — 71 becomes 59
+# The passing column, audited — 71 becomes 49
 
-**226 entries · 59 pass · 51 on the provider's word · 68 rejected · 48 unresolved.**
+**226 entries · 49 pass · 59 on the provider's word · 69 rejected · 49 unresolved.**
+
+> **Round two, same day.** This brief was first written after 36 of 69 passes had been attacked
+> and reported 59. The other 33 — the ones triage had cleared *without* attacking — were then
+> attacked too, and the number fell again to **49**. Everything below is preserved as first
+> written; the round-two section at the end records what changed, including a finding that
+> **rebuts this brief's own headline argument.**
 
 The register sells one thing: a passing column small enough to be true. Until 2026-08-18, **69 of
 its 71 passes had never been adversarially challenged.** The two that had were challenged on the
@@ -136,3 +142,94 @@ audit has a named list to start from.
   the table above says so rather than folding them in with the 21 that were tested.
 - **The six splits were decided by one judge each.** Better than leaving them tied, weaker than
   the two-refuter standard applied everywhere else in this audit.
+
+---
+
+# Round two — the 33 that were never attacked
+
+The section above closed by admitting that 33 entries had been "cleared by a single triage pass
+and never attacked", and counted them as unverified. That gap is now closed. Each of the 33 got
+two independent refuters, and the ten that split 1-1 got a third judge, as did the six from
+round one.
+
+**Every pass in this register has now faced two independent adversaries.** The count falls from
+59 to **49**.
+
+| | |
+|---|---:|
+| attacked in round two | 33 |
+| survived both refuters | 20 |
+| overturned by both | 3 |
+| split 1-1, decided by a third judge | 10 |
+| of those splits, upheld | 3 |
+| **withdrawn in round two** | **10** |
+
+## This brief's own headline argument was wrong
+
+Round one demoted `cache_control` (id 164) on the claim that "outside the content string" proves
+nothing, because `role` is a same-schema counterexample the model demonstrably reads. That
+argument was promoted here as the audit's second-biggest finding, and it was named as the burden
+fifteen sibling entries would have to clear.
+
+It does not survive. Refuters examining those siblings rejected the counterexample as
+non-transferring, and they are right: **`role` is serialised into the chat template and becomes
+input tokens — which is exactly why the model reads it — whereas `cache_control` is never
+concatenated into any text value.** That is a structural distinction, not a positional one.
+
+Tested against the nine entries named in advance, the argument scored one clean kill, three clean
+survivals, three live disputes, and two failures attributable to something else entirely. The
+prediction was wrong on the numbers, and ids 25 and 42 were **upheld** on exactly the reasoning
+this brief had dismissed.
+
+The register over-corrected, and this is the correction to the correction.
+
+## Which makes the real finding worse, not better
+
+Entry 164's demotion stands — on a ground nobody had checked when it was first demoted. A judge
+re-fetching the page independently (2,370,690 bytes; control phrases `cache_control` 239 hits,
+`ephemeral` 187) found that **every distinctive fragment of its core quote returns zero hits**,
+under the words "Directly confirmed this session": `serving/pricing directive` 0,
+`purely a serving` 0, `not read by the model as content` 0, `stripped out before processing` 0.
+
+That is the same invented phrasing as entry 74. Two of this register's most load-bearing entries
+quoted a page that does not contain their quotes.
+
+**Five entries have now been caught this way in one week:**
+
+| id | what was wrong with the quote |
+|---:|---|
+| 74 | two phrases, zero hits, under "Independently verified this session" |
+| 164 | four fragments, zero hits, under "Directly confirmed this session" |
+| 60 | zero hits on the cited page and on two other candidate pages |
+| 166 | a splice — two bullets from different sections welded into one sentence |
+| 114 | **inverted** — cited AWS as restricting eligibility; AWS expanded it |
+
+Entry 114 is instructive about proportion: the inverted quote sat in an auxiliary `trap` field,
+not in the sentence the verdict rests on, so the judge struck the false claim and **kept** the
+`PASS_ABSOLUTE`. Failing a structurally sound entry over a bad caveat would have been the mirror
+of the over-correction above.
+
+## What the register is now worth, in a sentence
+
+The round-two synthesis was asked for a sentence a sceptical customer would accept, and this is
+what it wrote:
+
+> "About three in five of these entries survive when two people check them independently the same
+> way; the rest are either wrong or a coin flip depending who you ask, and at least three were
+> caught citing text that isn't on the page they claimed to have verified — so a PASS in this
+> column is not evidence, it's a starting point."
+
+That is harsher than anything the site says, and it is the honest characterisation.
+
+## Still not done
+
+- **Nothing has been measured.** Still no `ANTHROPIC_API_KEY`. Every P1 demotion in both rounds —
+  the most common failure by a wide margin — is exactly the class a single measurement settles.
+  The register cannot get past "the provider says so" without one.
+- **The 12 entries withdrawn in round one were not re-run** through round two's two-refuter check.
+  Round one's method was triage-then-escalate; round two attacked everything. The withdrawals are
+  not held to the same standard as the survivors.
+- **The quote-integrity check has never been run across the whole register.** Five fabrications
+  were found by refuters who happened to be looking at those entries. Nobody has grepped all 226
+  entries' quotes against their sources, and on this week's hit rate there is no reason to assume
+  the remaining ones are clean.

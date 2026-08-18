@@ -15,7 +15,7 @@
   {
     "id": 11,
     "name": "msglm mk_msg_anthropic/mk_msgs_anthropic cache= / ttl= / cache_last_ckpt_only=",
-    "strictVerdict": "PASS_METADATA",
+    "strictVerdict": "CONTRACTUAL_ONLY",
     "reasoning": "cache=True appends an Anthropic cache_control block; ttl= sets the ttl field inside that same object — both are exactly the canonical cache_control example the rubric names. cache_last_ckpt_only only moves WHICH block carries cache_control (strips it from older messages, adds it to the newest) to stay under the 4-breakpoint cap; it never touches message text. Normalizing a plain string into a single [{type:text,text:...}] block is a format equivalence Anthropic's API treats identically to the raw string — the model reads the same text either way.",
     "savings": "UNQUANTIFIED — this is a convenience wrapper; savings flow entirely from Anthropic's own documented cache-read discount, not from the library.",
     "provenance": "primary-doc",
@@ -26,7 +26,14 @@
     "verifiedAgainst": "not re-verified this session (library source already primary-doc; mechanically a thin wrapper around an already-established-safe Anthropic field)",
     "class": "LEVER",
     "whoActsOnIt": "customer engineering",
-    "estimatedReach": "UNKNOWN"
+    "estimatedReach": "UNKNOWN",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Split 1-1 and demoted by a third judge. msglm's source was fetched and the mechanism confirmed exactly: it only ever sets a cache_control sibling key and never touches a text value. But the entry supplies no independent evidence for the field being unread — its own verifiedAgainst leans on 'an already-established-safe Anthropic field', a status the parent entry (id 164) lost the same day. A thin wrapper inherits its parent's evidentiary standing, including when that standing falls."
+      }
+    ]
   },
   {
     "id": 22,
@@ -228,7 +235,7 @@
   {
     "id": 154,
     "name": "Duplicate/fan-out billed requests from protocol-translation retries",
-    "strictVerdict": "PASS_ABSOLUTE",
+    "strictVerdict": "INSUFFICIENT_EVIDENCE",
     "reasoning": "Fixing/avoiding this bug means not sending the second, wasteful, non-streaming fallback request for a turn whose original streaming response was functionally fine but merely format-mismatched — i.e., eliminating a request that should never have been sent at all, the rubric's explicit PASS_ABSOLUTE example. When the model does answer, it answers identically either way; the fix is entirely about not doubling the request.",
     "savings": "2x on every affected turn while the bug is present (qualitative multiplier per the confirmed GitHub issue); no fleet-wide dollar aggregate published, as the entry states.",
     "provenance": "practitioner-data",
@@ -239,7 +246,14 @@
     "verifiedAgainst": "not re-verified this session (GitHub issue maximhq/bifrost#5128 already primary/practitioner-data per original entry, with A/B isolation described)",
     "class": "LEVER",
     "whoActsOnIt": "customer engineering",
-    "estimatedReach": "2x on affected turns only, while bug present; no fleet-wide aggregate"
+    "estimatedReach": "2x on affected turns only, while bug present; no fleet-wide aggregate",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Split 1-1 and demoted by a third judge. The cited Bifrost issue is real and open, and the repository is active — but a single unresolved bug report is not a settled mechanism, and the entry read as though it were."
+      }
+    ]
   },
   {
     "id": 165,
@@ -499,7 +513,7 @@
   {
     "id": 166,
     "name": "Cache breakpoint placement at volatility boundaries (segment by how often content changes)",
-    "strictVerdict": "PASS_METADATA",
+    "strictVerdict": "FAIL",
     "reasoning": "Verified directly against Anthropic's prompt-caching docs this pass: 'Cache breakpoints themselves don't add any cost,' and the docs explicitly recommend up to 4 breakpoints to 'cache different sections that change at different frequencies (tools rarely change, but context updates daily)' — matching Aider's shipped implementation (system/examples, repo-map, chat-files breakpoints, live turn left uncached). This only changes where cache_control markers sit among content blocks that are already present in the request; it does not reorder, trim, or mutate the prompt content itself, and the primary source confirms breakpoints are pure metadata with no token/content effect.",
     "savings": "UNQUANTIFIED in dollar terms by Aider itself, but structurally this is what prevents a fast-changing layer's edits from invalidating cache on a slower-changing layer behind it, directionally reducing unnecessary cache-write cost.",
     "provenance": "primary-doc — verified this session",
@@ -511,7 +525,19 @@
     "verifiedAgainst": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching (fetched this session)",
     "class": "LEVER",
     "whoActsOnIt": "our system automatically",
-    "estimatedReach": "UNKNOWN"
+    "estimatedReach": "UNKNOWN",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "A quoted string in this entry does not appear in the source it cites. The entry's second quote is a splice: two bullets from two different sections of the same page welded into one sentence, with 'for example' silently dropped. The first quote ('Cache breakpoints themselves don't add any cost') is genuine and returns 1 hit; the composite does not exist. The page was re-fetched as raw HTML on 2026-08-18 with a control phrase reported alongside, so a zero result cannot be a broken fetch. This is the fifth entry found this way in one week; see the 2026-08-18 audit brief."
+      },
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Split 1-1 and failed by a third judge, which re-fetched the page itself (control phrases 'prompt caching' 67 hits, 'cache_control' 239) and reproduced the splice independently rather than taking a refuter's word for it."
+      }
+    ]
   },
   {
     "id": 2,
@@ -1144,7 +1170,7 @@
   {
     "id": 81,
     "name": "Token counting endpoint (/v1/messages/count_tokens): cost and rate limits",
-    "strictVerdict": "PASS_ABSOLUTE",
+    "strictVerdict": "CONTRACTUAL_ONLY",
     "reasoning": "Verified directly against the primary doc this session: 'Token counting is free to use,' and 'Token counting and message creation have separate and independent rate limits. Usage of one does not count against the limits of the other' — both confirmed verbatim. The endpoint is a wholly separate, optional, free diagnostic call; using it has zero effect on the actual message-creation request sent to the model.",
     "savings": "N/A — correctly framed as a free diagnostic tool, not itself a savings lever; useful as the correct instrument for measuring OTHER techniques' savings.",
     "provenance": "primary-doc",
@@ -1160,7 +1186,14 @@
     "implementationNote": "Recommend customers route pre-flight token estimation through count_tokens rather than tiktoken or another provider's tokenizer; track as a hygiene signal, not a savings source.",
     "class": "PREREQUISITE",
     "whoActsOnIt": null,
-    "estimatedReach": null
+    "estimatedReach": null,
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Split 1-1 and demoted by a third judge on the register's evidentiary cap: the claim rests on the provider's documentation of its own behaviour rather than on a measurement or on the request never being sent."
+      }
+    ]
   },
   {
     "id": 92,
@@ -1205,7 +1238,7 @@
   },
   {
     "id": 114,
-    "name": "AWS Marketplace private offer drawing down existing EDP/PPA commitment",
+    "name": "AWS Marketplace private offer drawing down an existing EDP/PPA commitment — the trap's 'fully deployed on AWS infrastructure' eligibility restriction is struck as inverted",
     "strictVerdict": "PASS_ABSOLUTE",
     "reasoning": "A pure commercial/contractual billing-routing lever — which invoice line an already-incurred charge is paid against — with zero effect on the request sent to or read by the model. Bytes on the wire, model invoked, and amount of thinking are all completely unaffected; only which budget the same charge draws from changes.",
     "savings": "Restated: not a unit-price discount but conversion of already-owed committed dollars into paid-for usage — up to 100% of applied spend by definition, but the commonly-cited '~25% of EDP/PPA commitment' ceiling is sourced only from secondary blog posts (leadiq.com, nops.io), not an AWS primary document — the candidate says so itself; treat that percentage as unverified.",
@@ -1218,7 +1251,14 @@
     "implementationNote": "Requires account-level procurement data we never see; would need to be a manually-entered account attribute.",
     "class": "LEVER",
     "whoActsOnIt": "customer procurement",
-    "estimatedReach": "UNKNOWN (~25% ceiling sourced only to secondary blogs); restricted to AWS-only-deployed SaaS since May 2025"
+    "estimatedReach": "UNKNOWN (~25% ceiling sourced only to secondary blogs); restricted to AWS-only-deployed SaaS since May 2025",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "Split 1-1 and UPHELD at PASS_ABSOLUTE by a third judge, with a fabricated claim struck from its name. The mechanism is sound and structural: a private offer decides which committed-spend ledger an already-incurred charge settles against, and changes nothing on the wire. But the entry's trap field carried an INVERTED quote — it cited a May 2025 AWS change as restricting Marketplace eligibility to workloads 'fully deployed on AWS infrastructure', when that change EXPANDED eligibility to non-AWS, hybrid and on-premises deployments. The false material sat in an auxiliary caveat rather than in the sentence the verdict rests on, so the remedy is to strike it rather than to fail a structurally sound entry over a bad caveat."
+      }
+    ]
   },
   {
     "id": 125,
@@ -1246,7 +1286,7 @@
   {
     "id": 136,
     "name": "Prompt caching (cache-breakpoint reuse)",
-    "strictVerdict": "PASS_METADATA",
+    "strictVerdict": "CONTRACTUAL_ONLY",
     "reasoning": "This is the textbook case named directly in the strict bar's own definition of PASS_METADATA: 'Anthropic cache_control... [is] the canonical example.' The provider reuses KV-cache compute for a byte-identical prefix; cache_control is a field the model does not read as prompt content, it only tells serving infra where to slice for cache lookup. (For providers with fully automatic/implicit caching like OpenAI once a prefix clears ~1024 tokens, no field is even added — that sub-case is stronger, effectively PASS_ABSOLUTE — but since this entry spans Anthropic/OpenAI/Google Vertex together and Anthropic's mechanism requires the explicit marker, PASS_METADATA is correct for the entry as scoped.)",
     "savings": "~90% discount on cached-input tokens per Anthropic's publicly documented cache-read pricing — flagged by the candidate as primary-doc but not re-verified live this session; re-check the current pricing page before quoting a specific percentage to a customer.",
     "provenance": "primary-doc",
@@ -1259,7 +1299,19 @@
     "implementationNote": "This is the core detection our product should be built on: hit-ratio over time per stable-prefix key, computed purely from response token-count fields.",
     "class": "LEVER",
     "whoActsOnIt": "our system automatically",
-    "estimatedReach": "~90% off cache-hit tokens (bill-share UNKNOWN)"
+    "estimatedReach": "~90% off cache-hit tokens (bill-share UNKNOWN)",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "A quoted string in this entry does not appear in the source it cites. A refuter grepping the live page found the entry's quoted string absent as quoted. The page was re-fetched as raw HTML on 2026-08-18 with a control phrase reported alongside, so a zero result cannot be a broken fetch. This is the fifth entry found this way in one week; see the 2026-08-18 audit brief."
+      },
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Split 1-1 and demoted by a third judge, on the same evidentiary cap that decided the rest of this cluster: with the quoted string struck, what remains is the provider's own account of its behaviour, and no measurement was taken."
+      }
+    ]
   },
   {
     "id": 147,
@@ -1403,7 +1455,7 @@
   {
     "id": 60,
     "name": "Anthropic prompt caching (cache_control breakpoints)",
-    "strictVerdict": "PASS_METADATA",
+    "strictVerdict": "CONTRACTUAL_ONLY",
     "reasoning": "Verified directly against Anthropic's own docs: 'The response you receive is identical to what you would get if prompt caching were not used' and caching 'does not alter model behavior, outputs, or reasoning.' cache_control is a directive field, never rendered into the prompt. This is the canonical PASS_METADATA case named in the rubric itself.",
     "savings": "Confirmed: cache reads billed at 0.1x base input (90% discount), cache writes at 1.25x-2.0x base input depending on TTL (5-min vs 1-hour) -- matches the entry. ProjectDiscovery's practitioner numbers (59-84% reduction) are a separate, plausible field report not independently re-verified this pass.",
     "provenance": "primary-doc",
@@ -1414,7 +1466,19 @@
     "verifiedAgainst": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching",
     "class": "LEVER",
     "whoActsOnIt": "our system automatically",
-    "estimatedReach": "~90% off cache-hit tokens; unverified field report of 59-84% overall reduction"
+    "estimatedReach": "~90% off cache-hit tokens; unverified field report of 59-84% overall reduction",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "A quoted string in this entry does not appear in the source it cites. The entry presents 'does not alter model behavior, outputs, or reasoning' as verified against Anthropic's documentation; it returns zero hits on the cited page and on two other candidate Anthropic pages, confirmed independently by two refuters. The page was re-fetched as raw HTML on 2026-08-18 with a control phrase reported alongside, so a zero result cannot be a broken fetch. This is the fifth entry found this way in one week; see the 2026-08-18 audit brief."
+      },
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Withdrawn as a consequence: with the fabricated quote struck, only a cost-only documentation sentence remains to support a claim about token-content invariance."
+      }
+    ]
   },
   {
     "id": 71,
@@ -1716,7 +1780,7 @@
   {
     "id": 83,
     "name": "prompt_cache_key (OpenAI cache-warm routing hint)",
-    "strictVerdict": "PASS_METADATA",
+    "strictVerdict": "CONTRACTUAL_ONLY",
     "reasoning": "Verified via OpenAI's primary docs: this is explicitly named in the rubric itself as a canonical PASS_METADATA example. Confirmed it is a routing hint combined server-side with a prefix hash to influence which backend machine handles the request — it does not alter the prompt, model, or forward pass; it only changes cache-hit probability. The field is metadata the routing layer consumes, never rendered as prompt content to the model.",
     "savings": "UNQUANTIFIED as a standalone figure — it doesn't create a discount itself, it raises the hit-rate for OpenAI's underlying automatic prompt-caching discount (which is a separate, well-documented percentage). Confirmed via primary doc: OpenAI recommends capping traffic to ~15 requests/minute per key to avoid fragmenting across backend machines and missing the cache.",
     "provenance": "primary-doc",
@@ -1727,12 +1791,19 @@
     "verifiedAgainst": "https://developers.openai.com/api/docs/guides/prompt-caching (fetched; confirmed routing-hint framing and exact 15 req/min guidance)",
     "class": "LEVER",
     "whoActsOnIt": "our system automatically",
-    "estimatedReach": "UNKNOWN"
+    "estimatedReach": "UNKNOWN",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Split 1-1 and demoted by a third judge. Same cluster and same defect as ids 10 and 11: the field-invisibility claim is supported by provider documentation alone."
+      }
+    ]
   },
   {
     "id": 94,
     "name": "Gemini explicit context caching",
-    "strictVerdict": "PASS_METADATA",
+    "strictVerdict": "CONTRACTUAL_ONLY",
     "reasoning": "Same category as Anthropic's cache_control and OpenAI's prompt_cache_key: the customer calls createCachedContent to register content once, then passes a cache ID reference on subsequent calls. The cached content is still effectively part of what the model attends to (served from a KV-cache instead of recomputed) — no prompt bytes are omitted from the model's effective context, only from the wire and from the recompute cost. The cache ID itself is a metadata reference, not prompt content mutation.",
     "savings": "Same 90% discount on cached tokens as Gemini's implicit caching for 2.5+/3.x models (75% for 2.0), per the candidate's cited primary docs — not independently re-fetched this pass since it's a standard, well-established industry-wide caching pattern and not among the highest/most novel savings claims in this batch.",
     "provenance": "primary-doc",
@@ -1745,7 +1816,14 @@
     "verifiedAgainst": "not re-verified — standard, well-documented industry pattern; not prioritized for re-fetch given time-boxing and the 90%/75% figures already carrying primary-doc provenance in the source entry",
     "class": "LEVER",
     "whoActsOnIt": "customer engineering",
-    "estimatedReach": "UNKNOWN (90%/75% by model tier, not re-verified this session)"
+    "estimatedReach": "UNKNOWN (90%/75% by model tier, not re-verified this session)",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Split 1-1 and demoted by a third judge on the evidentiary cap — a documentation sentence about provider-side behaviour, with no measurement behind it."
+      }
+    ]
   },
   {
     "id": 105,
@@ -2180,7 +2258,14 @@
     "verifiedAgainst": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching (fetched this session)",
     "class": "LEVER",
     "whoActsOnIt": "our system automatically",
-    "estimatedReach": "~90% off cache-hit tokens (bill-share UNKNOWN)"
+    "estimatedReach": "~90% off cache-hit tokens (bill-share UNKNOWN)",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "superseded",
+        "note": "Split 1-1 and UPHELD at PASS_METADATA by a third judge, which checked the quote first: the entry's cited sentence returns 2 verbatim hits, and the numeric claims — 10% read price, 1.25x/2x write multiples, and all four 512/1,024/2,048/4,096 minimums — are present and unchanged. The judge then read the mechanism section rather than trusting either refuter, and found the invalidation table keys off content at each hierarchy level and not off cache_control's presence, which is a structural basis independent of the 'identical response' assurance. It also drew the distinction that decides this family: role is serialised into the chat template and becomes input tokens, which is why position proves nothing for role; cache_control has no analogous job at generation time."
+      }
+    ]
   },
   {
     "id": 53,
@@ -2399,7 +2484,7 @@
   {
     "id": 10,
     "name": "langchain_anthropic AnthropicPromptCachingMiddleware",
-    "strictVerdict": "PASS_METADATA",
+    "strictVerdict": "CONTRACTUAL_ONLY",
     "reasoning": "Adds cache_control to the last content block of system message and last tool def. Verified this session (via platform.claude.com fetch) that cache_control is a serving/pricing directive stripped before the model sees content — the model receives only the text value, field placement doesn't change semantics. Model reads an identical token sequence with or without the middleware.",
     "savings": "UNQUANTIFIED by the middleware itself — actual $ depends on cache hit rate, using Anthropic's standard 90% cache-read discount (confirmed under id 164).",
     "provenance": "primary-doc",
@@ -2411,7 +2496,14 @@
     "verifiedAgainst": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching (fetched this session)",
     "class": "LEVER",
     "whoActsOnIt": "customer engineering",
-    "estimatedReach": "UNKNOWN"
+    "estimatedReach": "UNKNOWN",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Withdrawn on the second round of the passing-column audit. The langchain middleware mechanism was verified accurate against the library's own source. What fails is the tier: the entry's support for cache_control being unread is the docs sentence 'Prompt caching has no effect on output token generation', which is an OUTCOME claim, while the entry asserts a MECHANISM claim ('stripped before the model sees content') that appears nowhere on the page. Provider's word, no measurement."
+      }
+    ]
   },
   {
     "id": 21,
@@ -2484,7 +2576,7 @@
   {
     "id": 76,
     "name": "Cache-read tokens excluded from ITPM rate limits (model-specific exception: Haiku 3.5)",
-    "strictVerdict": "PASS_ABSOLUTE",
+    "strictVerdict": "CONTRACTUAL_ONLY",
     "reasoning": "Directly confirmed via fetch this session: 'For most Claude models, only uncached input tokens count toward your ITPM rate limits,' and the † footnote confirms Claude Haiku 3.5 (retired except Bedrock/Google Cloud) is the sole model that counts cache_read_input_tokens toward ITPM. Pure accounting fact about how a quota is computed — requires zero change to any request sent and zero change to what the model reads.",
     "savings": "Not a $ saving, a rate-limit-headroom effect: verified verbatim worked example — 2M ITPM + 80% cache hit rate ≈ 10M effective input tokens/minute.",
     "provenance": "primary-doc",
@@ -2495,7 +2587,14 @@
     "verifiedAgainst": "https://platform.claude.com/docs/en/api/rate-limits.md (fetched this session, 'Cache-aware ITPM' section and † footnote quoted verbatim)",
     "class": "FACT",
     "whoActsOnIt": null,
-    "estimatedReach": null
+    "estimatedReach": null,
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Withdrawn on the second round of the audit. Both refuters verified the quotes verbatim against the live source — the sourcing was sound. The verdict was not: the claim rests on the provider's account of its own internal handling, with no measurement."
+      }
+    ]
   },
   {
     "id": 87,
@@ -2622,6 +2721,11 @@
         "date": "2026-08-18",
         "kind": "withdrawn-from-passing",
         "note": "Split 1-1 on audit and demoted by a third judge. The pricing and mechanics were re-fetched as raw HTML on 2026-08-18 and are verbatim and current: 1.25x five-minute write, $2/MTok one-hour write, 0.1x read, four breakpoint slots. What failed is the identity argument. The entry reasons that cache_control sits outside the content string and is therefore not read by the model — and `role` is a same-schema counterexample, a field outside the content string that the model demonstrably does read. Position in the request JSON is not proof of invisibility. Without a measurement, model-invisibility here is Anthropic's documented assertion, which the register caps at CONTRACTUAL_ONLY. See the 2026-08-18 audit brief: the judge flagged this as systemic across the caching-metadata cluster, not as one row."
+      },
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "The demotion recorded above stands, but the reason given for it was wrong and is corrected here rather than edited away. That note demoted this entry on the argument that 'sits outside the content string' proves nothing because role is a same-schema counterexample. Sibling refuters subsequently rejected that counterexample as non-transferring, and they are right: role is serialised into the chat template and becomes input tokens, which is precisely why the model reads it, whereas cache_control is never concatenated into any text field. The register over-corrected. The demotion survives on a different and far more serious ground, reproduced independently on 2026-08-18 against a fresh raw-HTML fetch (2,370,690 bytes; control phrases 'cache_control' 239 hits, 'ephemeral' 187): every distinctive fragment of this entry's core quote, presented under 'Directly confirmed this session', returns ZERO hits — 'serving/pricing directive' 0, 'purely a serving' 0, 'not read by the model as content' 0, 'stripped out before processing' 0. The bare word 'stripped' appears four times, all in an unrelated passage about thinking blocks. This is the same invented phrasing found in entry 74. The right verdict for the wrong reason is still a defect, and this is the correction."
       }
     ]
   },
@@ -2675,7 +2779,7 @@
   },
   {
     "id": 25,
-    "name": "Model-capability gate instead of hard-coded model-ID allowlist for enabling cache_control",
+    "name": "Model-capability gate instead of a hard-coded model-ID allowlist for enabling cache_control — scoped to field position outside tokenized content, not to response identity",
     "strictVerdict": "PASS_METADATA",
     "reasoning": "cache_control is a request-level API instruction (a breakpoint marker for the provider's caching layer), not content the model reads as part of its input sequence. Fixing a stale allowlist so cache_control gets attached for newly-released models changes only whether that metadata flag is present — the underlying prompt bytes and the answer are unaffected either way. This is a straightforward metadata-completeness fix.",
     "savings": "UNQUANTIFIED — recovers 100% of the cache discount for any model the router hasn't manually allowlisted yet",
@@ -2684,7 +2788,14 @@
     "providers": [
       "Anthropic (via any router maintaining its own model catalog)"
     ],
-    "trap": "Recurs on every new model release: works for models known when the allowlist was written, then silently zeroes out caching for everything shipped after, with no error — just $0 in the cache columns."
+    "trap": "Recurs on every new model release: works for models known when the allowlist was written, then silently zeroes out caching for everything shipped after, with no error — just $0 in the cache columns.",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "superseded",
+        "note": "Split 1-1 and UPHELD at PASS_METADATA by a third judge, with the scope narrowed. The judge re-fetched the live page (control phrase 'cache_control', 239 hits) and found the entry does not need the behavioural-equivalence sentence it leans on: the docs' own code samples show cache_control as a sibling JSON key alongside model, max_tokens, system and messages in all 55 examples, never concatenated into a text value. That is a schema fact, directly inspectable, and it answers all three prongs of the bar without trusting an output-fidelity promise. The name is narrowed because the entry's own line — 'the answer is unaffected either way' — claims more than is needed or shown."
+      }
+    ]
   },
   {
     "id": 36,

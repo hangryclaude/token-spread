@@ -1,14 +1,15 @@
 <!-- The first time this register was pointed at its own passing column. -->
 
-# The passing column, audited — 71 becomes 49
+# The passing column, audited — 71 becomes 47
 
-**226 entries · 49 pass · 59 on the provider's word · 69 rejected · 49 unresolved.**
+**226 entries · 47 pass · 61 on the provider's word · 69 rejected · 49 unresolved.**
 
-> **Round two, same day.** This brief was first written after 36 of 69 passes had been attacked
+> **Rounds two and three, same day.** This brief was first written after 36 of 69 passes had been attacked
 > and reported 59. The other 33 — the ones triage had cleared *without* attacking — were then
-> attacked too, and the number fell again to **49**. Everything below is preserved as first
-> written; the round-two section at the end records what changed, including a finding that
-> **rebuts this brief's own headline argument.**
+> attacked too, and the number fell again to **49**. Round three then grepped every quoted string
+> in the register against the source it cites and found 22% of them defective, taking it to
+> **47**. Everything below is preserved as first written; the two sections at the end record what
+> changed, including a finding that **rebuts this brief's own headline argument.**
 
 The register sells one thing: a passing column small enough to be true. Until 2026-08-18, **69 of
 its 71 passes had never been adversarially challenged.** The two that had were challenged on the
@@ -233,3 +234,114 @@ That is harsher than anything the site says, and it is the honest characterisati
   were found by refuters who happened to be looking at those entries. Nobody has grepped all 226
   entries' quotes against their sources, and on this week's hit rate there is no reason to assume
   the remaining ones are clean.
+
+---
+
+# Round three — every quoted string, grepped against its source
+
+Round two closed by naming the last untested surface: "the quote-integrity check has never been
+run across the whole register. Five fabrications were found by refuters who happened to be
+looking at those entries. Nobody has grepped all 226 entries' quotes against their sources."
+
+Now somebody has. **106 entries carry a quoted string and a fetchable source. 22% of them cite
+text that is not in the source they name.** The pass count falls from 49 to **47**.
+
+## The instrument was tested before its results were believed
+
+Four entries already known to carry defective quotes — 74, 164, 60 and 166 — were seeded into
+the batch without telling the agents which. The report was instructed that if the sweep missed
+its own controls, it must say so first and must not report a clean bill of health.
+
+**It caught three of four.** 74, 164 and 60 came back `absent`. **166 was missed** — its splice
+was classified as harmless connective prose. The reporter led with that rather than burying it:
+
+> "A known-bad control got waved through as harmless connective prose. That's a real gap in the
+> instrument, not a clean sweep — 3 of 4, not 4 of 4."
+
+So the 22% below is a floor. An instrument that misses a quarter of its known positives is not
+finding everything.
+
+The first attempt at this sweep failed outright — a bug passed the id list as a string, every
+batch died, and the result came back empty. The same control design caught that too: the reporter
+re-fetched the page itself, reproduced all four controls at zero hits, and opened with "The sweep
+is unreliable." An empty result was not allowed to read as a clean one.
+
+## What 22% is made of
+
+| outcome | entries |
+|---|---:|
+| absent — the string is not on the page in any form | 13 |
+| spliced — real fragments welded into a quotation the source never made | 9 |
+| unreachable — a JavaScript-rendered page curl cannot see | 1 |
+
+The unreachable one is excluded from the denominator rather than counted as a pass. 23 of 105
+checkable, and 24 with the missed control.
+
+Two defective passes were withdrawn, on the precedent set at id 164 — a quotation that does not
+exist decides the entry regardless of whether the mechanism is sound:
+
+- **44** cited "the same 75% token discount" against a Gemini pricing page where the string does
+  not appear and every live figure computes to 90%. An earlier correction fixed the number; this
+  one records that the string was never there.
+- **66** attributed "don't see evidence of widespread issues" to two companies. The article
+  carries two separate paraphrases — Anthropic's "does not see signs that overbilling is a
+  widespread issue" and OpenAI's "has no evidence that those issues are happening among its
+  customers" — neither presented as a direct quote. The entry welded a clause from each into a
+  joint denial that nobody made.
+
+Five passes kept their verdict and gained a correction: **61** (right figure, wrong page), **102**
+(dropped "Seller" from a program name), **120** (silently dropped "now"), **220** (two real
+fragments joined), and **126**, which is recorded as *contested* rather than resolved — see below.
+
+## The two shapes, and the one that is not a defect
+
+**Invented numbers** are the worst of it. id 50 cited throughput figures absent from the Mooncake
+paper, whose actual numbers are "up to a 525% increase", a "50% to 525%" enhancement and "75% more
+requests". id 225 quoted a range of "29-39%" that spans two different figures for two different
+configurations in one sentence. id 214 presented three paraphrases of SDK behaviour as
+quotations from source files that contain none of them.
+
+**Splices** run from serious to pedantic, and the brief distinguishes them rather than banking the
+count. id 77 joined a page's SEO meta description to a body paragraph as one continuous quote —
+serious, because one half is never rendered to a reader. id 99 dropped "(response_format)" and
+"in the input JSONL file" from the middle of two adjacent sentences with the ellipses honestly
+marked and the meaning intact — a splice by this register's own definition, and close to
+harmless. Both are recorded; only the register's definition is applied, not a feeling about
+severity.
+
+**And most of what the sweep surfaced was not a defect at all.** 59 of 106 entries came back
+`not-a-source-quote`, because the extraction that fed this sweep split on apostrophes and
+captured the register's own prose — "Anthropic's...", "the candidate's..." — as though it were
+quoted material. That is a bug in the harness, not in the register, and the agents identified it
+themselves rather than reporting a scandal.
+
+## One finding is a conflict, and it is left open
+
+id 126's quoted string returned zero hits, and the page's nearby language concerns self-set
+spend-limit notifications rather than tier spend caps. That contradicts the round-one tiebreak
+judge, which re-fetched the same page and reported "Once you reach your tier's spend cap, API
+usage pauses until the next month" verbatim, with control phrases.
+
+Two agents, the same method, the same page, opposite results. The `PASS_ABSOLUTE` stands, because
+the structural argument that decided it — a spend cap is a binary gate with no
+delivered-but-different branch — does not depend on the disputed string. The disagreement is a
+finding about this audit's reliability, and it is recorded rather than resolved.
+
+## Where the register stands
+
+**226 entries · 47 pass · 61 on the provider's word · 69 rejected · 49 unresolved.**
+**55 entries carry a correction, 63 in total, every one appended and none edited away.**
+
+The passing column has gone 71 → 59 → 49 → 47 in a single day, and every step was the register
+finding something wrong with itself rather than someone else finding it.
+
+## Still open, and now more precisely
+
+- **87 entries cite no source at all.** No quote sweep can ever check them. That is 38% of the
+  register, uncheckable by construction, and it has never been stated on the site.
+- **The sweep only asks whether a bracketed fragment is a substring.** Once a string was bucketed
+  `not-a-source-quote`, the claim around it went unchecked. id 185's fabricated DeepSeek prices
+  were caught only because one agent chose to keep going.
+- **Nothing is measured.** Still no `ANTHROPIC_API_KEY`. Every P1 demotion across all three
+  rounds is the class a single measurement would settle.
+- **The instrument misses roughly a quarter of what it looks for**, on its own control data.

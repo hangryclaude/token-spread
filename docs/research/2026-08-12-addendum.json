@@ -109,7 +109,14 @@
     "providers": [
       "anthropic"
     ],
-    "verifiedAgainst": "platform.claude.com/docs/en/about-claude/pricing"
+    "verifiedAgainst": "platform.claude.com/docs/en/about-claude/pricing",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "Found by the 2026-08-18 quote-integrity sweep, which fetched each cited source as raw HTML and grepped every quoted string with a control phrase reported alongside, so a zero hit count cannot be a failed fetch. The two fragments are separated on the page by a full JSON code example and a paragraph break; the entry joins them as one quotation."
+      }
+    ]
   },
   {
     "id": 183,

@@ -203,7 +203,14 @@
     "verifiedAgainst": "2026-08-17 — no page-stated revision date found on any of the three pages fetched: platform.kimi.ai/docs/guide/use-context-caching-feature-of-kimi-api (English), its Chinese mirror at platform.kimi.com/docs/guide/use-context-caching-feature-of-kimi-api (reached via platform.moonshot.cn's redirect), and platform.kimi.ai/docs/api/chat for the usage.cached_tokens field. All fetched raw and read in full on this date.",
     "trap": "A web search on this topic returns \"context caching does not change the model's output quality or response content\" phrased as if it's Kimi's stated policy — it is not stated anywhere in Moonshot's own docs; that's search-engine inference, not a citable source. Separately, secondary sources describing a manual cache_id/TTL/CNY-billed caching product are describing a superseded mechanism — the current feature is fully automatic with no client-managed cache object.",
     "settlingExperiment": "Temperature-0 diff against the live API: send the same >256-token prefix twice (first call is a guaranteed miss, second a likely hit per the response's usage.cached_tokens field), diff completions byte-for-byte across enough trials to rule out sampling noise, and repeat just above/below the 256-token boundary. Requires a Kimi API key this project does not have.",
-    "id": 199
+    "id": 199,
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "Found by the 2026-08-18 quote-integrity sweep, which fetched each cited source as raw HTML and grepped every quoted string with a control phrase reported alongside, so a zero hit count cannot be a failed fetch. Three separate bolded list headers are welded into one quoted sentence. Noted in the entry's favour: the second flagged string is the trap sentence this entry itself warns is a false web-search summary absent from Moonshot's documentation, and the sweep independently confirmed it absent — the entry was right about that."
+      }
+    ]
   },
   {
     "name": "Who captures a mid-term list-price decrease on committed-spend or PTU agreements",

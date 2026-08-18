@@ -213,7 +213,14 @@
     "verifiedAgainst": "https://github.com/anthropics/anthropic-sdk-python/blob/ad53cac8eeeb1608c162081f883755427ac3a26f/src/anthropic/_base_client.py (lines 769-778) and src/anthropic/_constants.py, both at the pinned commit; https://github.com/anthropics/anthropic-sdk-typescript/blob/main/src/client.ts (lines 913-923 and 1426-1438) on the current main branch. All fetched and read directly on 2026-08-17. Both repos confirmed live and non-archived: anthropic-sdk-python 3,829 stars, anthropic-sdk-typescript 2,091 stars, both pushed within the last day.",
     "trap": "The candidate also quotes Anthropic's docs verbatim as: 'The SDKs validate that your non-streaming Messages API requests are not expected to exceed a 10-minute timeout.' I checked both current doc pages (platform.claude.com/docs/en/api/sdks/python and .../typescript) as raw HTML on 2026-08-17 and that sentence appears on neither -- the actual text is 'will throw a ValueError if a non-streaming request is expected to take longer than approximately 10 minutes' (Python page) and 'This SDK also throws an error if a non-streaming request is expected to be above roughly 10 minutes long' (TypeScript page). That's a paraphrase inside quotation marks -- the exact failure mode this register was warned against repeating. I am not crediting that sentence; this verdict rests entirely on the source code, which independently supports it without needing the docs at all. Flagging it here so it doesn't get laundered into the record as a verified doc quote on a future pass.",
     "crosscheckOverride": "Adjudicated PASS_ABSOLUTE. One of two refuters overturned it on mechanism and the other upheld it. Failed rather than demoted a single step, because the surviving objection is that the guard's trigger is the declared ceiling rather than anything about the request that would actually be sent.",
-    "id": 214
+    "id": 214,
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "Found by the 2026-08-18 quote-integrity sweep, which fetched each cited source as raw HTML and grepped every quoted string with a control phrase reported alongside, so a zero hit count cannot be a failed fetch. Three strings presented as quotations from the cited SDK source appear nowhere in those files or either repository's README. They are paraphrases of what the code does, formatted as quotations."
+      }
+    ]
   },
   {
     "name": "AWS Step Functions StartExecution idempotency (STANDARD workflows) -- content-checked dedup on the control plane",
@@ -304,7 +311,14 @@
     "trap": "Because the failure mode is a hard error (ALREADY_EXISTS) rather than a silent merge, teams often 'fix' it by minting a fresh random/hashed ID per call to dodge collisions — which quietly disables de-duplication altogether, so the feature ends up providing neither correctness nor savings once anyone actually hits the error in practice.",
     "settlingExperiment": "N/A for the core claim — the ID-only comparison is stated directly in the documentation, not something measurement would establish.",
     "crosscheckOverride": "Adjudicated FAIL on the blanket claim. The advocate pass showed the source supports a narrower one and quoted it; the scope was moved into the name so the claim cannot be read wider than it is.",
-    "id": 220
+    "id": 220,
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "Found by the 2026-08-18 quote-integrity sweep, which fetched each cited source as raw HTML and grepped every quoted string with a control phrase reported alongside, so a zero hit count cannot be a failed fetch. The two quoted fragments both appear on the Google Cloud Tasks page but are not adjacent and come from different remarks; the entry joins them as one quotation. The scoping in the entry's name is unaffected and the mechanism claim stands."
+      }
+    ]
   },
   {
     "name": "LiteLLM \"Headroom\" pre-call prompt compression (docs.litellm.ai/docs/proxy/headroom)",
@@ -320,7 +334,14 @@
     "verifiedAgainst": "https://docs.litellm.ai/docs/proxy/headroom, fetched and full-text-searched 2026-08-17; https://github.com/headroomlabs-ai/headroom and https://github.com/BerriAI/litellm via `gh api`, checked 2026-08-17",
     "settlingExperiment": "Not needed to settle the verdict — the FAIL is decided structurally from the vendor's own description of the pre_call rewrite, no live traffic required. A confirming measurement, if desired: attach the guardrail to a virtual key, run a tool-heavy Claude Code session through a logging MITM proxy positioned between LiteLLM and Anthropic, and byte-diff the outbound /v1/messages body against what Claude Code actually sent client-side.",
     "trap": "An admin adopts this expecting 'same answers, fewer tokens' on the strength of the docs' own 'no behavioral change' framing — but that is a marketing assertion about a lossy rewrite, not a technical guarantee; a tool-output message stubbed down before the model sees it can drop the exact detail an answer depended on, with nothing in the spend log to reveal that a specific response would have differed against the original text. It also conflates two different 'savings' under one input-token number: real cache reuse (cache_control-marked, byte-exact, exempted from compression) and lossy content deletion (everything else) — a dashboard reader can't tell which produced a given month's drop.",
-    "id": 221
+    "id": 221,
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "Found by the 2026-08-18 quote-integrity sweep, which fetched each cited source as raw HTML and grepped every quoted string with a control phrase reported alongside, so a zero hit count cannot be a failed fetch. Multiple quoted strings return zero hits on both the docs page and the GitHub repository, including a lead-in clause joined by ellipsis to real text — presenting an invented clause and a real one as a single quotation."
+      }
+    ]
   },
   {
     "name": "Embedding-based semantic response caching shipped as a first-class feature on Kong AI Gateway, Google Apigee, and TrueFoundry AI Gateway",
@@ -368,7 +389,14 @@
     "settlingExperiment": "This claim needs a measurement to move off INSUFFICIENT_EVIDENCE, and none was run here. The settling experiment: create a Routine owned by a Max-tier subscription, deliberately set ANTHROPIC_API_KEY in its cloud execution environment, run it enough times to generate a nontrivial charge, and check whether Console usage records attribute the cost to metered API credits or subscription usage; then remove the env var and repeat, to isolate whether that variable is actually the causal switch. This project has no ANTHROPIC_API_KEY and ran no live traffic, so nothing here constitutes that measurement — the issue's own causal claim remains the reporter's theory, not a demonstrated mechanism.",
     "trap": "Anyone who exports ANTHROPIC_API_KEY into a cloud environment that also hosts scheduled Routines is — per the reporter's unconfirmed theory, not a confirmed Anthropic-acknowledged mechanism — at risk of every routine run silently billing metered pay-as-you-go credits instead of the subscription they believe they're using, with no UI surface (run history, Routines detail page, or spend alert) showing the split before the credit card gets auto-reloaded.",
     "crosscheckOverride": "Adjudicated INSUFFICIENT_EVIDENCE. The advocate found a source the adjudication had not read.",
-    "id": 224
+    "id": 224,
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "Found by the 2026-08-18 quote-integrity sweep, which fetched each cited source as raw HTML and grepped every quoted string with a control phrase reported alongside, so a zero hit count cannot be a failed fetch. Both halves are individually verbatim on the live docs page but are not adjacent; the entry joins them into one quotation."
+      }
+    ]
   },
   {
     "name": "Context editing (clear_tool_uses_20250919): automatic tool-result stripping sold as an 84% token-consumption cut",
@@ -383,6 +411,13 @@
     "verifiedAgainst": "https://platform.claude.com/docs/en/build-with-claude/context-editing and https://claude.com/blog/context-management, both verified 2026-08-17",
     "settlingExperiment": "Nothing here was measured by this sweep — no ANTHROPIC_API_KEY, no live traffic, per project scope. The FAIL verdict itself doesn't need a measurement: it rests on the documented mechanism (placeholder substitution) being a structural fact, not a benchmark claim. But the 84%/29%/39% magnitudes are Anthropic's own reported eval and are unverified here; settling those would require running the same class of long tool-heavy agent workflow twice — context editing on vs. off — and independently comparing total input tokens and task-success rate, which this project has no traffic to do.",
     "trap": "Someone reads '84% token reduction' and '29-39% performance improvement' and treats context editing as a free lunch — same product, lower bill. It isn't: the moment it fires, the model permanently loses the actual content of early tool calls in that conversation, replaced by a placeholder. Anthropic's benchmark happens to show this helps on a 100-turn web-search workflow (probably because stale tool output was crowding out useful context), but that's a property of that specific task shape, not a guarantee. On a workflow where a late turn needs to refer back to specifics from an early tool result — an exact file path, a precise number from an early API response, a quote a later step must reproduce verbatim — clearing it produces a materially worse or simply wrong answer with no error surfaced, because the model just sees 'placeholder text indicating it was removed' and carries on. Anyone adopting it as a pure cost lever without checking whether their own workflow has that shape is buying a changed product under a savings label.",
-    "id": 225
+    "id": 225,
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "Found by the 2026-08-18 quote-integrity sweep, which fetched each cited source as raw HTML and grepped every quoted string with a control phrase reported alongside, so a zero hit count cannot be a failed fetch. The quoted range '29-39%' appears nowhere. The blog carries two different real figures for two different configurations in the same sentence, and the entry's range spans them as though it were one measurement. A second quote drops 'to Claude that' from the middle of a docs sentence."
+      }
+    ]
   }
 ]

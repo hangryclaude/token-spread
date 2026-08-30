@@ -26,6 +26,7 @@ import initActBreaks from './effects/act-breaks/engine.js';
 import initCardGrammar from './effects/card-grammar/engine.js';
 import initFixedHud from './effects/fixed-hud/engine.js';
 import initCapsuleControls from './effects/capsule-controls/engine.js';
+import initScrollFilm from './effects/scroll-film/engine.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -77,10 +78,14 @@ async function mountAll() {
   // grey stop poisons the whole run.
   const ground = safe('caustic-field', () =>
     initCausticField($('#ground'), {
+      // Owner regrade 2026-08-20 ("I want it like Uniswap"): the green nebula
+      // wash goes; the field becomes graphite with a green whisper, still ONE
+      // hue family across all three stops so the linear-RGB lerp stays clean.
+      // Accent green now lives only in type, CTAs and the film's own highlights.
       stops: [
-        { at: 0.0, deep: '#03100a', mid: '#07301f', hot: '#2fae6b' },
-        { at: 0.5, deep: '#04120c', mid: '#0a3a26', hot: '#3ddc84' },
-        { at: 1.0, deep: '#020d08', mid: '#06281a', hot: '#27c974' },
+        { at: 0.0, deep: '#060809', mid: '#0f1413', hot: '#3d4b45' },
+        { at: 0.5, deep: '#070a0a', mid: '#121816', hot: '#48584f' },
+        { at: 1.0, deep: '#050707', mid: '#0d1211', hot: '#35423c' },
       ],
       speed: 0.055,   // the reference barely moves; this is not a lava lamp
       scale: 1.2,
@@ -111,6 +116,51 @@ async function mountAll() {
   };
   const marquee = safe('kinetic-marquee', () => initKineticMarquee($('#hero-marquee'), marqueeCfg));
   if (marquee?.setProgress) driven.push(marquee);
+
+  // ── act 1 · the scrubbed prism film ───────────────────────────────────────────
+  // Mounts directly on .hero-pin ([data-film-stage]) — CONTRACT says the container
+  // needs position:relative/absolute/sticky and a size, and the pin is already both
+  // (index-scroll.html's #act-hero carries the 240svh scroll runway; the pin is
+  // what stays on screen while it's consumed). Portrait/landscape is chosen once
+  // at mount, same as sticky-split's own wide/narrow read — the engine has no
+  // reactive src, so re-checking mid-session would need a destroy+remount this
+  // build doesn't do.
+  //
+  // Deviation from the plan's own snippet: the shipped engine's config is
+  // { count, src, chase, order, concurrency, dprMax }, not { frames, path, pad,
+  // ext } — there is no pad/ext pair, only ONE src pattern whose run of `#`
+  // sets the zero-padding width. Built here rather than copied verbatim.
+  const heroEl = $('#act-hero');
+  const port = matchMedia('(max-aspect-ratio: 3/4)');
+  const heroStage = $('[data-film-stage]');
+  const film = safe('scroll-film', () => initScrollFilm(heroStage, {
+    // 121 frames (f_000..f_120) — the asset pipeline delivered one more than the
+    // plan's own f_000..f_119 range, and there is no reason to drop a real frame
+    // that is already on disk. src's pad is still 3 digits either way.
+    count: 121,
+    src: (port.matches ? 'assets/film/hero-port/' : 'assets/film/hero/') + 'f_###.avif',
+    chase: 0.12,
+    order: 'coarse',
+    concurrency: 6,
+    dprMax: 1.5,
+  }));
+
+  // Progress is the HERO's own range, not the document's — spec: "the film must
+  // finish before act 2 arrives." Mirrors sticky-split's own formula (its own
+  // engine.js: p = -rect.top / (offsetHeight - paneHeight)), read against
+  // #act-hero itself rather than the pin, since the pin's height never changes
+  // (it is what's stuck) while #act-hero's is the section's whole scroll runway.
+  // Rects measured once per resize, per the plan, not per frame.
+  let heroTop = 0;
+  let heroSpan = 1;
+  const measureHero = () => {
+    if (!heroEl) return;
+    const rect = heroEl.getBoundingClientRect();
+    heroTop = rect.top + window.scrollY;
+    heroSpan = Math.max(1, heroEl.offsetHeight - window.innerHeight);
+  };
+  measureHero();
+  window.addEventListener('resize', measureHero, { passive: true });
 
   // ── act 2 · the spine, on wide screens only ───────────────────────────────────
   // Requires [data-split-copy] and [data-split-media] as DIRECT children of the section.
@@ -220,7 +270,14 @@ async function mountAll() {
   // ── act rhythm ────────────────────────────────────────────────────────────────
   // ZERO backdrops: a ground already exists, and a second full-viewport ground layer is
   // exactly what puts a seam between acts. Breaths give the silence instead.
-  safe('act-breaks', () => initActBreaks(document.querySelector('main'), { backdrops: null }));
+  // breathHeight: the corpus default is a full viewport of bare ground between
+  // acts. That read as pacing over the old green nebula; over the regraded
+  // graphite field a whole empty screen reads as dead air (owner + independent
+  // audit, same day, same word: "unfinished"). A third of a viewport keeps the
+  // out-gap-in rhythm without ever framing pure black.
+  safe('act-breaks', () => initActBreaks(document.querySelector('main'), {
+    backdrops: null, breathHeight: '34svh',
+  }));
 
   // A hash present at LOAD never fires hashchange, so the listener above cannot see it, and
   // the browser has already restored the scroll before act-breaks mounted. Measured: loading
@@ -246,6 +303,13 @@ async function mountAll() {
       for (const engine of driven) {
         try { engine.setProgress(p); } catch { /* a dead engine must not stop the page */ }
       }
+      // The film reads the HERO's own progress, not the document's — see the mount
+      // above. scrollY is the only input to either number, so nothing here needs
+      // its own "did it change" check; p !== last already answered that.
+      if (film?.setProgress) {
+        try { film.setProgress((window.scrollY - heroTop) / heroSpan); }
+        catch { /* a dead engine must not stop the page */ }
+      }
     }
     requestAnimationFrame(tick);
   };
@@ -253,7 +317,10 @@ async function mountAll() {
 
   // Fonts settle before the harness is told the page is built, or it screenshots
   // mid-reflow and the type metrics in the shot are not the ones a visitor sees.
-  if (document.fonts?.ready) await document.fonts.ready;
+  // film.ready joins the same awaited set (spec: "scroll-film's first-frame resolve
+  // joins the awaited set") — it always settles, true or false, never rejects
+  // (engine.js's own finishReady path), so this cannot hang the harness under §6.
+  await Promise.all([document.fonts?.ready, film?.ready].filter(Boolean));
 }
 
 mountAll()

@@ -38,6 +38,7 @@ rsync -a --quiet \
   --exclude 'tools/' \
   --exclude 'out/' \
   --exclude 'assets/og-source.html' \
+  --exclude 'assets/film-src/' \
   "$SRC"/ "$STAGE"/
 
 # Absolute URLs. Crawlers resolve a relative og:image against the page, but Slack,

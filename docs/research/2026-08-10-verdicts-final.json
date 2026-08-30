@@ -38,7 +38,7 @@
   {
     "id": 22,
     "name": "4-breakpoint budget algorithm (system=1, last-tool=1, message window shrinks to fit remainder)",
-    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "strictVerdict": "PASS_METADATA",
     "reasoning": "This only changes the SET of blocks that receive a cache_control field so the per-request breakpoint count never exceeds Anthropic's hard cap of 4. Every message is still sent, same order, same content — only which blocks are metadata-tagged as cache breakpoints changes. CORRECTED 2026-08-12: the attribution was checked and is wrong. This entry's provenance pointed at msglm (AnswerDotAI, 15 stars); its core.py was read via the GitHub API on 2026-08-12 and contains no such budget algorithm — zero matches for the described system=1/last-tool-1/shrinking-window logic. What it actually implements is cache_last_ckpt_only, a far simpler remove-previous-checkpoints toggle. The described algorithm may exist elsewhere; it does not exist in the cited source, and the mechanism analysis above stands on its own only as a description of what such an algorithm WOULD do. Stays INSUFFICIENT_EVIDENCE, now for two reasons instead of one.",
     "savings": "N/A — this is a correctness fix that avoids an outright HTTP 400 on tool-heavy turns, not a cost-savings lever, exactly as the entry itself frames it.",
     "provenance": "practitioner-data",
@@ -51,7 +51,14 @@
       "from": "PASS_METADATA",
       "to": "INSUFFICIENT_EVIDENCE",
       "why": "Searched the msglm repo directly (GitHub issue search for 'cache breakpoint', the _modidx.py symbol index, and core.py source) and found no trace of this mechanism. The only real cache-budget logic in msglm is cache_last_ckpt_only, which only strips a cache_control field from earlier messages and adds it to the last one -- confirmed metadata-only. But the entry describes a different, more elaborate scheme ('system=1, last-tool=1, message window shrinks to fit remainder') sourced to a GitHub issue I could not locate at the library it was attributed to. The entry's own name is ambiguous: 'message window shrinks to fit remainder' reads as consistent with dropping/trimming older messages from what's actually sent (content removal -> FAIL under the rubric's own terms, since the model would then read fewer/different bytes), not merely retagging which blocks carry cache_control. The reviewer's claim that 'every message is still sent, same order, same content' is an assertion, not something I could verify against a primary source -- and it does not match the one budget-shrinking mechanism I could confirm exists (cache_last_ckpt_only), which is a simpler, different algorithm. Per the rubric, default to the stricter verdict under genuine uncertainty."
-    }
+    },
+    "corrections": [
+      {
+        "date": "2026-08-20",
+        "kind": "verdict-changed",
+        "note": "CORRECTED 2026-08-20: the 2026-08-12 crosscheckOverride searched the wrong repository -- AnswerDotAI/msglm, confirmed via GitHub API to carry exactly the '15 stars' the override cites, but msglm is the source for a different entry (id 11), not this one. This entry's actual cited source, per the original candidate record, is github.com/BlockRunAI/Franklin/issues/73 (547 stars, not archived), fetched directly via `gh issue view` this session. The issue's own diff shows the fix only adds/omits a `cache_control` field across a full, unsliced copy of `request.messages` (`windowSize = Math.min(3, Math.max(0, 4 - used))` changes how many trailing messages get tagged, never which messages are sent). Restored to PASS_METADATA, consistent with the identical 'decide where to place cache_control among unchanged content' shape already passed at ids 9 and 42."
+      }
+    ]
   },
   {
     "id": 33,
@@ -279,7 +286,8 @@
         "kind": "withdrawn-from-passing",
         "note": "Split 1-1 and demoted by a third judge. The cited Bifrost issue is real and open, and the repository is active — but a single unresolved bug report is not a settled mechanism, and the entry read as though it were."
       }
-    ]
+    ],
+    "settlingExperiment": "Wait for maintainer akshaydeo's requested evidence (dashboard screenshot / reproducible example) to actually land on issue #5128, or reproduce it directly: run Claude Code through a Bifrost OpenAI-to-Anthropic proxy against a model that returns a non-compliant streaming response, and capture whether Bifrost issues a paired streaming (cancelled) + non-streaming (completed) request pair via request logs. A clean repro or a maintainer confirmation on the issue settles it to PASS_ABSOLUTE; a maintainer 'cannot reproduce' close settles it to FAIL."
   },
   {
     "id": 165,
@@ -328,7 +336,8 @@
       "from": "PASS_METADATA",
       "to": "INSUFFICIENT_EVIDENCE",
       "why": "I re-fetched Anthropic's prompt-caching docs myself and can confirm what the first reviewer only flagged as a caveat: there is NO documented guarantee that splitting one logical string into two adjacent 'text' content blocks tokenizes identically to a single block (no inserted boundary/separator token). The docs state only that cache hits require '100% identical prompt segments' — they say nothing about concatenation semantics across block boundaries. The rules are explicit here: 'default to the stricter verdict when uncertain,' and this is precisely a case where 'you cannot tell without an experiment.' A reviewer who identifies their own load-bearing unverified assumption and then grades PASS_METADATA anyway is grading on hope, not evidence. This is not a trivial edge case either — if the API tokenizer inserts even one boundary token when a string is split across blocks, every downstream token position shifts, which is a textbook 'model reads different bytes' failure, not metadata."
-    }
+    },
+    "settlingExperiment": "Live API test once a key is available (cost: 4 short /v1/messages calls, well under $0.05 with a small system prompt and claude-haiku): Request A sends system as ONE text block containing string S. Request B sends system as TWO adjacent text blocks whose concatenation equals S exactly, with cache_control on the final block in both cases. Compare usage.input_tokens on the first (uncached) call for A vs B — if they match exactly to the token, block-splitting is byte-identical from the tokenizer's perspective (settles PASS_METADATA for entry 12's registry-splitting technique). Then repeat each request once more and confirm cache_read_input_tokens hits 100% for both. Any token-count mismatch, however small, settles it FAIL — a boundary artifact is being inserted."
   },
   {
     "id": 23,
@@ -843,12 +852,13 @@
         "kind": "source-corrected",
         "note": "Found by the 2026-08-18 quote-integrity sweep, which fetched each cited source as raw HTML and grepped every quoted string with a control phrase reported alongside, so a zero hit count cannot be a failed fetch. Two quoted strings return zero hits, including the model-invariance claim that would have been load-bearing had this entry been a pass. It is not, so nothing changes but the record."
       }
-    ]
+    ],
+    "settlingExperiment": "With a real OpenRouter API key (~$1 spend): send N=10 byte-identical Anthropic-routed chat completions with cache_control breakpoints, varying only session_id (random per call) vs. a fixed value. Compare (a) response text for byte-identity and (b) cache_read_input_tokens/cache_creation_input_tokens in the returned usage object across both groups. Identical output plus unaffected cache-hit accounting regardless of session_id value would be a MEASUREMENT (not a docs sentence) supporting PASS_METADATA; any divergence supports FAIL. This sidesteps the 'docs sentence caps at CONTRACTUAL_ONLY' ceiling entirely because it never relies on OpenRouter's word."
   },
   {
     "id": 18,
     "name": "prompt-cache-doctor — byte-level diff detector for silent invalidators",
-    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "strictVerdict": "PASS_ABSOLUTE",
     "reasoning": "This is an offline diagnostic that diffs already-sent request bytes across consecutive calls after the fact and correlates against cache-miss events; it does not modify, delay, reorder, resend, or otherwise touch production requests. Zero bytes on the wire change as a result of running it.",
     "savings": "UNQUANTIFIED — it is a detection tool; savings only materialize if a human subsequently fixes what it finds (a separate technique to adjudicate on its own).",
     "provenance": "primary-doc",
@@ -863,6 +873,11 @@
         "date": "2026-08-12",
         "kind": "withdrawn-from-passing",
         "note": "DOWNGRADED from PASS_ABSOLUTE — the strongest verdict in the register, resting on a 'v0.1 README' of a tool that cannot be found. GitHub API 2026-08-12: 404 under the account this family's other entries cite; the only repos of that name anywhere carry one star. An offline diff detector genuinely cannot change what a model reads — the MECHANISM would pass — but a register entry is a claim that a thing exists and works, and PASS_ABSOLUTE for a tool with no locatable artifact is indistinguishable from fiction. This is the entry the register's own bar exists to catch."
+      },
+      {
+        "date": "2026-08-20",
+        "kind": "verdict-changed",
+        "note": "UPGRADED to PASS_ABSOLUTE (restoring the original pre-2026-08-12 verdict), 2026-08-20. The 2026-08-12 correction already found and credited the real source, Ankitajainkuniya/prompt-cache-doctor (1 star) -- the 404 it reported was only under the unrelated MukundaKatta account -- but adjudicated on the README, not the code. Read the actual source this session: recorder.py's wrapper literally executes `response = original(*args, **kwargs)` first, with nothing mutated before or after, matching its own docstring ('does NOT modify behavior or add latency beyond a single file append') verbatim. analyzer.py/cli.py operate only on the resulting local JSONL. No network-capable import in any file read. This satisfies the schema's structural-argument bar for PASS_ABSOLUTE directly rather than resting on the tool's own say-so. Credibility remains thin (1 star) but the artifact is real and does what it claims."
       }
     ]
   },
@@ -969,7 +984,7 @@
   {
     "id": 95,
     "name": "Vertex GSU burndown discount for cached tokens under Provisioned Throughput",
-    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "strictVerdict": "CONTRACTUAL_ONLY",
     "reasoning": "Nothing about the request changes at all — it's the identical explicit/implicit caching feature already in use; the only difference is which internal ledger (dollars vs. committed GSU capacity) the same cached tokens draw down against under a PT contract. Matches 'only the price/accounting path differs' cleanly.",
     "savings": "Candidate cites a 90% reduction in GSU capacity consumed per cached token. I attempted to re-verify this against the live Google Cloud doc this session; the fetched URL returned only a navigation/TOC shell, not the specific burndown table, so the exact 0.1 burndown-unit figure was not independently reconfirmed.",
     "provenance": "primary-doc (per original researcher; not independently reconfirmed by me this session)",
@@ -982,7 +997,14 @@
       "from": "PASS_ABSOLUTE",
       "to": "INSUFFICIENT_EVIDENCE",
       "why": "The core claim — that context-cached tokens draw down Provisioned Throughput GSU capacity at a reduced rate — could not be located in Google's own docs despite three separate WebFetch attempts (provisioned-throughput/overview, measure-provisioned-throughput, use-provisioned-throughput all redirected to docs.cloud.google.com and none contained the claimed mechanism or the 90%/0.1x figure). The original reviewer also flagged this as unverified. A PASS_ABSOLUTE requires certainty that the mechanism is purely downstream capacity accounting with zero effect on the request; we cannot certify that when we cannot confirm the mechanism exists as described at all. This is not a case of the mechanism being confirmed-but-imprecisely-quantified — the entire feature is unconfirmed from primary sources in this session."
-    }
+    },
+    "corrections": [
+      {
+        "date": "2026-08-20",
+        "kind": "verdict-changed",
+        "note": "2026-08-20 — mechanism and figure confirmed at the source; verdict set from INSUFFICIENT_EVIDENCE. Re-fetched the cited Vertex AI measure-provisioned-throughput page with a browser user agent (prior WebFetch attempts, including this candidate's, returned only the navigation shell). The full article states the burndown rate for cached tokens is 0.1x standard input tokens (a 90% reduction), matching the entry's original figure exactly, with a worked numeric example ('1,000 cached tokens ... burndown of ... 100 tokens per second'). That settles the crosscheck's objection that the mechanism was 'entirely unconfirmed from primary sources.' It lands at CONTRACTUAL_ONLY rather than PASS_ABSOLUTE: the only evidence is Google's own documentation of its billing/capacity policy, and every sibling Provisioned Throughput entry in this register (89, 96, 100, 103, 108, 112, 113) caps at CONTRACTUAL_ONLY or below on the same basis."
+      }
+    ]
   },
   {
     "id": 106,
@@ -1070,7 +1092,8 @@
       "from": "PASS_REPLAY",
       "to": "INSUFFICIENT_EVIDENCE",
       "why": "The passing reviewer's caveat only guards against 'is this really a byte-identical repeat of the same call' — it does not address a sharper failure mode I found by fetching Anthropic's own errors doc: documented auto-retries fire on 'connection errors, rate limits, and 5xx server errors,' i.e. cases where the ORIGINAL request may have genuinely failed or streamed incompletely, not merely 'still running but slow.' The proposed fix holds the original in-flight promise and returns it to the retry instead of letting a second generation proceed — but if the original in fact errored or returned a broken partial stream, naively awaiting-and-replaying it hands the customer a failure or garbage response where the natural SDK retry would have produced a fresh, successful completion. That is a different outcome delivered to the customer than baseline behavior would have produced — a behavior change, not a pure billing optimization — and it sits entirely outside the entry's own stated caveats. The 'primary-doc' verifiedAgainst citation (the streaming doc) does not establish this distinction either; my own fetch of the errors doc confirms retries are triggered by genuine failures, which undercuts the assumption that 'the retry' always means 'client gave up early on an otherwise-healthy generation.'"
-    }
+    },
+    "settlingExperiment": "Issue N concurrent requests with an artificially short client-side timeout (e.g. httpx timeout below expected completion time) so the SDK's default retry fires; hold the original in-flight connection open server-side and record whether it eventually completes cleanly, errors, or delivers a truncated/broken stream. If originals complete cleanly a high fraction of the time, the hold-and-replay fix is safe and this could move to PASS_REPLAY; if a nontrivial fraction error or diverge from what the retry would have returned, the fix changes the customer-visible outcome and this should move to FAIL. Needs a provider API key this machine does not have."
   },
   {
     "id": 161,
@@ -1184,7 +1207,8 @@
       "from": "PASS_ABSOLUTE",
       "to": "INSUFFICIENT_EVIDENCE",
       "why": "The original PASS_ABSOLUTE rests on 'mathematically equivalent... no claimed or plausible alteration of the output distribution' — a stronger claim than either the paper or this session's fetch can support. I fetched both the arXiv abstract and PDF this session: the abstract confirms the 3.2-4.8x kernel speedup figure but neither the abstract nor the (garbled/FlateDecode-encoded) PDF text yielded the claimed 78% KV-cache memory reduction, nor any explicit statement that outputs are bit-exact vs. merely equivalent-in-real-arithmetic. More importantly, ChunkAttention's actual mechanism — sharing KV-cache compute across CONCURRENT requests via a prefix tree — is precisely the class of optimization implicated in the now well-documented 'batch-invariance' non-determinism problem in LLM serving (see Thinking Machines Lab's 2025 'Defeating Nondeterminism in LLM Inference' and related vLLM discussions): floating-point reduction order in attention/matmul kernels depends on what else is in the batch, so a request's output can change depending on which other concurrent requests share its prefix-tree neighborhood at that instant. 'Mathematically equivalent in exact arithmetic' does not imply 'identical output on real GPU floating point,' and at temperature > 0 this can flip sampled tokens. The candidate's own admission that this wasn't re-verified this session, combined with an unproven strong no-alteration claim for a mechanism that is textbook batch-variant, means PASS_ABSOLUTE is not earned — default to the stricter verdict."
-    }
+    },
+    "settlingExperiment": "Run Microsoft's public ChunkAttention/vLLM integration example (github.com/microsoft/chunk-attention) and diff logits/greedy-decode tokens against stock vLLM attention on identical shared-prefix batches. Cost: low, single-GPU. Bit-identical output would move this to PASS_ABSOLUTE; any divergence would move it to FAIL."
   },
   {
     "id": 59,
@@ -1429,7 +1453,7 @@
   {
     "id": 16,
     "name": "bedrockcache -- 6-layer breakpoint/threshold audit across Bedrock abstraction stacks",
-    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "strictVerdict": "PASS_ABSOLUTE",
     "reasoning": "This is a static auditor that checks whether cache_control/cachePoint breakpoint metadata is correctly placed and translated across six SDK layers en route to Bedrock -- it inspects and validates non-content directive fields (segment-length minimum, 4-breakpoint cap), never touches message/tool/system content. Running the audit changes nothing about any live request; it only flags misconfiguration so a human fixes the metadata. No model-visible bytes change as a result of running the tool itself.",
     "savings": "UNQUANTIFIED (source gives none) -- accurately reported as such.",
     "provenance": "primary-doc",
@@ -1445,6 +1469,11 @@
         "date": "2026-08-12",
         "kind": "withdrawn-from-passing",
         "note": "DOWNGRADED from PASS_METADATA. No verifiedAgainst field; the claimed '6-layer audit' appears in no documentation anywhere. GitHub API 2026-08-12: MukundaKatta/bedrockcache exists with zero stars — the third entry in this register resting on the same account's vanity repos (with prompt-pillar and prompt-cache-key). The underlying idea, auditing breakpoint dialect translation across Bedrock abstraction layers, is real and is covered with proper sourcing by the separate Bedrock cache-dialect entry; this tool-specific claim cannot stand."
+      },
+      {
+        "date": "2026-08-20",
+        "kind": "verdict-changed",
+        "note": "UPGRADED to PASS_ABSOLUTE, 2026-08-20. Downloaded the real PyPI package and read the complete audit.py (417 lines, the entire audit engine) plus every import statement in every file in the package: the only imports anywhere are argparse/json/sys/dataclasses/typing/enum -- zero network-capable imports in the codebase, so it cannot send a request. audit() only reads the caller-supplied request dict and returns a report; nothing is transmitted. The entry's own '6-layer' claim checks out exactly against the code: six distinct backend audit functions (Converse, InvokeModel+Anthropic body, AnthropicBedrock SDK, LiteLLM, Strands, pydantic-ai). This resolves the 2026-08-12 correction, which was based on a GitHub star count and never looked at the code. Credibility/reach caveat carries forward unchanged: still 0 GitHub stars/forks, one of MukundaKatta's ~1,396 repos."
       }
     ]
   },
@@ -1573,7 +1602,8 @@
       "from": "PASS_METADATA",
       "to": "INSUFFICIENT_EVIDENCE",
       "why": "The prior reviewer passed this by ANALOGY to id=60/82 ('nothing in it suggests otherwise... same class of feature') rather than by verification, and explicitly noted the fetched page didn't restate a behavior-invariance guarantee. I re-fetched the same primary source directly and confirmed the gap is real, not just unstated-but-implied: Google's own caching docs (a) do not state that implicit caching leaves model output/behavior unchanged -- unlike Anthropic's and OpenAI's docs, which say so explicitly and are why id=60/82 correctly PASS; (b) give no confirmed discount percentage at all (the doc only says 'we automatically pass on cost savings,' no number -- the entry's 90% figure is unconfirmed at the source); and (c) do not describe the matching mechanism as exact-prefix-only -- it gives soft best-practice hints ('similar prefix,' 'short amount of time') that are at least as consistent with a fuzzy/approximate reuse scheme as with the strict byte-identical-prefix matching that would make this provably behavior-neutral. This is Google's DEFAULT-ON, non-opt-in behavior applied to all Gemini 2.5+ traffic with no customer control switch -- the highest-stakes case in the batch for an unverified default. Per the rubric's explicit instruction to default to the stricter verdict when uncertain, 'plausible by analogy to a different vendor's product' does not meet the bar; this needs to be resolved by evidence before it ships as a default-safe PASS to an enterprise customer."
-    }
+    },
+    "settlingExperiment": "Cheap live-API test (~$0.05, needs a Gemini API key): send two >2048-token prompts to Gemini 2.5 Flash sharing a byte-identical prefix, then a third sharing a near-but-not-identical prefix (single whitespace or punctuation change in the first 200 tokens), all within the 'short amount of time' window the docs recommend. Read usage.total_cached_tokens on each. If the near-identical-prefix call registers zero cache hit while the byte-identical one registers a hit, that MEASUREMENT confirms exact-prefix-only matching (supports PASS_ABSOLUTE on the mechanism question); any nonzero hit on the altered prefix reveals fuzzy matching and supports FAIL. This same experiment also settles the implicit-caching half of id=109."
   },
   {
     "id": 104,
@@ -1961,7 +1991,8 @@
         "kind": "withdrawn-from-passing",
         "note": "Withdrawn on audit of the passing column. The entry's own fields convict it: provenance 'inferred', and verifiedAgainst 'not re-verified — this is a provider-agnostic architectural pattern'. PASS_REPLAY is defined as a stored response hash-matching a byte-identical repeat; this entry describes a pattern nobody built or observed, and its safety rests on 'provided the implementation genuinely hashes the FULL request' — a condition no mechanism here enforces. Same conditional shape that failed BullMQ at id 189 and Sidekiq at id 216."
       }
-    ]
+    ],
+    "settlingExperiment": "Two independent, cheap sub-tests. (1) Zero-cost collision check: implement the candidate key function (a real cryptographic hash, e.g. SHA-256, over a canonical serialization -- sorted keys, explicit delimiters -- of model + all sampling params + full system/tools/messages) and feed it the same param/value pairs that break LiteLLM's key at id 3 (values that concatenate identically under a delimiter-less join); confirm it produces different hashes. This alone falsifies or corroborates the design's collision-safety with no API key needed. (2) Replay check, needs one live provider key: send two byte-identical requests through the built proxy within the TTL window; settles PASS_REPLAY if network capture shows zero outbound calls to the provider on the second request (not just a correct-looking response) and the returned body is byte-identical to the first. Total cost: near-zero for (1), one API call (~$0.01-1) for (2)."
   },
   {
     "id": 149,
@@ -2467,7 +2498,8 @@
       "Anthropic",
       "OpenAI"
     ],
-    "trap": "Building a gateway/proxy product makes you a sub-processor appearing on your own customers' sub-processor lists — directly relevant to token-spread's posture even though it isn't itself a savings lever."
+    "trap": "Building a gateway/proxy product makes you a sub-processor appearing on your own customers' sub-processor lists — directly relevant to token-spread's posture even though it isn't itself a savings lever.",
+    "settlingExperiment": "OpenAI's own DPA text (openai.com/policies/data-processing-addendum/) was blocked by a Cloudflare bot-check to both curl and WebFetch this session. A browser-driven fetch (e.g. claude-in-chrome) or an authenticated/cached mirror would close the remaining gap: confirm the SCC clause is present in OpenAI's DPA text itself, not just referenced from trust.openai.com."
   },
   {
     "id": 141,
@@ -2709,7 +2741,8 @@
       "from": "PASS_METADATA",
       "to": "INSUFFICIENT_EVIDENCE",
       "why": "The claim bundles two distinct API surfaces (Vertex AI and Gemini Developer API) into one PASS_METADATA verdict, but only the Developer API side was actually confirmed this session (ai.google.dev/gemini-api/docs/caching: implicit caching needs zero client-side fields, 'nothing you need to do to enable this'). My independent fetch of Vertex AI's context-cache-overview page (after following the cloud.google.com -> docs.cloud.google.com redirect) returned only a bare navigation index with no substantive mechanics, no confirmation implicit caching works identically there, and no output-neutrality statement for Vertex specifically. The candidate's own reasoning admits the Vertex half was not re-fetched this session either — the 'parity' claim rests on assumption/pattern-matching to other providers, not verification. Per the rule to default to the stricter verdict when uncertain, a bundled two-provider claim where only one provider is actually sourced should not carry a confident PASS for the whole pair."
-    }
+    },
+    "settlingExperiment": "Same experiment as id=93: a cheap live near-identical-prefix cache-hit test on Gemini 2.5, run once against the Developer API (generateContent) and once against Vertex AI (same model, same account), settles the implicit-caching mechanism question for both platforms at once (~$0.05-0.10 total) and would unblock the remaining half of this entry."
   },
   {
     "id": 120,

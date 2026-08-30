@@ -1,0 +1,851 @@
+[
+  {
+    "id": 226,
+    "name": "prompt_cache_key pinning to stop OpenAI Responses API cache-shard oscillation",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "OpenAI's own docs (quoted in the issue): 'passing prompt_cache_key allows the server to direct identical requests to the same machine for increased cache utilization' — this is a routing hint consumed by OpenAI's serving infrastructure, never fed into the model's token stream. PR #2907 confirms scope: 'Adds _prompt_cache_key as a PrivateAttr on LLM, pins it to str(state.id)... Net change: ~7 lines in 4 source files. No new config field, no behavior change when the attr is unset.' Same model, same prompt bytes, same reasoning effort — only which backend machine serves the call changes. Clears all three bar clauses.",
+    "savings": "$678.58 -> $199.21 is a PROJECTION, not a measured post-fix result. The issue itself frames it conditionally: 'Holding volume constant, lifting cache hit from 39% -> 97% drops the bill to $199.21' — a back-solved hypothetical. PR #2907's own text says 'We should run an eval before merging and see if caching is working,' i.e. no confirmed after-fix number existed at merge time.",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched issue #2904 and PR #2907 full bodies via `gh issue view`/`gh pr view --json body,files`. Quotes match verbatim; PR file list confirms the ~7-line, 4-file change scope claimed.",
+    "telemetrySignal": "per-turn cache_read_tokens oscillating between 0 and 35k across a 19-turn instance before the fix (table verified in issue #2904 body)",
+    "providers": [
+      "OpenAI",
+      "OpenHands/software-agent-sdk (All-Hands-AI)"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched issue #2904 and PR #2907 full bodies via `gh issue view`/`gh pr view --json body,files`. Quotes match verbatim; PR file list confirms the ~7-line, 4-file change scope claimed.",
+    "trap": "Reading only the headline makes this look like a measured $479 savings; it is a stated back-solved projection, and the PR explicitly flags that an eval still needed to run to confirm it.",
+    "crosscheckOverride": {
+      "from": "PASS_METADATA",
+      "to": "CONTRACTUAL_ONLY",
+      "why": "The load-bearing claim — that prompt_cache_key is 'never fed into the model's token stream' and that consistent-shard routing has zero effect on the answer — is sourced only from OpenAI's own prose ('direct identical requests to the same machine for increased cache utilization'). PR #2907 verifies just the client side: that the SDK now sends this extra field. It says nothing about what OpenAI's serving infrastructure does with it — whether shard affinity ever correlates with a different quantization tier, a different snapshot of the weights, or any other divergence we cannot see from outside. That is exactly the shape the bar names for the cap: 'the provider asserts identity and we cannot verify it. A documentation sentence, however clear, caps here.' The entry's own evidence is a documentation sentence, not a structural/schema argument or a measurement of identical outputs across shards. Downgrade to CONTRACTUAL_ONLY."
+    }
+  },
+  {
+    "id": 227,
+    "name": "Fabricated tool-call ids defeat Responses API prefix cache every turn",
+    "strictVerdict": "FAIL",
+    "reasoning": "Verified quote from issue #2905: 'Both id and call_id are fabricated from the stored canonical id, they are identical to each other, and neither matches either original value. The prefix cache terminates at this item on every replay.' The ids are literal bytes inside the serialized `input` array sent to the Responses API on every subsequent turn — not sideband metadata — so replaying fabricated values is 'the model reads a different sequence of tokens' by construction. Also, this candidate documents a defect (cost-increasing), not a merged or even proposed-and-landed fix — there is no PR, so nothing here actually qualifies as a passing technique.",
+    "savings": "None — describes a cost-inflating bug (breaks caching on every tool-call turn), not a savings mechanism. Issue only, no PR found for the proposed fix.",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched issue #2905 full body via `gh issue view --json body`. Code quotes for from_responses_function_call/to_responses_dict match verbatim.",
+    "telemetrySignal": "cache termination at the first function_call item on every tool-call turn, evidenced by the byte mismatch between OpenAI's original id (e.g. fc_abc123/call_xyz789) and the replayed fabricated id (fc_call_xyz789 for both fields)",
+    "providers": [
+      "OpenAI",
+      "OpenHands/software-agent-sdk (All-Hands-AI)"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched issue #2905 full body via `gh issue view --json body`. Code quotes for from_responses_function_call/to_responses_dict match verbatim.",
+    "trap": "Could be waved through as metadata-only because it's 'just an id field' — but these ids are part of the tokenized input array on the Responses API, not an envelope field, so drifting them is a genuine token-sequence change."
+  },
+  {
+    "id": 228,
+    "name": "Azure-OpenAI cache_control auto-gating for GPT-5.1",
+    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "reasoning": "Verified PR #9547 quote: 'Azure OpenAI does not support the prompt_cache_retention parameter... does not support cache_control in message content... Skip prompt caching features when Azure is detected, even for models that normally support it.' cache_control/prompt_cache_retention are caching-hint fields the bar's own PASS_METADATA definition names as its example ('cache_control placement, TTL selection, envelope fields outside tokenized content'); gating them on Azure-detection changes zero bytes of system/user/tool text sent to the model.",
+    "savings": "None to negative, and the framing as a 'cost technique' is questionable: this is a crash-avoidance fix (Azure requests hard-failed with these fields present), not a cost reduction. The practical effect for Azure users is losing caching entirely (going from 'request errors out' to 'request succeeds uncached'), the opposite of a savings win — only the metadata classification (not the savings claim) survives the bar.",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched PR #9547 full body and file list via `gh pr view --json body,files`. Quotes match verbatim; diff touches only src/api/providers/openai.ts and openai-native.ts (9 and 6 lines) plus a new test file.",
+    "telemetrySignal": "not measured — PR contains no before/after token or dollar figures, only a described crash-to-success behavior change",
+    "providers": [
+      "OpenAI (Azure-hosted)",
+      "RooCodeInc/Roo-Code"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched PR #9547 full body and file list via `gh pr view --json body,files`. Quotes match verbatim; diff touches only src/api/providers/openai.ts and openai-native.ts (9 and 6 lines) plus a new test file.",
+    "trap": "The word 'cache_control' makes this look like a caching-savings technique; the actual effect is turning caching OFF for the affected calls to prevent a crash. It clears the metadata bar but shouldn't be read as delivering savings.",
+    "crosscheckOverride": {
+      "from": "PASS_METADATA",
+      "to": "INSUFFICIENT_EVIDENCE",
+      "why": "The cited quotes are verbatim, but the underlying PR was never shipped. `gh pr view 9547 --repo RooCodeInc/Roo-Code` shows state CLOSED with mergedAt: null — it was closed, not merged. A bot review on the PR itself flagged it as broken before closure ('Missing openAiUseAzure configuration flag check ... users with this flag set will still have prompt caching enabled'). A follow-on attempt, PR #9576 ('Fixes 9544...'), was also closed unmerged. A third attempt, PR #10821, is still OPEN and unmerged as of today. I pulled the CURRENT src/api/providers/openai.ts from the repo's default branch directly: cache_control is applied unconditionally (lines ~118/147) with zero Azure-detection gate anywhere near it — the isAzureOpenAi variable is used only for client construction, not to skip cache_control. So the bug this PR claimed to fix is still live in the last version of the code, and the repo itself is now archived (isArchived: true, per gh repo view), meaning it likely never will be fixed. The 'technique' the entry certifies as PASS_METADATA was never deployed to any real user — it's a rejected/abandoned patch to a dead repo. Downgrading: we cannot verify this metadata-gating behavior ever existed on the wire in production, only in an unmerged, bot-flagged-buggy PR."
+    },
+    "settlingExperiment": "Because the repo is archived (merges structurally impossible now), the only way to settle whether Azure-gated cache_control ever shipped anywhere is to check whether any fork carries PR #10821's or #10837's patch, or to hit a live Azure OpenAI/Foundry endpoint through the last released Roo-Code build with cache_control present and see whether the request still 400s -- which would also confirm whether the crash this whole PR chain aimed to fix is even still reproducible."
+  },
+  {
+    "id": 229,
+    "name": "Synthetic max_tokens=1 keep-alive pings to outrun Anthropic's 5-minute cache TTL",
+    "strictVerdict": "FAIL",
+    "reasoning": "Read the source directly (base_coder.py lines 1340-1392, fetched fresh from GitHub, not from the candidate's quote): 'kwargs[\"max_tokens\"] = 1' then 'completion = litellm.completion(model=self.main_model.name, messages=self.cache_warming_chunks.cacheable_messages(), stream=False, **kwargs)' inside a background `warm_cache_worker` thread firing on a `5*60-5` second timer. This manufactures a genuine additional real inference call — a full forward pass over the cached prefix plus at least one generated token — that would not exist without the flag. That is strictly more model work happening, an automatic-fail condition regardless of how cheaply it's priced.",
+    "savings": "None as a wire-neutral technique — it's a cost HEDGE (spend cache-read-priced tokens now to avoid a possibly larger cache-miss later), whose net dollar effect depends entirely on usage cadence and is not quantified anywhere in the code or docs.",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched aider/coders/base_coder.py directly from GitHub via `gh api repos/.../contents/...` (base64-decoded, 2485 lines) and read lines 1340-1392 myself — quoted lines match exactly. Also fetched aider/website/docs/usage/caching.md and confirmed the --cache-keepalive-pings description verbatim.",
+    "telemetrySignal": "extra litellm.completion() calls at ~295s intervals per active session with max_tokens=1 and output length 0-1, distinguishable in request logs from user-triggered calls",
+    "providers": [
+      "Anthropic",
+      "DeepSeek (per docs)",
+      "Aider-AI/aider"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched aider/coders/base_coder.py directly from GitHub via `gh api repos/.../contents/...` (base64-decoded, 2485 lines) and read lines 1340-1392 myself — quoted lines match exactly. Also fetched aider/website/docs/usage/caching.md and confirmed the --cache-keepalive-pings description verbatim.",
+    "trap": "Framed as 'just a timer,' which invites PASS_SCHEDULING — but it doesn't just change when an existing request goes out, it creates a wholly new real inference request with no other trigger."
+  },
+  {
+    "id": 230,
+    "name": "Client-side double-counting of Anthropic cache tokens in cost display",
+    "strictVerdict": "PASS_ABSOLUTE",
+    "reasoning": "Verified code quote (from issue #5516, matches source): 'cost += cache_write_tokens * input_cost_per_token * 1.25 / cost += cache_hit_tokens * input_cost_per_token * 0.10 / cost += prompt_tokens * input_cost_per_token # already contains both' — pure local arithmetic in Coder.compute_costs_from_tokens, zero request-side effect either way, so the category is right. BUT the issue author's own follow-up comment (fetched and read in full) retracts the headline claim: 'compute_costs_from_tokens is not what produces the printed cost in the normal case... Both numbers are also correct... they only run when completion_cost returns nothing or throws.' In normal operation aider uses litellm.completion_cost(), which prices correctly, so the buggy fallback the candidate describes is largely dead code, not the typical user-facing bug implied.",
+    "savings": "None in the common case. The candidate's own 'evidence' field quotes only the original issue body and omits the author's retraction, which shows the double-billing arithmetic only fires for an uncosted model or when litellm.completion_cost() throws — not the normal display path most users see.",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched issue #5516 full body AND its one comment via `gh issue view --json body,comments`. The comment (same author, Tanisha-Katara, posted 2026-08-03) explicitly states 'I got the main claim wrong' and narrows the bug to a rarely-hit fallback.",
+    "telemetrySignal": "would show as an inflated printed $ figure with cache_hit/cache_write nonzero and prompt_tokens constant across calls — but only reachable when litellm's own cost calculator fails, a condition not independently telemetered in the issue",
+    "providers": [
+      "Anthropic",
+      "DeepSeek",
+      "Aider-AI/aider"
+    ],
+    "verifiedAgainst": "Fetched issue #5516 full body AND its one comment via `gh issue view --json body,comments`. The comment (same author, Tanisha-Katara, posted 2026-08-03) explicitly states 'I got the main claim wrong' and narrows the bug to a rarely-hit fallback.",
+    "trap": "The single most load-bearing piece of evidence — the author's own retraction — is not in the candidate's citation at all. Grading from the issue body alone, as the candidate does, overstates a live production bug into what is actually a dead-code path in the normal case.",
+    "adversarialNote": "survived both skeptic lenses"
+  },
+  {
+    "id": 231,
+    "name": "OpenAI-compatible gateway loses cache-write accounting for Anthropic models",
+    "strictVerdict": "PASS_ABSOLUTE",
+    "reasoning": "Verified quote (issue #36749): 'opencode recorded: {\"input\": 19428, \"output\": 4, \"cache\": {\"write\": 0, \"read\": 0}} / gateway returned: {\"prompt_tokens\": 19428, \"cache_creation_input_tokens\": 19426}'. A detailed follow-up comment (also verified) explains why this is silent and purely cosmetic: 'OpenAI Chat subtracts: prompt_tokens is inclusive, so nonCached = prompt_tokens - (cached + cacheWrite). Drop cacheWrite here and the total stays perfectly correct... Nothing reconciles wrong... The bill is the only place the difference is observable.' opencode's outbound request is byte-identical regardless of this bug; only how it parses/displays the provider's returned usage object is wrong.",
+    "savings": "UNQUANTIFIED — no dollar or percentage total given anywhere in the issue or comments, only a single-call example (19,426 tokens misclassified from cache-write (1.25x) pricing into plain-input (1.0x) display).",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched issue #36749 full body and both comments via `gh issue view --json body,comments`. Quotes match verbatim, including the 2026-08-18 follow-up tracing the same gap into opencode's V2 codebase (packages/ai/src/protocols/openai-chat.ts).",
+    "telemetrySignal": "assistant-message cache.write staying at 0 while cache.read grows across a session (millions of read tokens with zero recorded writes, a physical impossibility the reporter flags) — observable purely from opencode's own stored records, no network capture needed",
+    "providers": [
+      "Anthropic (via Bedrock/LiteLLM gateway using OpenAI-compatible transport)",
+      "sst/opencode (anomalyco/opencode)"
+    ],
+    "verifiedAgainst": "Fetched issue #36749 full body and both comments via `gh issue view --json body,comments`. Quotes match verbatim, including the 2026-08-18 follow-up tracing the same gap into opencode's V2 codebase (packages/ai/src/protocols/openai-chat.ts).",
+    "trap": "Could be misread as affecting real provider spend — it doesn't; the bytes actually billed by the provider are unaffected, only opencode's own local split between 'input' and 'cache.write' display buckets is wrong.",
+    "adversarialNote": "survived both skeptic lenses"
+  },
+  {
+    "id": 232,
+    "name": "MCP CacheableResult TTL/cacheScope hints (SEP-2549)",
+    "strictVerdict": "FAIL",
+    "reasoning": "Verified: caching.mdx states 'A cached response is identified by the request method together with the request parameters that affect the result' and 'Clients MUST NOT serve a cached response for a request whose method or parameters differ from the request that produced it.' changelog.mdx confirms ttlMs/cacheScope were added via CacheableResult, crediting SEP-2549 (PR #2549, merged, titled 'SEP-2549: TTL for List Results'). ttlMs and cacheScope are envelope-level freshness/visibility hints on the MCP transport response, not fields the model ever reads — they only govern whether the client re-issues a tools/list-style RPC. When served fresh-from-cache, the exact same tool/resource JSON is what gets serialized into the model's context on the next completion call as would come from a live re-fetch; the exact-match cache key (method+params, MUST NOT clause) rules out ever substituting different content. This is a real, newly-ratified protocol mechanism, but it operates one hop upstream of the model (client<->MCP-server), and the fields themselves (ttlMs, cacheScope) are metadata the model never consumes — closer to PASS_METADATA than PASS_ABSOLUTE since it is explicitly a hint field addition to the wire format, not proof that literally nothing changed structurally in the exchanged envelope.",
+    "savings": "UNQUANTIFIED (spec frames it qualitatively as reducing re-fetching/polling reliance; no first-party token/dollar figure)",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/docs/specification/2026-07-28/server/utilities/caching.mdx directly — confirmed the cache-key-identification sentence and the MUST NOT clause verbatim, plus ttlMs/cacheScope field definitions. Fetched changelog.mdx directly — confirmed the CacheableResult/ttlMs/cacheScope changelog entry crediting SEP-2549 verbatim. Confirmed via gh api that PR #2549 ('SEP-2549: TTL for List Results') is merged.",
+    "telemetrySignal": "None published; by construction this is invisible to any billing/token telemetry since it only affects MCP-transport RPC counts, not LLM completion requests.",
+    "providers": [
+      "Model Context Protocol (spec, all clients/servers)",
+      "modelcontextprotocol/modelcontextprotocol"
+    ],
+    "verifiedAgainst": "Fetched raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/main/docs/specification/2026-07-28/server/utilities/caching.mdx directly — confirmed the cache-key-identification sentence and the MUST NOT clause verbatim, plus ttlMs/cacheScope field definitions. Fetched changelog.mdx directly — confirmed the CacheableResult/ttlMs/cacheScope changelog entry crediting SEP-2549 verbatim. Confirmed via gh api that PR #2549 ('SEP-2549: TTL for List Results') is merged.",
+    "crosscheckOverride": {
+      "from": "PASS_METADATA",
+      "to": "FAIL",
+      "why": "Cited quotes verified verbatim (caching.mdx cache-key MUST-NOT clause, changelog.mdx SEP-2549 credit, PR #2549 confirmed merged) — evidence is not forged. But the pass reasoning's claim that a cache hit always serves identical content to a live re-fetch is not supported: the MUST-NOT clause only enforces exact match on request method+params, never on whether the underlying tool/resource actually changed. ttlMs is a pure elapsed-time trust window with no revalidation ('client MAY/SHOULD consider fresh' for N ms), and the spec's own need for a separate, complementary listChanged notification system ('Caching is complementary to change notifications') concedes TTL alone doesn't guarantee live accuracy. Within the TTL window a changed tool/resource list can be served stale, meaning the model reads a different token sequence than a live fetch would produce -- unlike the register's own PASS_REPLAY standard (byte-identical hash match only). Fails the bar's 'different tokens' clause. | The reasoning's load-bearing claim — 'the exact same tool/resource JSON... would come from a live re-fetch' — is not established by the evidence cited. The MUST NOT clause only guarantees cache-KEY correctness (same method+params -> same cache slot); it says nothing about the cached VALUE staying current. ttlMs exists precisely to let the client serve a snapshot taken at cache-write time for up to ttlMs without re-querying the MCP server — and unlike Anthropic-style prompt caching (where the cached bytes are literally the prior request's own tokens, so identity is tautological), an MCP tools/list result describes live, mutable server-side state (servers connect/disconnect, tools get added/deprecated) that can drift during the TTL window. A cache hit mid-TTL therefore risks handing the model a tool/resource list that differs from what a fresh fetch — and thus what a no-caching baseline — would have produced at that moment. That is a real, protocol-intended staleness tolerance, not a hypothetical: it's the entire reason TTL exists (to avoid re-fetching == to accept serving old data instead of current data). This is the same failure shape as semantic caching's 'close enough, so skip the fresh call' — it reads different tokens for the model whenever upstream state actually changed within the window. The entry's own hedge ('closer to PASS_METADATA... not proof nothing changed structurally') concedes the identity guarantee isn't there. Downgrade to FAIL: content the model ultimately sees (via tools=/resources= serialized into the next completion call) can legitimately differ from the fresh-fetch counterfactual, and nothing in the record rules that out."
+    }
+  },
+  {
+    "id": 233,
+    "name": "Turn-boundary deferred MCP tool-registry publish to protect the prompt-cache prefix",
+    "strictVerdict": "FAIL",
+    "reasoning": "Verified: the docstring of refresh_agent_mcp_tools() (lines 7672-7712, quote at 7708-7711) reads exactly: 'The caller owns the prompt-cache contract: this helper does NOT check turn state, because each caller has a different policy (/reload-mcp rebuilds after explicit user consent; the late-binding and between-turns paths only rebuild at a turn boundary, before that turn's tools= prefix is assembled).' The mechanism never trims or slims the eventual tool-schema content — every newly-connected server's tools are added in full, unabridged, once published. What is controlled is purely WHEN a live registry change is allowed to flow into the tools= array handed to the model: never mid-turn (which would fork/invalidate an already-cached prefix for that in-flight turn), only at the next turn boundary. This is a scheduling decision about the timing of a content update, not a change to what content is ultimately shown or how much reasoning happens — matches PASS_SCHEDULING cleanly.",
+    "savings": "UNQUANTIFIED (no first-party percentage in the source file; a companion doc frames the payoff qualitatively as preserving the cached prefix for the in-flight turn)",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched the full raw file at raw.githubusercontent.com/NousResearch/hermes-agent/main/tools/mcp_tool.py (8182 lines) via curl and located refresh_agent_mcp_tools at line 7672; read lines 7672-7721 directly and confirmed the cited docstring quote verbatim at lines 7708-7711 (candidate's '~line 7705' is within the same docstring block). Confirmed repo is real, non-fork, non-archived via gh api.",
+    "telemetrySignal": "None published in the fetched source.",
+    "providers": [
+      "NousResearch (Hermes agent runtime)",
+      "NousResearch/hermes-agent"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched the full raw file at raw.githubusercontent.com/NousResearch/hermes-agent/main/tools/mcp_tool.py (8182 lines) via curl and located refresh_agent_mcp_tools at line 7672; read lines 7672-7721 directly and confirmed the cited docstring quote verbatim at lines 7708-7711 (candidate's '~line 7705' is within the same docstring block). Confirmed repo is real, non-fork, non-archived via gh api.",
+    "crosscheckOverride": {
+      "from": "PASS_SCHEDULING",
+      "to": "FAIL",
+      "why": "Docstring quote verified verbatim at lines 7708-7711 in the real, active repo (233k stars, pushed same-day). But the passing reasoning generalized a claim ('never mid-turn... only at the next turn boundary') that the docstring itself limits to two of three callers, explicitly exempting /reload-mcp ('does NOT check turn state, because each caller has a different policy'). Fetched that caller directly (tui_gateway/methods_tools.py's reload.mcp RPC handler): its own comment and user-facing warning state '/reload-mcp invalidates the prompt cache (next message re-sends full input tokens)' -- applied immediately on user confirmation, with no turn-boundary deferral at all. One of the three code paths this entry credits with avoiding mid-turn cache invalidation explicitly does the opposite by design. Fails the bar's 'different tokens' clause. | The cited docstring itself gives away the mechanism's actual effect: rebuild is deliberately withheld until the next turn boundary specifically so that turn's tools= prefix isn't rebuilt mid-turn. Compare against the counterfactual of publishing immediately (the naive policy): under immediate-publish, an in-flight turn's subsequent API call would include the newly-connected server's tools; under this deferred policy, that same call instead goes out with the OLD (smaller) tools= array, and the model cannot see or invoke the new tools until the next turn starts. That is not 'only WHEN the request was sent changed' — it is a difference in WHAT is sent for every call made during the deferral window, i.e., a genuinely different sequence of tokens (a shorter/older tool-schema list) than the model would have read under the non-deferred baseline. Deliberately withholding newly-available tool definitions from the array the model reads, in order to protect a cache prefix, is structurally the same move as 'tool-schema slimming' — an automatic-FAIL category per the bar — just gated by turn-boundary timing rather than a token-budget heuristic. The 'caller owns the prompt-cache contract' language frames this as a tradeoff between cache-prefix stability and content freshness, and confirms the tradeoff is real, not cosmetic: freshness is knowingly sacrificed for the in-flight turn to preserve the cache hit. That disqualifies PASS_SCHEDULING; downgrade to FAIL."
+    }
+  },
+  {
+    "id": 234,
+    "name": "Anthropic 'Tool Search Tool' (defer_loading) collapsing MCP tool catalogs",
+    "strictVerdict": "FAIL",
+    "reasoning": "Verified: massgen/MassGen's docs/claude-advanced-tooling.md states verbatim 'The params handler adds the server-side search tool tool_search_tool_<variant>_20251119 and marks all custom + MCP tools with defer_loading: true unless you override a tool/server with defer_loading: false (visible up front)'. This is textbook tool-schema slimming, one of the register's explicit auto-FAIL categories: a defer_loading:true tool's full schema is materially absent from the model's context until the model itself issues a search call, at which point the search-tool invocation, its results, and the subsequently expanded schema all become additional tokens in the transcript that would not exist under eager loading. Which tools are visible, and how much discovery/search reasoning the model performs, depends on runtime choices — a direct change to both the token sequence read and the amount of thinking done, not an accounting or metadata change.",
+    "savings": "UNQUANTIFIED first-party; an adjacent unrelated source (mysql-mcp RFC, see the Lazy Tool Hydration entry) estimates ~500-1000 tokens/tool for full-catalog schemas, which this feature is designed to avoid paying upfront for deferred tools",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched raw.githubusercontent.com/massgen/MassGen/main/docs/claude-advanced-tooling.md directly and confirmed the defer_loading/tool_search_tool_<variant>_20251119 quote verbatim, including the override and logging language. Confirmed massgen/MassGen is a real, distinct GitHub organization/repo (1,119 stars) via gh search, not a mistaken path.",
+    "telemetrySignal": "Shipped Anthropic beta feature (advanced-tool-use-2025-11-20) with confirmed third-party adoption wiring it to MCP catalogs; visible as a distinct tool_search_tool_* line item in per-request tool-use telemetry.",
+    "providers": [
+      "Anthropic (tool_search_tool_bm25/regex beta)",
+      "MassGen",
+      "LangChain",
+      "aliasocracy/hermes-tool-slimmer",
+      "massgen/MassGen (usage); langchain-ai/langchain (SDK surface); aliasocracy/hermes-tool-slimmer"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched raw.githubusercontent.com/massgen/MassGen/main/docs/claude-advanced-tooling.md directly and confirmed the defer_loading/tool_search_tool_<variant>_20251119 quote verbatim, including the override and logging language. Confirmed massgen/MassGen is a real, distinct GitHub organization/repo (1,119 stars) via gh search, not a mistaken path."
+  },
+  {
+    "id": 235,
+    "name": "Lazy Tool Hydration (minimal tools/list + tools/get_schema)",
+    "strictVerdict": "FAIL",
+    "reasoning": "Verified: issue #1978 body states verbatim 'a MySQL MCP server with 106 tools sends ~207KB (~54,600 tokens) on every initialization—even when the model only needs 2-3 tools' and 'This provides 91% token savings' with 'Measured savings: 91% reduction (54,604 -> 4,899 tokens for 106 tools)'. This is explicit, deliberate tool-schema slimming: most tools are shown to the model as name+category+summary only, with full JSON-Schema parameters withheld until a separate tools/get_schema call is made for the handful the model selects — squarely the register's tool-schema-slimming auto-FAIL. The model reads a materially smaller, different token sequence up front and a different (larger, staged) one for tools it ends up using.",
+    "savings": "91% (54,604 -> 4,899 tokens for 106 tools), self-reported by the RFC author, unaudited by any third party",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched the full issue body via gh api repos/modelcontextprotocol/modelcontextprotocol/issues/1978 and confirmed the 106-tool/54,600-token and 91%/54,604->4,899 figures verbatim. Confirmed issue state (closed/completed) and that neverinfamous/mysql-mcp is a real, very small (9-star) repo referenced as the reference implementation.",
+    "telemetrySignal": "Issue closed with state_reason 'completed' on the tracker; no visible maintainer/spec adoption comment found; self-reported numbers only, not independently corroborated.",
+    "providers": [
+      "neverinfamous/mysql-mcp (proposal author)",
+      "modelcontextprotocol/modelcontextprotocol issue #1978; neverinfamous/mysql-mcp (lazy branch)"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched the full issue body via gh api repos/modelcontextprotocol/modelcontextprotocol/issues/1978 and confirmed the 106-tool/54,600-token and 91%/54,604->4,899 figures verbatim. Confirmed issue state (closed/completed) and that neverinfamous/mysql-mcp is a real, very small (9-star) repo referenced as the reference implementation."
+  },
+  {
+    "id": 236,
+    "name": "lazyRegistration handshake capability / autoConnect:false dormant MCP servers",
+    "strictVerdict": "FAIL",
+    "reasoning": "Verified: claude-code#32613 body states verbatim 'A 10-server unoptimized setup consumes ~75,000 tokens at session start before any user prompt' and 'With autoConnect: false on 6 of them, session starts in <2,000 tokens', plus the defer_loading cross-reference sentence quoted in the candidate. Issue #2376's lifecycle contract section contains the exact 'DORMANT: process alive, pipe open, no tools/list called' line. Same tool-schema-slimming family as the mysql-mcp entry but at whole-server granularity: an entire server's tool set is withheld from the model's context until the server is activated (user command or tool-discovery search), then injected in full at the next turn boundary. The model's available/visible tool set, and hence the token sequence it reads, differs materially depending on which servers are dormant vs active at a given point — an explicit auto-FAIL under tool-schema-slimming, not rescued by operating per-server rather than per-tool.",
+    "savings": "~75,000 -> <2,000 tokens at session start for a 10-server/15-tool-each config, self-reported by the issue author (posted 'via Claude Sonnet 4.6 agent'), unaudited",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched both full issue bodies via gh api. Confirmed the ~75,000/<2,000 token figures verbatim in claude-code#32613 and the DORMANT lifecycle-contract quote verbatim in modelcontextprotocol#2376. Confirmed closed/duplicate and closed/completed state_reasons respectively via gh api.",
+    "telemetrySignal": "Not shipped: claude-code#32613 closed as duplicate (state_reason: 'duplicate'), pointing to an external cross-repo RFC (github/copilot-cli#1938) not verified here; modelcontextprotocol#2376 closed with state_reason 'completed' but is an RFC-style proposal, not confirmed as a standardized shipped protocol field.",
+    "providers": [
+      "Proposal authors (cross-linked RFC, not shipped by MCP spec or Anthropic as verified)",
+      "modelcontextprotocol/modelcontextprotocol issue #2376; anthropics/claude-code issue #32613 (closed as duplicate)"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched both full issue bodies via gh api. Confirmed the ~75,000/<2,000 token figures verbatim in claude-code#32613 and the DORMANT lifecycle-contract quote verbatim in modelcontextprotocol#2376. Confirmed closed/duplicate and closed/completed state_reasons respectively via gh api."
+  },
+  {
+    "id": 237,
+    "name": "FastMCP CodeMode: catalog-to-two-meta-tools collapse",
+    "strictVerdict": "FAIL",
+    "reasoning": "Verified: docs/updates.mdx (FastMCP 3.1.0 release) states verbatim 'Instead of loading the entire tool catalog into context, CodeMode gives LLMs meta-tools: search for relevant tools on demand, inspect their schemas, then write Python that chains call_tool() calls in a sandbox.' examples/code_mode/README.md states verbatim 'CodeMode collapses an entire tool catalog into two meta-tools: search (keyword-based discovery) and execute' and 'Instead of burning context tokens on every intermediate result, the LLM writes a script that runs server-side and returns only the final answer... Intermediate data never touches the context window.' This stacks two auto-FAIL mechanisms: tool-schema slimming (N real tool schemas replaced by 2 meta-tool schemas, real tools discovered via search rather than shown) and a context-editing-style suppression of intermediate tool-call results from the model's view. The model demonstrably reads a different token sequence (2 schemas vs N, plus search-call/script round trips instead of sequential tool-call transcripts) and performs categorically different reasoning (writing one orchestrating script vs. emitting sequential tool calls) — not a wire-format or timing change.",
+    "savings": "UNQUANTIFIED first-party percentage in the fetched docs (framed only qualitatively as avoiding intermediate-result token burn)",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched raw.githubusercontent.com/PrefectHQ/fastmcp/main/docs/updates.mdx and confirmed the 'meta-tools: search... execute...' quote verbatim in the 3.1.0 release notes. Fetched raw.githubusercontent.com/PrefectHQ/fastmcp/main/examples/code_mode/README.md and confirmed the 'collapses an entire tool catalog into two meta-tools' and 'Intermediate data never touches the context window' quotes verbatim.",
+    "telemetrySignal": "Shipped feature with a dedicated 'Code Mode' changelog entry (FastMCP 3.1.0, referenced as March 3, 2026) in an active, large (27k-star) repo; also independently referenced as a mitigation strategy in the unrelated claude-code#32613 issue, corroborating it is a real shipped feature.",
+    "providers": [
+      "PrefectHQ (FastMCP)",
+      "PrefectHQ/fastmcp (27,291 stars)"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched raw.githubusercontent.com/PrefectHQ/fastmcp/main/docs/updates.mdx and confirmed the 'meta-tools: search... execute...' quote verbatim in the 3.1.0 release notes. Fetched raw.githubusercontent.com/PrefectHQ/fastmcp/main/examples/code_mode/README.md and confirmed the 'collapses an entire tool catalog into two meta-tools' and 'Intermediate data never touches the context window' quotes verbatim."
+  },
+  {
+    "id": 238,
+    "name": "SEP-1576: schema $ref dedup + optional-field trimming + embedding-similarity tool retrieval",
+    "strictVerdict": "FAIL",
+    "reasoning": "The SEP's own abstract lists mechanism (4) as 'an embedding-based similarity matching approach for tool retrieval, limiting the number of tool descriptions returned to the LLM' — this is a direct instance of the bar's automatic-FAIL 'semantic/similarity caching' applied to tool selection: which tools the model can even see, and hence the exact token sequence and action space presented, varies per-turn based on a similarity score. Mechanisms (1)-(3) (schema $ref dedup, optional-field suppression, response-verbosity control) are additional instances of the bar's separately-named automatic-FAIL 'tool-schema slimming.' All four mechanisms change what tokens the model reads.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh issue view 1576 --repo modelcontextprotocol/modelcontextprotocol --json body,state,labels`. Confirmed verbatim: the 65%/60% GitHub-MCP-server field-duplication stats, and 'an embedding-based similarity matching approach for tool retrieval, limiting the number of tool descriptions returned to the LLM.' State=CLOSED, labels=['enhancement','SEP-requested','dormant'].",
+    "telemetrySignal": "Confirmed via GitHub API: issue is CLOSED with labels ['enhancement','SEP-requested','dormant'] — matches the candidate's claim of non-adoption exactly.",
+    "providers": [
+      "modelcontextprotocol/modelcontextprotocol issue #1576"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched via `gh issue view 1576 --repo modelcontextprotocol/modelcontextprotocol --json body,state,labels`. Confirmed verbatim: the 65%/60% GitHub-MCP-server field-duplication stats, and 'an embedding-based similarity matching approach for tool retrieval, limiting the number of tool descriptions returned to the LLM.' State=CLOSED, labels=['enhancement','SEP-requested','dormant']."
+  },
+  {
+    "id": 239,
+    "name": "SEP-1881: OAuth-scope-filtered tools/list (auth-driven implicit schema reduction)",
+    "strictVerdict": "FAIL",
+    "reasoning": "Spec text confirmed verbatim: '1. tools/list returns only tools for which the current access token satisfies the tool's authorization requirements... 2. Tools requiring missing scopes are omitted entirely from the response.' Regardless of the security motivation, this is tool-schema slimming (one of the bar's named automatic FAILs): two callers with different OAuth scopes hitting the identical server receive objectively different tools/list payloads, so the token sequence the model reads depends on caller identity. Motivation (security vs. cost) is irrelevant to the bar's mechanical test.",
+    "savings": "None",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh issue view 1881 --repo modelcontextprotocol/modelcontextprotocol --json body,state,labels`. Both quoted clauses present verbatim in the Specification section. State=CLOSED, labels=['proposal','SEP'].",
+    "telemetrySignal": "n/a — SEP is framed purely as a security/information-disclosure fix; confirmed no cost framing anywhere in the fetched body.",
+    "providers": [
+      "modelcontextprotocol/modelcontextprotocol issue #1881"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched via `gh issue view 1881 --repo modelcontextprotocol/modelcontextprotocol --json body,state,labels`. Both quoted clauses present verbatim in the Specification section. State=CLOSED, labels=['proposal','SEP']."
+  },
+  {
+    "id": 240,
+    "name": "Prefix-cache-aware pod routing (AIBrix gateway)",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "File confirmed verbatim: 'Prefix Cache Aware routing improves KV cache reuse across GPU pods by steering requests whose prompt shares a common prefix to the pod that already has those KV blocks cached' and, separately in-file, 'Block hashes are used as cache keys — a pod that has processed a request with an identical prefix will have those KV blocks hot in GPU memory.' The request body, model weights, and generated tokens are untouched — only which physical GPU pod (running the identical model) receives the byte-identical request changes. This is load-balancer destination selection the model never observes, backed by a structural code/architecture description rather than a marketing claim.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched pkg/plugins/gateway/algorithms/prefix_cache_readme.md via `gh api repos/vllm-project/aibrix/contents/...`. Both quoted sentences present verbatim (second confirmed via grep in the same file). Star count re-verified at 5014 via `gh api repos/vllm-project/aibrix --jq .stargazers_count`, matching the claim exactly.",
+    "telemetrySignal": "Rising vllm:gpu_prefix_cache_hit_rate at the fleet level with no change in per-request prompt-token counts in logs; consistent with the routing-only mechanism described in the source.",
+    "providers": [
+      "vllm-project/aibrix"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched pkg/plugins/gateway/algorithms/prefix_cache_readme.md via `gh api repos/vllm-project/aibrix/contents/...`. Both quoted sentences present verbatim (second confirmed via grep in the same file). Star count re-verified at 5014 via `gh api repos/vllm-project/aibrix --jq .stargazers_count`, matching the claim exactly.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "CONTRACTUAL_ONLY",
+      "why": "The reasoning's own quotes concede the mechanism: routing succeeds precisely when it produces a KV-cache hit, meaning the destination pod SKIPS recomputing the forward pass over the shared prefix instead of running it — that is a direct difference in the amount of compute ('thinking') performed for identical prompt tokens between a cache-hit and cache-miss outcome. This is mechanistically the same genus as cache_control-based prompt caching, which this register's own PASS_METADATA tier exists to capture — not PASS_ABSOLUTE, which is reserved for zero-effect accounting/placement with no caching consequence at all. Separately, 'evidenceVerified' only re-fetched README prose and confirmed the wording hadn't changed, plus a star count — no code path was read, no request/response pair was captured, nothing rules out continuous-batching-induced floating point non-determinism when a request lands in a different batch composition on a different pod. That is a documentation sentence standing in for verification of runtime behavior — 'however clear, [it] caps here.' Downgrade to CONTRACTUAL_ONLY."
+    }
+  },
+  {
+    "id": 241,
+    "name": "ZMQ-based cross-instance KV cache event sync (AIBrix)",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "File confirmed verbatim: 'KV Cache Event Synchronization is a feature that enables multiple vLLM instances to share key-value cache states through ZMQ-based event publishing. This improves prefix cache hit rates and reduces redundant computation by allowing the AIBrix gateway to make intelligent routing decisions based on real-time cache state.' This is control-plane telemetry (which pod holds which KV blocks) feeding the routing decision in the prior entry — the model never sees it, and it does not touch the request, model identity, or generation depth.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched docs/source/features/kv-event-sync.rst via `gh api repos/vllm-project/aibrix/contents/...`. Overview paragraph present verbatim in the fetched content.",
+    "telemetrySignal": "Gateway-reported prefix-cache-hit metric tracks engine-reported metrics more tightly (lower staleness) once event-sync is enabled vs. polling; no change to per-request token counts — consistent with the file's stated purpose.",
+    "providers": [
+      "vllm-project/aibrix"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched docs/source/features/kv-event-sync.rst via `gh api repos/vllm-project/aibrix/contents/...`. Overview paragraph present verbatim in the fetched content.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "CONTRACTUAL_ONLY",
+      "why": "This entry is parasitic on the pod-routing entry: its stated purpose is to make the gateway's routing table fresher so more requests land on the pod already holding matching KV blocks — i.e., its entire function is to increase how often the compute-skipping (cache-hit) path fires across the fleet. That is a fleet-level change in aggregate 'amount of thinking' performed, not a no-op control-plane detail, so it inherits the same category problem as the routing entry it feeds: at best a PASS_METADATA-class caching effect, not PASS_ABSOLUTE. On evidence: the verification re-fetched an .rst overview paragraph and confirmed the prose was unchanged; the offered telemetrySignal ('lower staleness' of a hit-rate metric) is a proxy assumption about the mechanism working as described, not a direct trace proving zero effect on any individual request's compute path. A documentation overview paragraph, however clear, caps this at CONTRACTUAL_ONLY."
+    }
+  },
+  {
+    "id": 242,
+    "name": "Prefill/decode disaggregated routing (AIBrix PD router)",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "File confirmed verbatim: 'In PD disaggregation, inference is split across two specialized pod roles: Prefill pod — processes the prompt (context), builds the KV-cache, then transfers it. Decode pod — generates tokens using the KV-cache transferred from the prefill pod.' and 'The router is responsible for selecting one prefill pod and one decode pod per request.' The same model weights execute both phases; only the physical placement of the compute (which GPU runs the compute-bound prefill matmuls vs. the memory-bandwidth-bound decode loop) changes. The prompt tokens read, the model, and the sampled output tokens are unaffected — this is a hardware-utilization/placement change, not a computation change.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched pkg/plugins/gateway/algorithms/pd_readme.md via `gh api repos/vllm-project/aibrix/contents/...`. Both quoted passages present verbatim.",
+    "telemetrySignal": "GPU-type utilization splits (compute-bound prefill GPUs vs. memory-bandwidth-bound decode GPUs) with no change in output token count or model identity per request — consistent with the routing-only mechanism in the source.",
+    "providers": [
+      "vllm-project/aibrix"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched pkg/plugins/gateway/algorithms/pd_readme.md via `gh api repos/vllm-project/aibrix/contents/...`. Both quoted passages present verbatim.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "CONTRACTUAL_ONLY",
+      "why": "This is the strongest mechanism case of the four — total FLOPs should be conserved across a prefill/decode split, so the compute-skip attack that lands on the other three entries doesn't cleanly apply here. But the verdict still can't hold at PASS_ABSOLUTE on the evidence given: the only support is two sentences from pd_readme.md describing the intended handoff, with no code inspected for the failure/fallback paths that early PD-disaggregation systems are known to have — e.g. a KV-cache transfer that times out or arrives partial, forcing the decode pod to reprocess part of the prefix it was supposed to receive pre-computed. If that fallback path exists and fires, it is by definition 'a different amount of thinking' happening for that request, and nothing in the quoted text or the verification method (re-fetching the doc, confirming the same two sentences) rules it out. A README description of the happy path, however clear, caps this at CONTRACTUAL_ONLY rather than an absolute, zero-exceptions guarantee."
+    }
+  },
+  {
+    "id": 243,
+    "name": "KV-overlap-based worker selection (NVIDIA Dynamo kv_router)",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "File confirmed verbatim: 'kv_router.rs estimates how much of a request each worker already has cached, then asks the scheduler to choose a worker. It selects a worker but does not send the request.' The module map explicitly separates worker-selection (kv_router.rs) from request-dispatch (push_router.rs), which by construction means the selection logic never touches request content, model choice, or generation — a structural architecture description, not a documentation-only identity claim, so it clears PASS_ABSOLUTE rather than capping at CONTRACTUAL_ONLY.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched lib/llm/src/kv_router/CLAUDE.md via `gh api repos/ai-dynamo/dynamo/contents/...`. Quoted sentence present verbatim, and the file's own module map corroborates the select/send separation. Star count re-verified at 7799 via `gh api repos/ai-dynamo/dynamo --jq .stargazers_count`, matching the claim exactly.",
+    "telemetrySignal": "Per-worker cached-token/overlap metrics rise for repeat-prefix traffic while total tokens billed by the serving engine for a given request are unaffected — consistent with a pre-dispatch placement decision.",
+    "providers": [
+      "ai-dynamo/dynamo"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched lib/llm/src/kv_router/CLAUDE.md via `gh api repos/ai-dynamo/dynamo/contents/...`. Quoted sentence present verbatim, and the file's own module map corroborates the select/send separation. Star count re-verified at 7799 via `gh api repos/ai-dynamo/dynamo --jq .stargazers_count`, matching the claim exactly.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "CONTRACTUAL_ONLY",
+      "why": "Same genus as the AIBrix pod-routing entry: worker selection exists specifically to steer a request toward a replica that already holds overlapping KV cache, so a 'successful' selection is definitionally a compute-skip (cache-hit) outcome versus a cache-miss recompute on a different worker — a change in the amount of thinking performed, not a no-op placement. The 'structural, not marketing' claim is also weaker than it's presented: the only thing re-fetched and verified is CLAUDE.md, a documentation/instructions file describing the kv_router.rs / push_router.rs module boundary — nobody actually read kv_router.rs or push_router.rs to confirm the described separation is enforced in the current code rather than aspirational or stale prose. Reconfirming that a doc file's sentence is 'present verbatim' is reconfirming a documentation claim, which is exactly what the rubric caps at CONTRACTUAL_ONLY, not a structural proof sufficient for PASS_ABSOLUTE."
+    }
+  },
+  {
+    "id": 244,
+    "name": "Conditional prefill-disaggregation bypass (NVIDIA Dynamo)",
+    "strictVerdict": "PASS_ABSOLUTE",
+    "reasoning": "Verified verbatim in lib/kv-router/src/conditional_disagg.rs: 'Decides whether a request should skip remote prefill and run prefill locally on the chosen decode worker' and 'A request bypasses to AGG only if its net-new prefill stays under this cap' (DEFAULT_CONDITIONAL_DISAGG_EFF_ISL_THRESHOLD=2048, DEFAULT_CONDITIONAL_DISAGG_EFF_ISL_RATIO_THRESHOLD=0.7, both confirmed present in the file). The decision only chooses WHICH worker performs an unchanged prefill computation (co-located vs. across a KV-transfer network hop) based on cache-credit accounting; prompt tokens, model weights, and generated-token count are identical either way. Pure request-placement/topology decision, decided before any model computation runs.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched lib/kv-router/src/conditional_disagg.rs from ai-dynamo/dynamo via `gh api repos/ai-dynamo/dynamo/contents/...`; both quoted doc-comments and both named threshold constants with their exact values (2048, 0.7) are present verbatim.",
+    "telemetrySignal": "Fraction of requests taking the AGG-bypass path vs. full disaggregated path, and a drop in KV-transfer network bytes for bypassed requests, with zero change in prompt or completion token counts.",
+    "providers": [
+      "self-hosted",
+      "ai-dynamo/dynamo"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched lib/kv-router/src/conditional_disagg.rs from ai-dynamo/dynamo via `gh api repos/ai-dynamo/dynamo/contents/...`; both quoted doc-comments and both named threshold constants with their exact values (2048, 0.7) are present verbatim.",
+    "trap": "Reads like it could be model-routing (skipping a hop = doing less), but net_new_tokens() is only a threshold INPUT to a placement decision — the actual token computation for those tokens is never skipped, only relocated.",
+    "adversarialNote": "survived both skeptic lenses"
+  },
+  {
+    "id": 245,
+    "name": "KVBM host/disk KV cache offload tiers (NVIDIA Dynamo)",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "Verified verbatim in recipes/qwen3-32b/vllm/agg-kvbm/README.md: 'KVBM offloads cold KV cache blocks to host memory so the effective cache footprint extends beyond GPU HBM, which improves prefix-reuse hit rate on long or repeated prompts without adding GPUs' and '`DYN_KVBM_CPU_CACHE_GB=100` is pinned as page-locked host memory for KVBM’s G2 tier.' The candidate's mechanism also claims a G3 disk tier via GPUDirectStorage, which the cited recipe file alone does not state (it only documents the G2/host tier) — I independently corroborated the disk tier elsewhere in the same repo: docs/fern/.../kvbm-guide.md states 'Option 2: Both CPU and Disk cache (GPU -> CPU -> Disk tiered offloading)' and 'so that only rank 0 loads KV blocks from G2/G3 storage', and container/run.sh exposes a `--use-nixl-gds` (GPUDirect Storage) flag, plus lib/kvbm-config/src/nixl.rs documents 'GDS - GPUDirect Storage' as a backend. KVBM is described as a 'write-through cache', so a hit against an offloaded block reconstructs identical KV state to a GPU-resident hit — tokens read, model identity, and reasoning depth are unaffected regardless of which tier served the hit.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched recipes/qwen3-32b/vllm/agg-kvbm/README.md (primary quote, verbatim match) plus, to check the G3/disk/GPUDirectStorage claim not covered by that file alone, docs/fern/pages/kubernetes/kv-cache-offloading/overview.mdx and docs/fern/pages/developer-guide/knowledge-base/modular-components/kvbm/kvbm-guide.md from ai-dynamo/dynamo via gh api; all corroborating text found verbatim.",
+    "telemetrySignal": "Prefix-cache hit rate stays elevated as working-set size exceeds HBM capacity at fixed GPU count; kvbm_offload_blocks_d2h / kvbm_onboard_blocks_h2d / kvbm_host_cache_hit_rate metrics move with cold-block cascade activity.",
+    "providers": [
+      "self-hosted",
+      "ai-dynamo/dynamo"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched recipes/qwen3-32b/vllm/agg-kvbm/README.md (primary quote, verbatim match) plus, to check the G3/disk/GPUDirectStorage claim not covered by that file alone, docs/fern/pages/kubernetes/kv-cache-offloading/overview.mdx and docs/fern/pages/developer-guide/knowledge-base/modular-components/kvbm/kvbm-guide.md from ai-dynamo/dynamo via gh api; all corroborating text found verbatim.",
+    "trap": "The single cited file only documents the G2 (host-RAM) tier — the G3/disk/GPUDirectStorage detail in the candidate's mechanism text is real but requires a second, uncited source in the same repo to confirm; don't take that citation alone as full support for the three-tier claim.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "CONTRACTUAL_ONLY",
+      "why": "Attack: every cited source — the primary recipe README plus both corroborating fern-docs pages — is documentation prose, not source code. Unlike entry 1 (named .rs constants) or entries 3/4 (formulas pulled from routing_logic.py), nothing here shows CODE enforcing bit-exact write-through consistency between a GPU-resident KV block and its host/disk-tiered copy; 'identical KV state' is an assertion the docs make, not a structural guarantee verified in source. The G3/disk tier is additionally evidenced only by a `--use-nixl-gds` flag's existence and a backend enum entry — not a confirmed default-active path with thresholds the way entry 1 has. This is the textbook CONTRACTUAL_ONLY profile: 'the provider asserts identity and we cannot verify it. A documentation sentence, however clear, caps here.' The analyst's own admission that the primary source doesn't cover the full claimed mechanism, requiring two more uncited doc pages to patch the gap, is itself the tell. Downgraded from PASS_ABSOLUTE."
+    }
+  },
+  {
+    "id": 246,
+    "name": "Ground-truth KV-aware routing via LMCache controller (vLLM production-stack)",
+    "strictVerdict": "PASS_ABSOLUTE",
+    "reasoning": "Verified verbatim in docs/source/use_cases/kv-cache-aware-routing.rst: 'With KV cache aware routing, incoming requests are routed to the instance with the highest KV cache hit rate' and 'Unlike prefix aware routing—which always sends requests with the same prefix to the same instance, even if the cache has been evicted—KV cache aware routing prioritizes cache hits to optimize resource usage.' I also pulled the actual implementation (src/vllm_router/routers/routing_logic.py, class KvawareRouter) which queries an LMCache controller for `matched_tokens` per instance before picking a target — this is real code, not just marketing prose. Selecting which identical replica serves an unmodified request based on live cache telemetry changes nothing the model reads.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched docs/source/use_cases/kv-cache-aware-routing.rst (quote verbatim) and src/vllm_router/routers/routing_logic.py (class KvawareRouter, `matched_tokens` lookup logic, RoutingLogic.KVAWARE enum) from vllm-project/production-stack via gh api / gh search code.",
+    "telemetrySignal": "Router-reported cache-hit rate under eviction pressure tracks ground truth more closely than the static prefix-hash mode; fewer routes to instances that silently evicted the target prefix.",
+    "providers": [
+      "self-hosted",
+      "vllm-project/production-stack"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched docs/source/use_cases/kv-cache-aware-routing.rst (quote verbatim) and src/vllm_router/routers/routing_logic.py (class KvawareRouter, `matched_tokens` lookup logic, RoutingLogic.KVAWARE enum) from vllm-project/production-stack via gh api / gh search code.",
+    "adversarialNote": "survived both skeptic lenses"
+  },
+  {
+    "id": 247,
+    "name": "Load-aware routing scored against cache-hit benefit (vLLM production-stack)",
+    "strictVerdict": "PASS_ABSOLUTE",
+    "reasoning": "Verified verbatim in docs/source/use_cases/loadaware-routing.rst: 'With plain KV cache aware routing, every request that matches a popular cached prefix is sent to the one instance holding that prefix, however busy it is — the hot instance queues while its peers sit idle. Load aware routing scores every instance and can send a request to a cold-but-idle instance when the warm one is saturated.' Confirmed in actual code (routing_logic.py, class LoadAwareRouter): 'score(i) = matched_tokens(i) / prompt_tokens - beta * relative_load(i)' and DEFAULT_LOADAWARE_BETA = 1.0 are present exactly as documented. This only changes which physical, identical replica serves an unmodified request by weighing an infra-internal tradeoff (cache locality vs. queue depth) invisible to the model — same request, same model, same output.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched docs/source/use_cases/loadaware-routing.rst (quote verbatim) and cross-checked src/vllm_router/routers/routing_logic.py from vllm-project/production-stack via gh api / gh search code — score formula and beta default match the doc exactly.",
+    "telemetrySignal": "Reduced p99 queueing latency / more even running-request counts across replicas under skewed popular-prefix traffic, at an unchanged aggregate cache-hit-rate-vs-tokens-served ratio.",
+    "providers": [
+      "self-hosted",
+      "vllm-project/production-stack"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched docs/source/use_cases/loadaware-routing.rst (quote verbatim) and cross-checked src/vllm_router/routers/routing_logic.py from vllm-project/production-stack via gh api / gh search code — score formula and beta default match the doc exactly.",
+    "adversarialNote": "survived both skeptic lenses"
+  },
+  {
+    "id": 248,
+    "name": "XGBoost-based per-endpoint latency prediction for SLO-aware routing (llm-d router)",
+    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "reasoning": "Verified verbatim in pkg/epp/framework/plugins/requestcontrol/dataproducer/predictedlatency/README.md: 'Trains XGBoost models via a sidecar and generates per-endpoint TTFT/TPOT predictions' and 'SLO headroom calculation per endpoint: headroom = SLO - predicted_latency (used by downstream scorer and admission plugins).' This predictor only feeds a decision about WHICH endpoint (replica) serves an unmodified request — a learned scheduler input, not a change to the prompt, model identity, or generation depth.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched pkg/epp/framework/plugins/requestcontrol/dataproducer/predictedlatency/README.md from llm-d/llm-d-router (confirmed repo exists via `gh repo view llm-d/llm-d-router`, 297 stars) via gh api; quote verbatim.",
+    "telemetrySignal": "Per-endpoint predicted-vs-actual TTFT/TPOT tracked as training labels; routing decisions correlate with predicted headroom, with zero change in per-request token counts.",
+    "providers": [
+      "self-hosted",
+      "llm-d/llm-d-router"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched pkg/epp/framework/plugins/requestcontrol/dataproducer/predictedlatency/README.md from llm-d/llm-d-router (confirmed repo exists via `gh repo view llm-d/llm-d-router`, 297 stars) via gh api; quote verbatim.",
+    "trap": "The evidence field's parenthetical '(llm-d/llm-d, 4066 stars)' cites the wrong repo — the file actually lives in llm-d/llm-d-router (297 stars), a separate, much smaller repo from the 4067-star llm-d/llm-d parent project. The path itself checks out in llm-d-router; only the star-count attribution in the candidate's evidence string is misattached.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "INSUFFICIENT_EVIDENCE",
+      "why": "Quotes verbatim-verified against pkg/epp/framework/plugins/requestcontrol/dataproducer/predictedlatency/README.md, and the repo is real and non-trivial (llm-d/llm-d-router, 297 stars, pushed same day — the entry's own star-count correction checks out). But the reasoning's central claim — 'this predictor only feeds a decision about WHICH endpoint... serves an unmodified request' — is contradicted by the fuller picture available in the same repo. The predictor's own README says its headroom output is 'used by downstream scorer AND ADMISSION plugins' (quoted by the entry itself but then argued away). I fetched pkg/epp/framework/plugins/requestcontrol/admitter/latencyslo/README.md and confirmed a real, wired-in AdmissionPlugin: 'Rejects sheddable requests when no endpoint can meet latency SLO constraints' — for priority<0 traffic, if no endpoint has valid/idle/cold headroom, 'the request is rejected' outright, not merely rerouted. That is a materially different claim than 'unmodified request, different replica': some requests, under this predictor's guidance, get no model response at all rather than a same-model response from a different worker. The entry supplies no quantification of how often this triggers or whether typical deployments wire the admitter plugin at all, so I can't confirm either that it always behaves as pure routing or that it doesn't. Downgrading rather than failing outright since a rejected request technically never has 'the model read different tokens' or 'a different model answer' — there's no model turn to compare — but the entry's unqualified 'only... WHICH endpoint' framing overstates what's verified and needs the shedding behavior disclosed or ruled out before it can stand as PASS_ABSOLUTE. | Attack: the sole evidence is one README paragraph describing the PREDICTOR, which itself states the headroom value is 'used by downstream scorer and ADMISSION plugins' (plural). Admission control implies possible request rejection, throttling, priority reordering, or an SLO-driven fallback path — not necessarily a pure pick-among-identical-replicas decision like entries 3/4. That downstream admission-plugin logic was never fetched or characterized, so there's no positive evidence ruling out a path that changes what a request actually receives (e.g., a degraded/alternate serving route triggered when no endpoint has headroom). The reasoning field's conclusion ('only feeds a decision about WHICH endpoint... serves an unmodified request') outruns what the cited evidence shows. Compounding the concern: the entry's own trap admits a repo/star-count misattribution in the evidence string, a general evidence-quality flag. Downgraded from PASS_ABSOLUTE to INSUFFICIENT_EVIDENCE — the routing-only mechanism is plausible but not settled."
+    },
+    "settlingExperiment": "Deploy the llm-d-router Helm chart with router.latencyPredictor.enabled=true against a live InferencePool of ≥2 replicas of the identical model checkpoint (no latency-slo-admitter pluginRef added). Fire an identical request repeatedly while forcing the scorer to alternate replicas (e.g. synthetic load skew), capture the exact bytes sent to and returned by the model server per replica, and diff — confirming byte-identical prompts/outputs regardless of which endpoint the XGBoost-scored router picked. Separately, `kubectl get configmap <release>-router -o yaml` against a real cluster install to confirm the rendered schedulingProfiles still omits latency-slo-admitter, ruling out any values.yaml override this desk review didn't see."
+  },
+  {
+    "id": 249,
+    "name": "Latency-SLO admission shedding (llm-d router latency-slo-admitter)",
+    "strictVerdict": "FAIL",
+    "reasoning": "Verified verbatim in pkg/epp/framework/plugins/requestcontrol/admitter/latencyslo/README.md: 'Rejects sheddable requests when no endpoint can meet latency SLO constraints' and 'If none are met, the request is rejected.' A rejected request receives no model completion whatsoever — this is not 'same request answered more cheaply,' it is 'this request is not answered at all,' which trivially fails the bar (zero models answer vs. one) and is an admission-control/availability tradeoff, not an identity-preserving cost optimization. Correctly proposed as FAIL by the candidate itself.",
+    "savings": "None",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched pkg/epp/framework/plugins/requestcontrol/admitter/latencyslo/README.md from llm-d/llm-d-router via gh api; quote verbatim, including the three admission conditions (hasValid/hasIdle/hasCold) table.",
+    "telemetrySignal": "A distinct rejection/error-rate metric for sheddable-priority traffic that rises under load, visible as requests receiving no model completion at all rather than a delayed one.",
+    "providers": [
+      "self-hosted",
+      "llm-d/llm-d-router"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched pkg/epp/framework/plugins/requestcontrol/admitter/latencyslo/README.md from llm-d/llm-d-router via gh api; quote verbatim, including the three admission conditions (hasValid/hasIdle/hasCold) table."
+  },
+  {
+    "id": 250,
+    "name": "LiteLLM Bedrock 1h-TTL cache-write mispricing correction",
+    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "reasoning": "The candidate's quoted numbers ($0.07288 vs $0.11648, the 11,632-token repro) are verbatim in PR #36808's body — that much checks out. But re-fetched PR state is OPEN, mergedAt: null, and the author is 'app/devin-ai-integration' — a bot, not a human contributor. reviewDecision is REVIEW_REQUIRED with zero substantive reviews (only automated codecov/codspeed/greptile-apps bot comments, one of which is the Devin bot introducing itself: 'I'll be helping with this pull request!'). No LiteLLM maintainer has looked at, endorsed, or merged this. The 'Screenshots / Proof of Fix' section is the bot grading its own change — there is no independent confirmation the underlying bug exists in shipped LiteLLM or that this specific fix is correct. Even if the described bug and fix were real, this would be a PASS_ABSOLUTE-shaped accounting correction (byte-identical Bedrock request, only LiteLLM's cost display changes) — but the evidentiary bar isn't met: an unmerged bot PR caps well below CONTRACTUAL_ONLY, which itself is reserved for a documentation sentence from the provider.",
+    "savings": "UNQUANTIFIED — self-claimed ~37% cost-display undercount, unconfirmed by any maintainer or independent reproduction",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh pr view 36808 -R BerriAI/litellm` (state, mergedAt, author, reviews, comments) and `gh issue view 36760`. Confirmed: state=OPEN, mergedAt=null, author=app/devin-ai-integration (bot), reviewDecision=REVIEW_REQUIRED, reviews=[]. Quoted cost figures present verbatim in the PR body.",
+    "telemetrySignal": "x-litellm-response-cost header / /spend/logs diverging from the real AWS invoice on Bedrock Converse requests with ttl:1h cache_control — signal itself is plausible in form but the specific fix is unverified",
+    "providers": [
+      "AWS Bedrock",
+      "Anthropic (via Bedrock Converse)",
+      "BerriAI/litellm"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched via `gh pr view 36808 -R BerriAI/litellm` (state, mergedAt, author, reviews, comments) and `gh issue view 36760`. Confirmed: state=OPEN, mergedAt=null, author=app/devin-ai-integration (bot), reviewDecision=REVIEW_REQUIRED, reviews=[]. Quoted cost figures present verbatim in the PR body.",
+    "trap": "Reads like a confirmed, merged bug-fix PR with hard before/after numbers. It is actually an open, unmerged, unreviewed PR whose author is a bot (Devin AI), and the 'proof of fix' is that same bot self-certifying its own patch. No LiteLLM maintainer has touched it.",
+    "settlingExperiment": "Watch #36808/#36760 for either a merge or a maintainer comment closing #36760 as covered by #34860. Independently: run LiteLLM main against a real Bedrock Converse call with an 11k-token system block under a 1h cache_control TTL (the PR's own repro curl), and diff the x-litellm-response-cost header against the actual AWS Bedrock invoice line for that call — settles both whether the bug still exists in shipped code and whether it needs this specific fix."
+  },
+  {
+    "id": 251,
+    "name": "LiteLLM stops re-listing Vertex cachedContents on every cache hit",
+    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "reasoning": "Quoted instrumentation ('3 discovery calls for 3 identical completions' -> '1 discovery call') is verbatim in PR #37277's body. But re-fetched state is OPEN, mergedAt: null, opened 2026-08-18 (one day before this adjudication). reviewDecision is REVIEW_REQUIRED; the only 'reviews' are from automated bots (greptile-apps, veria-ai/oss-review-agent) plus CI status bots (codecov, codspeed-hq) — no LiteLLM maintainer has reviewed or merged it. The PR's own comment thread shows the author fixing bugs Greptile flagged mid-review ('Greptile was right on both counts, and the first one was a genuine bug I introduced'), i.e. the patch was still actively unstable at time of citation. Cannot confirm this ships as described.",
+    "savings": "removes 2 of 3 redundant cachedContents.list round-trips per repeated cache-hit request (latency only; PR itself does not quantify a dollar figure) — but the fix's acceptance is unconfirmed",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh pr view 37277 -R BerriAI/litellm` (state, mergedAt, author, reviews, comments) and `gh issue view 36395`. Confirmed: state=OPEN, mergedAt=null, author=aayushbaluni (human, non-bot), reviewDecision=REVIEW_REQUIRED, reviews are bot-only (greptile-apps COMMENTED, veria-ai COMMENTED). Quoted before/after discovery-call counts present verbatim.",
+    "telemetrySignal": "count of cachedContents GET calls per identical repeated generateContent request",
+    "providers": [
+      "Google Vertex AI / Gemini",
+      "BerriAI/litellm"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched via `gh pr view 37277 -R BerriAI/litellm` (state, mergedAt, author, reviews, comments) and `gh issue view 36395`. Confirmed: state=OPEN, mergedAt=null, author=aayushbaluni (human, non-bot), reviewDecision=REVIEW_REQUIRED, reviews are bot-only (greptile-apps COMMENTED, veria-ai COMMENTED). Quoted before/after discovery-call counts present verbatim.",
+    "trap": "The candidate's own caveat that 'dollar impact not quantified' is honest, but it undersells the bigger gap: the PR is unmerged and unreviewed by any human maintainer, and the author was still patching self-introduced bugs in the same PR thread as of the citation date.",
+    "settlingExperiment": "Watch whether either #37277 or #32411 merges (or gets closed as duplicate of the other). Independently: run either branch's proxy against a real Vertex/Gemini endpoint with a cache_control breakpoint over the min-token floor, issue three identical completions, and count outbound cachedContents.list calls on the wire via a logging proxy — an independent reproduction of the count the PR author already self-reported (1 GET on-branch vs 3 upstream)."
+  },
+  {
+    "id": 252,
+    "name": "LiteLLM cache-affinity router sticky-routing TTL fix (prevents duplicate paid caches across deployments)",
+    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "reasoning": "PR #28435's own text matches the candidate's quote verbatim. But re-fetched: state=OPEN, mergedAt=null, CLA not signed ('not_signed' badge from CLAassistant), and an automated review-gate bot (oss-pr-review-agent-shin) explicitly posted: 'This PR is currently BLOCKED from merge... Score: 4/5 ... 1 unresolved reviewer concern (greptile).' This is not merely unmerged — it is flagged as blocked. Worse, the 'corroborating' issue #17139 is not actually the same bug: it's a Google Vertex/Gemini double-GCP-billing feature request (a different provider, and a request for a sticky-routing *feature* that doesn't exist at all, not a TTL-mismatch bug in an existing one), and it was auto-closed by the stale bot as NOT_PLANNED with zero LiteLLM maintainer engagement — the opposite of corroboration.",
+    "savings": "UNQUANTIFIED and unconfirmed — no maintainer has validated the mechanism or merged the fix",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh pr view 28435 -R BerriAI/litellm` (state, mergedAt, CLA status, reviews, comments) and `gh issue view 28427` and `gh issue view 17139 --json state,stateReason,comments`. Confirmed: PR state=OPEN, mergedAt=null, CLA unsigned, review-bot comment literally says BLOCKED. Issue #17139: state=CLOSED, stateReason=NOT_PLANNED, only comment is the stale-bot auto-close notice.",
+    "telemetrySignal": "cache_read_input_tokens=0 with cache_creation_input_tokens>0 on requests that should be warm — plausible in form, unverified as fixed",
+    "providers": [
+      "AWS Bedrock",
+      "Anthropic",
+      "Google Vertex AI (cited issue only)",
+      "BerriAI/litellm"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched via `gh pr view 28435 -R BerriAI/litellm` (state, mergedAt, CLA status, reviews, comments) and `gh issue view 28427` and `gh issue view 17139 --json state,stateReason,comments`. Confirmed: PR state=OPEN, mergedAt=null, CLA unsigned, review-bot comment literally says BLOCKED. Issue #17139: state=CLOSED, stateReason=NOT_PLANNED, only comment is the stale-bot auto-close notice.",
+    "trap": "Two stacked traps: (1) the fix PR is explicitly bot-flagged BLOCKED with an unsigned CLA, not just 'unmerged'; (2) the cited 'corroborating' issue #17139 is a different provider (Vertex/Gemini, not Bedrock/Anthropic) describing a different mechanism (no sticky routing at all, vs. a TTL bug in existing sticky routing), and it was closed NOT_PLANNED by a stale-bot with no maintainer ever weighing in — it corroborates nothing.",
+    "settlingExperiment": "Watch whether github-actions auto-closes #28435 within its grace window and whether a fresh PR gets opened against #28427 (a maintainer-adjacent user just asked to keep it open, which sometimes precedes a new attempt). Independently: run the router with two Bedrock/Anthropic deployments behind a 1h cache_control TTL, wait 5-10 minutes (past the old hardcoded 300s affinity window but inside the real 3600s cache TTL), and check whether the router still sticks the second request to the same deployment or fans it to a second one and creates a duplicate paid cache write."
+  },
+  {
+    "id": 253,
+    "name": "LiteLLM Bedrock guardrails silently drop cache_control when rewriting to guarded_text",
+    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "reasoning": "The candidate's quoted mechanism text is verbatim in PR #33825's body, and the underlying claim (cache_control is envelope metadata the model doesn't read) would indeed cap at PASS_METADATA if true and shipped. But re-fetched: state=OPEN, mergedAt=null, reviewDecision=REVIEW_REQUIRED, and reviews=[] — literally zero reviews of any kind, human or automated bot, beyond routine CI/CLA/codecov status checks. No one — maintainer or otherwise — has evaluated whether the 6 new unit tests the PR claims actually demonstrate the bug and fix correctly. This is a self-contained, self-graded PR with no external check at all.",
+    "savings": "UNQUANTIFIED and unconfirmed — restores prompt-cache hits on guardrails-enabled Bedrock Converse turns, if the fix is real and correct",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh pr view 33825 -R BerriAI/litellm` (state, mergedAt, author, reviews, comments) and `gh issue view 33281`. Confirmed: state=OPEN, mergedAt=null, author=Taranum01, reviewDecision=REVIEW_REQUIRED, reviews=[]. Quoted root-cause description present verbatim in PR body.",
+    "telemetrySignal": "cachePoint block missing from the transformed Converse request body whenever guardrailConfig is set — the unit-test assertions cited are the author's own, unreviewed by anyone",
+    "providers": [
+      "AWS Bedrock",
+      "BerriAI/litellm"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched via `gh pr view 33825 -R BerriAI/litellm` (state, mergedAt, author, reviews, comments) and `gh issue view 33281`. Confirmed: state=OPEN, mergedAt=null, author=Taranum01, reviewDecision=REVIEW_REQUIRED, reviews=[]. Quoted root-cause description present verbatim in PR body.",
+    "trap": "The PASS_METADATA framing presumes the bug and fix are both real and correctly implemented; with zero reviews of any kind on an unmerged PR, that presumption is unsupported evidence, not confirmed fact.",
+    "settlingExperiment": "PR #33825 needs its CLA signed and to leave draft state before it can even enter review -- track that first. Once merged, drive a two-turn Bedrock Converse call with both cache_control_injection_points=[{location:message,index:-1}] and guardrailConfig set, capture the transformed request body via detailed_debug, and confirm a cachePoint block now follows the trailing guardContent block, with cache_read_input_tokens>0 on the second turn."
+  },
+  {
+    "id": 254,
+    "name": "LiteLLM proxy mutated the caller's shared message/tool list, silently stripping cache_control on later provider calls",
+    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "reasoning": "The candidate's quoted repro output ('anthropic system BEFORE: [...cache_control...]' vs 'AFTER: [...]' with the marker gone) is verbatim in PR #35602's body, and the mechanism (fixing accidental metadata mutation, restoring a field the model never reads) would cap at PASS_METADATA if real and shipped. Re-fetched: state=OPEN, mergedAt=null, reviewDecision=REVIEW_REQUIRED, with zero human or maintainer reviews — only a greptile-apps bot summary plus routine CI checks. Notably, one commenter (Sanjays2402) on the PR itself flags that 'the Responses API sibling still has this exact bug' unaddressed, meaning even by the author's own thread this is an incomplete, unmerged, unvetted fix.",
+    "savings": "UNQUANTIFIED and unconfirmed — prevents full-price re-billing of a cached prefix after a prior OpenAI-compatible call touched the same shared list, if the fix is real and lands as-is",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh pr view 35602 -R BerriAI/litellm` (state, mergedAt, author, reviews, comments). Confirmed: state=OPEN, mergedAt=null, author=vineethsaivs, reviewDecision=REVIEW_REQUIRED, no human/maintainer reviews. Quoted before/after JSON present verbatim in PR body.",
+    "telemetrySignal": "cache_control keys present pre-call, absent post-call on the same in-memory messages/tools object — plausible in form, not independently confirmed",
+    "providers": [
+      "Anthropic",
+      "AWS Bedrock",
+      "Groq (repro example)",
+      "OpenAI-compatible providers generally",
+      "BerriAI/litellm"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched via `gh pr view 35602 -R BerriAI/litellm` (state, mergedAt, author, reviews, comments). Confirmed: state=OPEN, mergedAt=null, author=vineethsaivs, reviewDecision=REVIEW_REQUIRED, no human/maintainer reviews. Quoted before/after JSON present verbatim in PR body.",
+    "trap": "Same self-graded pattern as the other four LiteLLM entries in this batch. Additionally, the PR's own comment thread notes an identical unfixed bug in a sibling code path (Responses API), undercutting the claim that the correction is complete even if merged as-is.",
+    "settlingExperiment": "After #35602 (or an equivalent fix) merges, re-run the PR's own repro script -- build cache_control_marked messages, call litellm.GroqChatConfig().transform_request on them, then litellm.AnthropicConfig().transform_request on the same list -- and confirm the printed 'caller's messages unchanged:' flips from False to True. That exact script fails against main as of this re-check (2026-08-20), confirmed by reading gpt_transformation.py directly rather than trusting the PR body."
+  },
+  {
+    "id": 255,
+    "name": "Anthropic API server-side phantom cache writes past the declared breakpoint (confirmed + fixed)",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "This is the one candidate in the batch with real, verified confirmation. Re-fetched issue #1547: state=CLOSED, stateReason=COMPLETED (not merely stale-closed). The confirming comment is from dtmeadows-ant, authorAssociation=CONTRIBUTOR, and a public API check (`search/commits?q=repo:anthropics/anthropic-sdk-python+author:dtmeadows-ant`) shows 19 authored commits in Anthropic's own official SDK repo — consistent with Anthropic staff, not a random outside contributor. The verbatim confirming quote: \"This was server-side and has since been fixed: running your script today ... produces exactly your 'expected' output ... nothing is written (or billed as a write) past your explicit breakpoint.\" Before/after usage numbers in the issue body match the candidate's citation exactly (cache_creation=1416 on warm calls, buggy, vs cache_creation=0, fixed). The caller's request bytes never changed across the fix — this was a pure provider-internal billing/accounting correction, i.e. zero request change, matching PASS_ABSOLUTE's definition exactly, and confirmed directly by the provider rather than resting on a documentation sentence (which would cap at CONTRACTUAL_ONLY).",
+    "savings": "eliminated an unrequested ~1,416-token phantom cache write per warm call (billed at 1.25x, never re-read) on single-breakpoint caching setups — historical only: confirmed fixed server-side as of 2026-08-05, so there is no ongoing saving to capture going forward, only avoided overbilling that has already stopped",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh issue view 1547 -R anthropics/anthropic-sdk-python --json state,stateReason,labels,comments` and `gh api search/commits?q=repo:anthropics/anthropic-sdk-python+author:dtmeadows-ant`. Confirmed: state=CLOSED, stateReason=COMPLETED, confirming comment author dtmeadows-ant has authorAssociation=CONTRIBUTOR and 19 commits in the repo. Quoted confirmation text and before/after usage numbers present verbatim in the issue thread.",
+    "telemetrySignal": "usage.cache_creation_input_tokens > 0 on a warm call that should show cache_creation=0 given only one declared cache_control breakpoint",
+    "providers": [
+      "Anthropic (direct API)",
+      "anthropics/anthropic-sdk-python"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched via `gh issue view 1547 -R anthropics/anthropic-sdk-python --json state,stateReason,labels,comments` and `gh api search/commits?q=repo:anthropics/anthropic-sdk-python+author:dtmeadows-ant`. Confirmed: state=CLOSED, stateReason=COMPLETED, confirming comment author dtmeadows-ant has authorAssociation=CONTRIBUTOR and 19 commits in the repo. Quoted confirmation text and before/after usage numbers present verbatim in the issue thread.",
+    "trap": "Best-evidenced entry in the set, but it is not an adoptable 'technique' — no caller action produced this outcome; Anthropic silently fixed its own server-side billing bug. Worth flagging to whoever curates the register that this may belong in a 'resolved billing bugs' ledger rather than a techniques list, even though it cleanly satisfies PASS_ABSOLUTE's mechanics.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "CONTRACTUAL_ONLY",
+      "why": "Re-fetched issue #1547 directly (gh issue view --json body,comments,state,stateReason) rather than trusting the register's summary. Two things check out: the quote is verbatim and the 1416-vs-0 numbers are real (1416 comes from the issue body's 'Actual behavior' block, not fabricated). But the authority chain the PASS_ABSOLUTE verdict rests on doesn't survive: (1) GitHub's authorAssociation=CONTRIBUTOR specifically means 'has previously committed to the repo' and explicitly does NOT indicate org membership -- that's what MEMBER means, and GitHub computes it server-side regardless of public/private membership settings. A commenter who were actually an Anthropic org member on Anthropic's own repo would very plausibly show MEMBER, not CONTRIBUTOR. The register's reasoning treats CONTRIBUTOR+19 commits as proof of staff status; it's actually the value you'd expect from a non-member. (2) I pulled the account directly (gh api users/dtmeadows-ant): created ~3 months prior, 0 public repos, no company/bio field despite an @anthropic.com email on the commit metadata, 4 followers, and `orgs` returns `[]` -- a near-blank profile. (3) The SDK repo is Stainless-generated (committer on dtmeadows-ant's commits is stainless-app[bot]), where 'author' is auto-attributed from an internal spec change, not necessarily a human manually operating as a recognized GitHub contributor -- so '19 commits' is weaker proof of standing than it looks. (4) Decisively: the confirming comment's own justification is 'consistent with the cache writes happen only at your breakpoint rule in the docs: platform.claude.com/...' -- i.e., the confirmation is 'I re-ran it and got numbers matching what the docs already promised,' not an internal postmortem, changelog, linked fix commit, or engineering ticket. That is exactly a documentation-sentence-level appeal to authority, and no independent measurement was performed by whoever compiled this entry -- they read a comment, they didn't reproduce the before/after themselves. PASS_ABSOLUTE requires 'only a measurement or a structural argument'; this is testimony from an identity we cannot fully verify as an authoritative Anthropic engineering source, capping it at CONTRACTUAL_ONLY. Separately, the entry's own 'trap' field concedes there's no caller-side technique here at all -- worth flagging as a category mismatch for a 'cost-technique' register regardless of the verdict."
+    }
+  },
+  {
+    "id": 256,
+    "name": "OpenAI Python SDK default JSON ensure_ascii=True inflates non-ASCII schema/prompt tokens up to 3.6x",
+    "strictVerdict": "FAIL",
+    "reasoning": "Re-fetched issue #2428 in full via `gh issue view 2428 --repo openai/openai-python`. Body verbatim: 'Schema (ensure_ascii=True) ... Num tokens: 233' vs 'Schema (ensure_ascii=False) ... Num tokens: 65', concluding '3.6x token overhead for non-ASCII text in schema descriptions', corroborated by 'Prompt tokens (from response) ... Num tokens: 240' from the live API call. The candidate itself correctly proposes FAIL and I confirm it: the only remedy (switching json.dumps to ensure_ascii=False) is a literal change to the byte/token sequence the model reads for the schema description — automatic FAIL under clause 1 of the bar regardless of informational equivalence. Correctly self-classified.",
+    "savings": "up to 3.6x fewer tokens for non-ASCII schema/tool descriptions if fixed (currently open/unmerged, so $0 realized — the bug still costs money today)",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched full issue body+state via gh CLI (openai/openai-python#2428); every quoted number and the reproduction script match verbatim.",
+    "telemetrySignal": "tokenized length of the outbound JSON request body for non-ASCII schema text vs. the same text un-escaped; visible in usage.prompt_tokens deltas",
+    "providers": [
+      "openai",
+      "openai/openai-python"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched full issue body+state via gh CLI (openai/openai-python#2428); every quoted number and the reproduction script match verbatim.",
+    "trap": "Reads like a real, quantified cost bug (which it is) and register history shows miners want to find a way to pass real bugs — but the fix necessarily changes wire tokens, so it's a hard FAIL, correctly self-labeled as such by the submitter."
+  },
+  {
+    "id": 257,
+    "name": "google-genai (Python) chat-history recorder breaks alternating-role structure during streaming, causing 100% Gemini implicit-cache miss",
+    "strictVerdict": "FAIL",
+    "reasoning": "Re-fetched issue #2508 in full (body + all comments) via gh CLI. Body verbatim: 'the SDK is dumping every single chunk as a separate Content entry into the history... resulting in a 100% cache miss (Cached Read = 0)'. Community fix comment (shawn-maybush) posts a `_clean_session_history()` merge routine; second reporter (Venkaiahbabuneelam) confirms verbatim: 'We didn't encounter any errors with the proposed fix.' The fix changes the literal serialized Content/JSON sequence sent on every subsequent turn (fewer, merged role entries) in order to restore the byte-prefix cache match — a token/structure change under clause 1, so FAIL is correct even though the fix's purpose is billing-neutral correctness.",
+    "savings": "restores Gemini implicit prompt-cache hits (avoids full-price reprocessing of the growing chat history each turn) for any multi-turn streaming session containing a thought/tool-call chunk",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched full issue body and comment thread via gh CLI (googleapis/python-genai#2508); all three quoted passages (bug description, workaround, confirmation) match verbatim.",
+    "telemetrySignal": "response.usage_metadata.cached_content_token_count dropping to 0 partway through an otherwise-repetitive streaming chat session",
+    "providers": [
+      "google",
+      "googleapis/python-genai"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched full issue body and comment thread via gh CLI (googleapis/python-genai#2508); all three quoted passages (bug description, workaround, confirmation) match verbatim.",
+    "trap": "Same shape as candidate 1 — a real, corroborated cache-defeating bug whose only fix is a wire-content change, correctly self-classified FAIL rather than mis-sold as a pass."
+  },
+  {
+    "id": 258,
+    "name": "Partial-batch resubmission on failure/expiry (only resend the unfinished subset)",
+    "strictVerdict": "PASS_REPLAY",
+    "reasoning": "Fetched src/bespokelabs/curator/request_processor/batch/base_batch_request_processor.py from raw.githubusercontent.com/main. Confirmed verbatim at line 445: `if request.original_row_idx in completed_request_ids: continue` inside `requests_from_generic_request_file()`; confirmed verbatim at lines 737-739: `response_file = batch.request_file.replace(\"requests_\", \"responses_\")` / `completed_request_ids, _ = self.validate_existing_response_file(response_file)` / `await self.submit_batch_from_request_file(batch.request_file, completed_request_ids, ...)` inside `resubmit_batch()`. Whatever row IS resent is byte-identical to the original attempt (same GenericRequest re-serialized via create_api_specific_request_batch); the only thing that changes is which subset of rows gets sent at all — rows with an existing response are skipped entirely. That is client-side bookkeeping over which requests get transmitted, not a change to any transmitted request's content, model, or reasoning settings.",
+    "savings": "not stated as a percentage; savings scale with batch failure/expiry rate — e.g. a batch 95% complete when it expires only re-costs the remaining 5%",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched base_batch_request_processor.py raw source directly; both cited code spans (line 445 skip-check, lines 737-739 resubmit_batch) match verbatim including exact variable names and line proximity.",
+    "telemetrySignal": "resubmitted batch's request_file line-count equals total_requests minus already-answered original_row_idx count, never the full original count",
+    "providers": [
+      "openai",
+      "anthropic",
+      "google",
+      "mistral",
+      "bespokelabsai/curator"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched base_batch_request_processor.py raw source directly; both cited code spans (line 445 skip-check, lines 737-739 resubmit_batch) match verbatim including exact variable names and line proximity.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "PASS_REPLAY",
+      "why": "PASS_ABSOLUTE requires 'zero request change' — but this mechanism's entire purpose is to change what's transmitted: it sends strictly fewer requests than a naive full resubmit would. Re-fetched base_batch_request_processor.py and base_request_processor.py directly. validate_existing_response_file() (base_request_processor.py:609-651) builds completed_request_ids purely from row IDs recorded inside already-received valid responses (response.generic_request.original_row_idx, gated on is_valid) — i.e. rows that already got a real model answer are dropped from the resend set entirely and their prior answer is reused instead of being re-asked. That's conditional replay (skip+reuse-prior-response), not 'nothing on the wire changed.' It does verify as a clean PASS_REPLAY, though a stronger one than typical: requests_from_generic_request_file() (line 428-450) re-reads the identical on-disk batch.request_file (never regenerated) for both the original submission and every resubmission, so byte-identical content for any resent row is guaranteed by same-file identity rather than by a hash check — satisfying, not undermining, the PASS_REPLAY bar. Note the internal inconsistency this exposes: entries 2 and 3 in this same register use structurally identical 'skip-if-already-done' mechanisms and were correctly scored PASS_REPLAY, not PASS_ABSOLUTE — entry 1 should match them."
+    }
+  },
+  {
+    "id": 259,
+    "name": "Whole-pipeline resume cache keyed on prompt-function source hash",
+    "strictVerdict": "FAIL",
+    "reasoning": "Fetched src/bespokelabs/curator/llm/llm.py raw source. Confirmed `_hash_fingerprint` (lines 144-169) builds `fingerprint_str` from `str(dataset_hash)`, `str(prompt_func_hash)`, `str(self.prompt_formatter.model_name)`, response_format schema, `str(self.batch_mode)`, and sorted generation_params, then `fingerprint = xxh64(fingerprint_str.encode(\"utf-8\")).hexdigest()` — matches the candidate's quote exactly. Confirmed `run_cache_dir = os.path.join(curator_cache_dir, fingerprint)` (line 224) and `response = self._get_cached_response(run_cache_dir, dataset)` (line 317) verbatim. Further verified `_get_function_hash(func)` (line 337) explicitly docstrings 'Get a hash of a function's source code' — confirming any edit to prompt_func invalidates the cache, not just a coarse content match. Also confirmed db.py's invalidation instruction verbatim: 'Please clear your cache with `rm -rf ~/.cache/curator`'. This is exact hash-gated whole-run replay: nothing is served unless dataset, prompt-function source, model, schema, batch_mode and params are all identical to a prior completed run.",
+    "savings": "not quantified in repo; effectively 100% of provider spend avoided for an unmodified re-run of the same curator script",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched llm.py and db.py raw source directly from main; all cited line ranges (144-169, 224, 317, and the rm -rf instruction) match verbatim, and _get_function_hash's own docstring corroborates the source-hashing claim.",
+    "telemetrySignal": "same fingerprint hex reproducibly maps to the same ~/.cache/curator/<fingerprint>/ directory across two runs of an unedited script; editing prompt_func body changes the fingerprint",
+    "providers": [
+      "openai",
+      "anthropic",
+      "google",
+      "mistral",
+      "bespokelabsai/curator"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched llm.py and db.py raw source directly from main; all cited line ranges (144-169, 224, 317, and the rm -rf instruction) match verbatim, and _get_function_hash's own docstring corroborates the source-hashing claim.",
+    "crosscheckOverride": {
+      "from": "PASS_REPLAY",
+      "to": "FAIL",
+      "why": "All cited quotes (llm.py:144-169, 224, 317, db.py rm -rf line) verified verbatim on re-fetch. But the mechanism is not a hash of 'the full request' as PASS_REPLAY requires -- it's a hash of a presumed-sufficient RECIPE for producing the request: dataset._fingerprint (content hash of the dataset) + a hash of the prompt_func FUNCTION OBJECT + model_name + schema + batch_mode + params. Critically, _get_function_hash's own docstring claims it 'Get[s] a hash of a function's source code' (quoted verbatim in the original reasoning as corroborating evidence) but the actual implementation (lines 358-368) does NOT hash source text -- it recursively pickles the function via `datasets.utils._dill.Pickler(recurse=True)` and xxh64's the pickled bytes. That's a materially different, and importantly incomplete, guarantee: dill pickling captures bytecode and closure cell values, but cannot capture what the function DOES at call time against live/external state -- e.g. a prompt_func that reads wall-clock time, an env var, a random draw, or makes a network call to fetch few-shot examples would produce an unchanged fingerprint across two runs whose actual rendered prompts differ. In that case the cache replays a stored response for a request the code never re-derives or diffs against -- exactly the scenario PASS_REPLAY's 'byte-identical hash match of the full request' is meant to exclude. This is a structural gap, not a demonstrated bug in a specific run, and ordinary curator usage (pure prompt_func over dataset fields) is unaffected -- so I can't confirm this actually fires in practice, only that nothing in the code rules it out or detects it. Downgrading to INSUFFICIENT_EVIDENCE rather than FAIL because the failure mode requires a non-pure prompt_func the repo doesn't demonstrate. | PASS_REPLAY requires the stored response be replayed ONLY on a byte-identical hash match of the FULL REQUEST. Re-fetched llm.py directly: _hash_fingerprint() (lines 144-167) hashes dataset_hash + prompt_func_hash + model_name + response schema + batch_mode + sorted generation_params — and _get_function_hash() (lines 337-369) computes prompt_func_hash by dill-pickling the function object (Pickler(recurse=True).dump(func)), i.e. hashing the function's CODE and closed-over state, not the actual rendered per-row request bodies sent to the API. This is a proxy for the request, not the request itself. Any prompt_func with runtime-dependent (non-pure) behavior — reads today's date, samples random few-shot examples without a pickled fixed seed, reads a config file by path, calls an external API for supplementary content — produces a genuinely different rendered prompt/request on a second run while the source+closure hash (and therefore the fingerprint and cache hit) stays identical. The cache would then silently replay a stored response for a request whose actual tokens differ from what's being sent now — precisely the 'model reads different tokens but a stale answer is substituted' failure the bar is built to catch. Since the mechanism verifiably hashes a proxy for the request rather than the request's own content, it does not meet PASS_REPLAY's 'full request' requirement and downgrades to FAIL."
+    }
+  },
+  {
+    "id": 260,
+    "name": "eval_set() task-identifier hashing to skip re-running unchanged eval tasks",
+    "strictVerdict": "FAIL",
+    "reasoning": "Fetched src/inspect_ai/_eval/evalset.py raw source. Confirmed verbatim at lines 633-644: reusable_logs filtered `if not shuffle_changed(...)`, then `log_task_identifiers = [log.task_identifier for log in reusable_logs]` and `pending_tasks = [task[1] for task in all_tasks if task[0] not in log_task_identifiers]` — tasks with a matching identifier are dropped before any run_eval call. Confirmed `task_args_hash = hashlib.sha256(to_json(task_args, ...)).hexdigest()` (line 1428) and `TASK_IDENTIFIER_VERSION = 3` (line 1321) verbatim. CAVEAT found during verification that the candidate's description overstates precision: the code comment at lines 1414-1417 states verbatim 'this effectively uses \\'params_passed\\' as the basis of comparison as opposed to \\'params\\' which in newer logs includes the fully resolved params' — i.e. the identifier is built from the literal args passed by the user, NOT the 'resolved... schema-normalized params' the candidate claims; `eval_plan.model_copy(update={\"params\": None})` explicitly strips the resolved field before hashing. This is a real, deliberate (documented, backward-compat-motivated) precision gap, not a fabrication of the whole mechanism — the exact-hash-gated skip itself, and the shuffle/limit disqualifier, verify exactly as claimed. It remains syntactic exact-match gating (not semantic/similarity matching), so PASS_REPLAY stands, but the write-up's 'resolved/schema-normalized' phrasing is factually backwards per the source's own comment.",
+    "savings": "not quantified; savings equal 100% of run cost for every task+model combination whose identifier is unchanged since the last CI run in the same log_dir",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched evalset.py raw source directly from main; confirmed all cited line spans (633-644, 1428, 1321) verbatim, and additionally fetched log/_log.py to confirm EvalPlanStep carries both `params` and `params_passed` as distinct fields (lines 673/676), which exposed the resolved-vs-passed discrepancy noted above.",
+    "telemetrySignal": "re-running eval_set() against an unmodified task file and log_dir returns prior EvalLog headers with no new provider API calls in the transcript; changing a solver's explicitly-passed args changes the hash (changing only a solver's internal default value does not, per the params_passed caveat above)",
+    "providers": [
+      "anthropic",
+      "openai",
+      "google",
+      "generic (any provider inspect_ai targets)",
+      "UKGovernmentBEIS/inspect_ai"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched evalset.py raw source directly from main; confirmed all cited line spans (633-644, 1428, 1321) verbatim, and additionally fetched log/_log.py to confirm EvalPlanStep carries both `params` and `params_passed` as distinct fields (lines 673/676), which exposed the resolved-vs-passed discrepancy noted above.",
+    "trap": "Candidate's mechanism description claims the hash uses 'schema-normalized/resolved' params; the source's own comment says the opposite (it deliberately uses the unresolved params_passed for backward compatibility with older logs). Does not flip the verdict — still exact syntactic hash-gating, not semantic matching — but the submitted description of what's hashed is inaccurate and should be corrected if published.",
+    "crosscheckOverride": {
+      "from": "PASS_REPLAY",
+      "to": "FAIL",
+      "why": "Re-fetched evalset.py and log/_log.py fresh; confirmed the candidate's own flagged caveat is real and, on closer reading, worse than the writeup credits. EvalPlanStep carries two distinct fields (log/_log.py:670-677): `params` ('Parameters used to instantiate solver' -- i.e. the fully RESOLVED config including applied defaults) and `params_passed` ('Parameters explicitly passed'). The hash-building code (evalset.py ~1414-1424) explicitly nils out `params` via `step.model_copy(update={\"params\": None})` and hashes only `params_passed`, with the comment verbatim: 'this effectively uses params_passed as the basis of comparison as opposed to params which in newer logs includes the fully resolve[d] params.' This is not a hypothetical: it is a code-confirmed, deliberately-chosen exclusion. Consequence: if a solver step's RESOLVED configuration changes without changing what the user explicitly passed -- e.g. an inspect_ai version upgrade changes a solver's default temperature/max_tokens, or any default that resolves differently in a new environment -- the task_identifier is unchanged, eval_set() treats the task as already-run, skips it, and silently reuses the old log's samples as if they reflected the current (actually different) resolved config. That is 'the model reads a different sequence of tokens' / 'a different amount of thinking happens' being masked by a hash that the source itself documents does not cover resolved params. This is confirmed by the source's own comment, not speculative -- so FAIL rather than INSUFFICIENT_EVIDENCE, even though it's syntactic exact-match gating over the (narrower) hashed surface. Repo is real and very active (2578 stars, pushed same day). | Re-fetched evalset.py directly and pulled the full task_identifier() body (lines 1325-1468). Confirmed the code explicitly strips resolved solver params before hashing: `eval_plan.model_copy(update={'finish': None, 'steps': [step.model_copy(update={'params': None}) for step in eval_plan.steps]})`, with the adjacent comment stating verbatim this 'effectively uses params_passed... as opposed to params... which in newer logs includes the fully resolved params.' So the identifier hashes task_args, model, model_generate_config (minus an infra-only exclude list: max_retries/timeout/max_connections/batch/cache), model_roles, and limits — but explicitly NOT the resolved solver-step parameters that actually get sent to the model. Concretely: if a solver's internal default changes (library upgrade, code edit inside the solver, an env-driven default) without the call site's explicitly-passed args changing, the identifier is byte-identical across runs while the real resolved request sent to the model is not — eval_set() will skip re-running and silently serve the stale prior EvalLog. This is a confirmed (not speculative — stated in the source's own comment), non-hash-of-the-full-request gap, which is exactly what PASS_REPLAY's 'byte-identical hash match of the full request' is meant to rule out. The original write-up found this same gap and called it a documented caveat that 'does not flip the verdict' — that concession is wrong under the strict bar: a cache that can and does key on less than the full resolved request is not byte-identical replay, it's FAIL."
+    }
+  },
+  {
+    "id": 261,
+    "name": "Native transparent auto-batcher: size/time-threshold scheduling layer over provider Batch APIs",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "Fetched src/inspect_ai/model/_providers/util/batch.py raw source. Confirmed verbatim at lines 84-91: `self._max_batch_request_count = min(max_batch_request_count, config.max_size or sys.maxsize)`, `self._min_batch_request_count = config.size or DEFAULT_BATCH_SIZE`, `self._send_delay = config.send_delay or DEFAULT_SEND_DELAY`, `self._tick = config.tick or DEFAULT_BATCH_TICK`, `self._max_batches = config.max_batches or DEFAULT_MAX_BATCHES`. Confirmed verbatim at line 229: `if should_send and len(self._inflight_batches) < self._max_batches:`. Also fetched batch_readme.md and confirmed verbatim: 'Requests are accumulated and written to files.' / 'The provider processes the file in bulk, returning results for all requests at once.' The mechanism only changes WHEN and in what grouping a request is transmitted (accumulate-then-flush on a size-or-time trigger with connection-limited polling); no individual request's content, target model, or reasoning configuration is altered.",
+    "savings": "implicit: routes eligible eval traffic onto each provider's ~50% discounted batch tier without the eval author writing any batching code; magnitude depends on adoption of batch=True per model config",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched batch.py and batch_readme.md raw source directly from main; all cited line spans (84-91, 229) and the readme quote match verbatim.",
+    "telemetrySignal": "a low size / high send_delay BatchConfig shows fewer, larger Batch API submissions in provider dashboards for the same eval workload versus batch=False; captured request bodies are unchanged between batched and unbatched runs",
+    "providers": [
+      "anthropic",
+      "openai",
+      "google",
+      "together",
+      "grok",
+      "UKGovernmentBEIS/inspect_ai"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched batch.py and batch_readme.md raw source directly from main; all cited line spans (84-91, 229) and the readme quote match verbatim.",
+    "crosscheckOverride": {
+      "from": "PASS_SCHEDULING",
+      "to": "CONTRACTUAL_ONLY",
+      "why": "Traced the actual dispatch code (openai_completions.py) rather than just the scheduling layer: `batcher.generate_for_request(request) if batcher else client.chat.completions.create(**request)` — the identical `request` dict, built once by the same completion_params_completions() call, is what's sent whether or not batching is active. So the client-side 'no request content changed' half of the original claim is well-supported (better supported now than in the original write-up, which only verified the accumulate/flush queueing logic in batch.py and never traced into the provider files). But PASS_SCHEDULING also requires confidence that 'a different model answers' is NO, and that half of the claim is not something inspect_ai's source can establish at all — it rests entirely on each provider's assertion (e.g. OpenAI/Anthropic/Google batch-API docs claiming batch requests are served by the same model/weights as the synchronous endpoint, just on a slower/cheaper queue). No client-observable evidence in this repo, or obtainable by a client, can verify that server-side claim; it is exactly the 'provider asserts identity and we cannot verify it' case the bar defines. Downgrade from PASS_SCHEDULING to CONTRACTUAL_ONLY: the WHEN-only claim is solid, but the model-identity claim it also depends on is doc-only."
+    }
+  },
+  {
+    "id": 262,
+    "name": "Idempotent claim-before-submit for durable, crash-safe Batch API evals",
+    "strictVerdict": "FAIL",
+    "reasoning": "Verified verbatim in js/src/durable-eval.ts: `const claim = await store.getOrSet(claimRecordKey(key, \"batch\", batchId), encoder.encode(batchId)); ... if (!claim.created) continue;` immediately gates the only line that calls `processor.submit(items, context)`. The DurableEvalStore docstring confirms intent: 'Minimal persistence used to reconnect provider webhooks with submitted batches... Durable evaluations do not require any Braintrust backend changes.' This is a pure client-side idempotency guard against duplicate Batch API submission on retry/re-invocation — the one submission that does go through is byte-identical to what would have been sent without the guard; nothing about the model, tokens, or reasoning effort of that submission changes. Repo is only 27 stars and the interface is marked @experimental, but the code is real, on `main`, and I fetched it directly rather than trusting the citation.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched https://raw.githubusercontent.com/braintrustdata/braintrust-sdk-javascript/main/js/src/durable-eval.ts directly; confirmed the getOrSet claim/skip pattern and DurableEvalStore docstring quotes verbatim. Confirmed repo stats via `gh repo view` (27 stars, pushed today). Did not independently re-derive the exact 1543-1547 line numbers cited (WebFetch summarization doesn't preserve line numbers), but the code block itself matches exactly.",
+    "telemetrySignal": "A content-blind audit sees only atomic key-value store writes (claim records) and provider Batch API job IDs; it would observe exactly one batch submission per runId+itemIds under concurrent re-invocation instead of duplicates, without ever needing to inspect request bodies.",
+    "providers": [
+      "OpenAI",
+      "Anthropic (provider-agnostic Batch API wrapper)",
+      "braintrustdata/braintrust-sdk-javascript"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched https://raw.githubusercontent.com/braintrustdata/braintrust-sdk-javascript/main/js/src/durable-eval.ts directly; confirmed the getOrSet claim/skip pattern and DurableEvalStore docstring quotes verbatim. Confirmed repo stats via `gh repo view` (27 stars, pushed today). Did not independently re-derive the exact 1543-1547 line numbers cited (WebFetch summarization doesn't preserve line numbers), but the code block itself matches exactly.",
+    "trap": "Low star count (27) and @experimental tag could read as unshipped/toy code, but this is real code in the SDK's main branch behind a commercial product, verified by direct fetch rather than trusting the citation.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "FAIL",
+      "why": "Fetched js/src/durable-eval.ts directly and traced the exact sequence: `store.getOrSet(claimRecordKey(...))` (line ~1543) runs and durably commits the claim BEFORE `processor.submit(items, context)` is called (line ~1555) and BEFORE `writeBatchRecords(store, key, [batch])` persists the batch record. getOrSet on the Redis store is implemented as `SET key value PX <ttlMs> NX GET` with ttlMs defaulting to 7 days. This is classic claim-then-act non-atomicity: if the process crashes after the claim commits but before submit+writeBatchRecords complete, the batch is never in `state.batches` on restart, so the loop re-enters, calls getOrSet again on the same deterministic key, gets `created:false` (claim already exists), and does `continue` — permanently skipping submission until the claim key expires (up to 7 days on Redis; never, on the documented in-memory store, until process exit). During that window the model reads zero tokens for that batch instead of the tokens it should have read — the opposite of 'zero request change.' The entry's own title asserts 'crash-safe' and its reasoning claims 'the one submission that does go through is byte-identical... nothing about the model, tokens, or reasoning effort... changes,' but that's true only for the happy path; the exact crash scenario the mechanism exists to handle can silently withhold the request entirely. PASS_ABSOLUTE requires zero request change unconditionally, not just on the non-crash path — downgrade to FAIL."
+    }
+  },
+  {
+    "id": 263,
+    "name": "Queue-threshold / time-threshold accumulation dispatcher for moving sync requests onto the Batch API",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "Verified verbatim in langbatch/BatchDispatcher.py: `has_threshold_requests = queue_size >= self.queue_threshold`, `reached_time_threshold = (current_time - self.last_batch_time) >= self.time_threshold`, and the gate `if has_threshold_requests or (reached_time_threshold and queue_size > 0): ... await self._create_and_dispatch_batch()`, with confirmed defaults `queue_threshold=50000`, `time_threshold=3600*2`. Only WHEN a queued request is flushed into a submitted batch changes; the request body passed to `batch_class.create(requests, ...)` is untouched. This is a textbook PASS_SCHEDULING.",
+    "savings": "UNQUANTIFIED",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched https://raw.githubusercontent.com/EasyLLM/langbatch/main/langbatch/BatchDispatcher.py directly; confirmed the full _check_batch_conditions body, threshold defaults, and class docstring verbatim. Confirmed repo stats via `gh repo view` (6 stars, last pushed 2025-07-14, over a year stale as of 2026-08-19). Did NOT independently verify the candidate's aside comparing this to openai.py's retry() behavior (full-file resubmission on expiry) — that sub-claim is NOT_VERIFIED, I did not fetch openai.py.",
+    "telemetrySignal": "Request-submission timestamps cluster at discrete threshold-crossing moments rather than arriving continuously; request JSON payloads are byte-identical to what a synchronous call would have sent — a content-blind audit sees only the timing pattern change.",
+    "providers": [
+      "OpenAI",
+      "Anthropic",
+      "Azure OpenAI",
+      "GCP Vertex AI",
+      "AWS Bedrock",
+      "EasyLLM/langbatch"
+    ],
+    "verifiedAgainst": "Fetched https://raw.githubusercontent.com/EasyLLM/langbatch/main/langbatch/BatchDispatcher.py directly; confirmed the full _check_batch_conditions body, threshold defaults, and class docstring verbatim. Confirmed repo stats via `gh repo view` (6 stars, last pushed 2025-07-14, over a year stale as of 2026-08-19). Did NOT independently verify the candidate's aside comparing this to openai.py's retry() behavior (full-file resubmission on expiry) — that sub-claim is NOT_VERIFIED, I did not fetch openai.py.",
+    "trap": "6 stars and 13+ months stale — this is a minimal reference implementation, not a load-bearing production citation. The core scheduling mechanism verified cleanly, but treat this as illustrating the pattern rather than proof of wide adoption.",
+    "crosscheckOverride": {
+      "from": "PASS_SCHEDULING",
+      "to": "CONTRACTUAL_ONLY",
+      "why": "Fetched Anthropic's live batch-processing docs (platform.claude.com/docs/en/build-with-claude/batch-processing): it describes Batch API purely in terms of pricing/throughput ('reducing costs by 50%... processed asynchronously, with each request handled independently') and gives no technical guarantee that batch-processed generations are computed by the identical serving path as synchronous Messages calls — that equivalence is asserted, not something a client can verify from the wire. This dispatcher's entire purpose (per its own name: 'for moving sync requests onto the Batch API') is to convert what would have been synchronous calls into a structurally different asynchronous job-based API surface with a different SLA and rate-limit pool — that's a bigger change than 'only WHEN the request was sent,' which is what PASS_SCHEDULING requires. The request body content is verified unchanged, but whether the batch-processed answer is produced by 'the same model' as the sync path rests entirely on a provider documentation sentence, which per the framework caps this at CONTRACTUAL_ONLY rather than PASS_SCHEDULING."
+    }
+  },
+  {
+    "id": 264,
+    "name": "Anthropic long-context cache tiering bug in Helicone's cost calculator",
+    "strictVerdict": "PASS_ABSOLUTE",
+    "reasoning": "Verified issue #5766 verbatim: 'The code always uses basePricing.input = 0.000003, so a request past 200k tokens has its cache writes billed at the base-tier rate, about half the intended long-context rate.' I then independently fetched the live packages/cost/models/calculate-cost.ts from main and confirmed this exact code is still present: `breakdown.cacheWrite5mCost = modelUsage.cacheDetails.write5m * basePricing.input * write5mMultiplier` uses tier-0 `basePricing` unconditionally, while `cachedInputCost` correctly routes through `getPricingTier(preprocessedPricing, getThresholdValue(...))`. This is purely a third-party dashboard's cost-display math over already-returned usage tokens — by construction it cannot alter the request sent to Anthropic, which model answers, or how much it reasons.",
+    "savings": "None",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched issue #5766 via `gh issue view` and confirmed the quote verbatim. Also fetched the live calculate-cost.ts from raw.githubusercontent.com/Helicone/helicone/main and confirmed the described basePricing-for-cache-write code path is present exactly as claimed. Also checked the referenced companion issue #5765 (cache-READ tiering) and found it is ALSO state:OPEN, not merged — so the candidate's parenthetical 'per the linked prior fix, cache-read' should not be read as implying that fix has already landed.",
+    "telemetrySignal": "A content-blind audit of the wire traffic to Anthropic sees zero change; only Helicone's internally computed cost-breakdown field for cache-write line items would shift (roughly doubling for >200k-token traces) once/if the tier lookup is fixed.",
+    "providers": [
+      "Anthropic",
+      "Helicone/helicone"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched issue #5766 via `gh issue view` and confirmed the quote verbatim. Also fetched the live calculate-cost.ts from raw.githubusercontent.com/Helicone/helicone/main and confirmed the described basePricing-for-cache-write code path is present exactly as claimed. Also checked the referenced companion issue #5765 (cache-READ tiering) and found it is ALSO state:OPEN, not merged — so the candidate's parenthetical 'per the linked prior fix, cache-read' should not be read as implying that fix has already landed.",
+    "trap": "The issue is OPEN/unmerged as of this check — I directly confirmed the buggy code is still live on main, so this is a documented-but-unshipped correction, not a deployed one. The three-clause verdict still holds regardless of merge status because a cost-display fix is structurally request-inert by nature, but a reader should know Helicone has not actually shipped this fix yet.",
+    "adversarialNote": "survived both skeptic lenses"
+  },
+  {
+    "id": 265,
+    "name": "Threshold-pricing dead code for OpenAI/Azure/OpenRouter in Helicone",
+    "strictVerdict": "PASS_ABSOLUTE",
+    "reasoning": "Verified issue #5690 verbatim: 'getThresholdValueFunction(provider) only has cases for vertex, google-ai-studio, anthropic, and xai; every other provider hits default: return () => 0.' Independently fetched the live calculate-cost.ts and confirmed this exact default branch is present, with only vertex/google-ai-studio/anthropic/xai handled and openai/azure/openrouter/helicone falling through to a constant-zero threshold (so getPricingTier always selects the base tier for those providers). This is again purely Helicone's own internal cost-display computation over usage tokens Anthropic/OpenAI already returned — zero effect on the request, model, or reasoning.",
+    "savings": "None",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched issue #5690 via `gh issue view` and confirmed the quote verbatim, including the worked gpt-5.4 example ($2.625 expected vs $1.50 actual, ~43% under). Independently fetched the live calculate-cost.ts and confirmed the getThresholdValueFunction default-branch behavior described is present exactly as claimed.",
+    "telemetrySignal": "A content-blind audit of requests to OpenAI/Azure/OpenRouter sees no change whatsoever; only Helicone's displayed cost-breakdown numbers for large-context requests on those providers would roughly double once the threshold function is extended.",
+    "providers": [
+      "OpenAI",
+      "Azure OpenAI",
+      "OpenRouter",
+      "Helicone/helicone"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched issue #5690 via `gh issue view` and confirmed the quote verbatim, including the worked gpt-5.4 example ($2.625 expected vs $1.50 actual, ~43% under). Independently fetched the live calculate-cost.ts and confirmed the getThresholdValueFunction default-branch behavior described is present exactly as claimed.",
+    "trap": "Same as the companion cache-tiering entry: issue is OPEN/unmerged, confirmed via direct source fetch to still be present on main. This is a well-evidenced but currently-unshipped correction.",
+    "adversarialNote": "survived both skeptic lenses"
+  },
+  {
+    "id": 266,
+    "name": "Gemini thinking-token omission undercounts Langfuse cost by ~2.2x",
+    "strictVerdict": "PASS_ABSOLUTE",
+    "reasoning": "Verified issue #16321 verbatim, including the reconciliation table showing 'Langfuse shows $0.028906 while the true cost is ~$0.064 — roughly 2.2x under-reported' and the expected formula 'cost = prompt_token_count x input_rate + candidates_token_count x output_rate + thoughts_token_count x output_rate  # currently missing.' This is exclusively a cost-display computation over Gemini's own already-returned usage_metadata (thoughts_token_count is already present and already folded into the displayed Sigma total) — fixing it changes what Langfuse shows, not the call made to Gemini, which model answered, or how much it thought.",
+    "savings": "None",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched issue #16321 via `gh issue view` and confirmed all quoted figures verbatim. Additionally traced Langfuse's actual generic cost function, worker/src/services/IngestionService/index.ts `calculateUsageCosts` (fetched live from main): it is a price-key-driven loop (`for (const [key, units] of Object.entries(usageUnits)) { const price = modelPrices?.find(p => p.usageType === key); if (units != null && price) {...} }`) that silently skips any usage key lacking a matching price entry — architecturally consistent with the reported silent-drop mechanism, though I did not confirm the exact missing 'reasoning' price row for gemini-2.5-flash in default-model-prices.json specifically.",
+    "telemetrySignal": "A content-blind audit of the Gemini API call sees zero change; only Langfuse's internal cost-breakdown field for gemini-2.5-flash (and likely the wider Gemini 2.5/3.x thinking family) traces would rise toward the true Google-billed figure once thoughts_token_count is priced.",
+    "providers": [
+      "Google Gemini",
+      "langfuse/langfuse"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched issue #16321 via `gh issue view` and confirmed all quoted figures verbatim. Additionally traced Langfuse's actual generic cost function, worker/src/services/IngestionService/index.ts `calculateUsageCosts` (fetched live from main): it is a price-key-driven loop (`for (const [key, units] of Object.entries(usageUnits)) { const price = modelPrices?.find(p => p.usageType === key); if (units != null && price) {...} }`) that silently skips any usage key lacking a matching price entry — architecturally consistent with the reported silent-drop mechanism, though I did not confirm the exact missing 'reasoning' price row for gemini-2.5-flash in default-model-prices.json specifically.",
+    "trap": "Issue is OPEN/unmerged as of this check. Unlike the Helicone entries I did not reproduce the exact missing-price-row line, only the generic architecture that would produce this failure mode — flagging that as slightly weaker corroboration than the Helicone pair.",
+    "adversarialNote": "survived both skeptic lenses"
+  },
+  {
+    "id": 267,
+    "name": "Missing cache-token OTel attributes make Langfuse overestimate Claude cost by 2.5x",
+    "strictVerdict": "PASS_ABSOLUTE",
+    "reasoning": "Verified issue #12635 verbatim: 'Langfuse calculated cost: $3.71 (all input at $3/MTok). Anthropic's actual cost: $1.47 (cache-aware billing). Overestimate: 2.5x,' with the issue's own stated root cause: 'The primary fix is in the LangSmith OTEL exporter (which doesn't currently send cache token data). This issue is for ensuring Langfuse handles the data correctly once it becomes available upstream.' The Anthropic call itself was already billed cache-aware by Anthropic regardless of what Langfuse displays — this is purely a telemetry-completeness gap (a missing OTel GenAI semantic-convention attribute) feeding a cost-display calculation, with zero effect on the request, model, or reasoning depth.",
+    "savings": "None",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Fetched issue #12635 via `gh issue view` and confirmed the quote verbatim, including the explicit statement that the fix is contingent on an upstream LangSmith OTEL exporter change not yet shipped. Cross-checked against Langfuse's generic calculateUsageCosts function (fetched live from main): it has no special-case exclusion for cache keys, meaning if the exporter did send cache_read_input_tokens/cache_creation_input_tokens with matching price entries, they would be priced correctly — consistent with the issue's framing that Langfuse's own pricing logic isn't the primary defect.",
+    "telemetrySignal": "gen_ai.usage.cache_read_input_tokens / cache_creation_input_tokens as OTel span attributes — a content-blind audit of these specific envelope fields would directly reveal whether the upstream exporter populates them, independent of any tokenized request content.",
+    "providers": [
+      "Anthropic",
+      "langfuse/langfuse"
+    ],
+    "verifiedAgainst": "2026-08-19: Fetched issue #12635 via `gh issue view` and confirmed the quote verbatim, including the explicit statement that the fix is contingent on an upstream LangSmith OTEL exporter change not yet shipped. Cross-checked against Langfuse's generic calculateUsageCosts function (fetched live from main): it has no special-case exclusion for cache keys, meaning if the exporter did send cache_read_input_tokens/cache_creation_input_tokens with matching price entries, they would be priced correctly — consistent with the issue's framing that Langfuse's own pricing logic isn't the primary defect.",
+    "trap": "This is doubly unshipped — not just a Langfuse-side open issue, but explicitly blocked on a third-party exporter (LangSmith OTEL) that doesn't yet emit the needed fields at all. The three-clause verdict is unaffected (still purely a telemetry/accounting question), but this is the most speculative/furthest-from-shipped of the four billing-audit entries.",
+    "adversarialNote": "survived both skeptic lenses"
+  },
+  {
+    "id": 268,
+    "name": "Trace-cost double-counting on shared trace_id inflates Langfuse dataset-run totals ~163x",
+    "strictVerdict": "PASS_ABSOLUTE",
+    "reasoning": "Deciding quote from the issue body: \"the trace cost is counted once per dataset item, even though they reference the same trace\" combined with \"Opening the shared trace shows total trace cost ≈ $1.46\" while the Dataset Run summary shows \"Trace Cost (sum): ~$238\". This is a SQL/aggregation rollup bug entirely inside Langfuse's own Dataset Run summary view — it sums one already-computed trace cost once per dataset-item row instead of once per unique trace. No model request, past or future, is read, re-sent, or altered; only the number Langfuse's dashboard displays changes.",
+    "savings": "None — the real spend was ~$1.46 the whole time; the fix removes a ~$238 phantom rollup from the UI, it does not reduce any actual bill.",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh issue view 12489 --repo langfuse/langfuse` this session. Issue is OPEN; both quoted fragments (\"the trace cost is counted once per dataset item...\" and the ~163 items / $1.46 avg / $238 sum figures) are present verbatim in the body.",
+    "telemetrySignal": "A content-blind wire audit sees nothing: the underlying trace, its token counts, and its true per-call cost are untouched. Only the output of Langfuse's own internal aggregation query over already-stored cost records changes.",
+    "providers": [
+      "langfuse/langfuse"
+    ],
+    "verifiedAgainst": "Re-fetched via `gh issue view 12489 --repo langfuse/langfuse` on 2026-08-19. Issue is OPEN; both quoted fragments (\"the trace cost is counted once per dataset item...\" and the ~163 items / $1.46 avg / $238 sum figures) are present verbatim in the body.",
+    "trap": "Framed like a cost-savings finding, but no real overspend ever occurred — the $238 was always a UI artifact of double-counting a single trace's cost across ~163 rows; the 'saving' is a corrected dashboard number, not recovered money.",
+    "adversarialNote": "survived both skeptic lenses"
+  },
+  {
+    "id": 269,
+    "name": "tokencost's daily price-sync workflow silently dead for 11 months",
+    "strictVerdict": "PASS_ABSOLUTE",
+    "reasoning": "Deciding quote: \"workflow \\\"Daily Price Updates\\\" (id 150671558) state: active ... last successful run 2025-09-01 ... every scheduled run since ... failure\" and \"The prices themselves have been frozen since the last merged update on 2025-09-05.\" tokencost is a client-side, post-hoc cost-estimation library; its price table is consulted after a model call completes to compute an estimate. A dead CI job that lets that table go stale does not touch what is sent to or read by any model — it only degrades the accuracy of an estimate computed afterward.",
+    "savings": "None directly — restoring the workflow doesn't change any bill, it only stops tokencost's own cost estimates from silently drifting from reality for months at a time.",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh issue view 237 --repo AgentOps-AI/tokencost` this session. Issue is OPEN; the workflow-status block and the closing line \"11 months of daily red runs went unremarked, which is its own finding\" are present verbatim.",
+    "telemetrySignal": "Content-blind wire audit sees zero change — no request differs. The entire defect and its fix live in a GitHub Actions workflow and a static price table shipped with the library, downstream of any API call.",
+    "providers": [
+      "AgentOps-AI/tokencost"
+    ],
+    "verifiedAgainst": "Re-fetched via `gh issue view 237 --repo AgentOps-AI/tokencost` on 2026-08-19. Issue is OPEN; the workflow-status block and the closing line \"11 months of daily red runs went unremarked, which is its own finding\" are present verbatim.",
+    "trap": "The issue is unresolved and the root cause of the CI failure is explicitly unknown to the reporter (\"I could not read the run logs ... so I have deliberately not guessed at a cause\") — this credits identifying a broken accounting pipeline, not a merged fix; the verdict holds regardless because the mechanism, whatever it turns out to be, stays entirely outside the token stream.",
+    "adversarialNote": "survived both skeptic lenses"
+  },
+  {
+    "id": 270,
+    "name": "Replicate seconds/milliseconds unit bug undercharges GPU-time cost 1000x",
+    "strictVerdict": "FAIL",
+    "reasoning": "Deciding quote, verified directly in source at the cited commit: the `completion_cost` docstring reads \"total_time (float, int): Optional. (Only used for Replicate LLMs) The total time used for the request in seconds\" while `get_replicate_completion_pricing` unconditionally executes `return a100_80gb_price_per_second_public * total_time / 1000`. This is a unit-contract mismatch entirely inside litellm's self-hosted `cost_calculator.py` — a function that computes a dollar figure litellm reports to its own caller after the fact. It does not construct, alter, or gate the request sent to Replicate's API.",
+    "savings": "None — a self-hosted cost-accounting library's arithmetic bug; Replicate's own metering and invoice are computed independently and are unaffected by what litellm's internal function returns.",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched litellm/cost_calculator.py at commit 65ca095d4d15a82372e53a547a2390a69f7e1797 via `gh api repos/BerriAI/litellm/contents/...`. Confirmed the exact line `return a100_80gb_price_per_second_public * total_time / 1000` (get_replicate_completion_pricing) and the completion_cost docstring's \"total_time used for the request in seconds\" — both quotes match the issue verbatim.",
+    "telemetrySignal": "Content-blind wire audit sees nothing — same request, same response from Replicate either way. The fix is a division operator inside a Python helper function that runs after the call completes.",
+    "providers": [
+      "Replicate",
+      "BerriAI/litellm"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched litellm/cost_calculator.py at commit 65ca095d4d15a82372e53a547a2390a69f7e1797 via `gh api repos/BerriAI/litellm/contents/...`. Confirmed the exact line `return a100_80gb_price_per_second_public * total_time / 1000` (get_replicate_completion_pricing) and the completion_cost docstring's \"total_time used for the request in seconds\" — both quotes match the issue verbatim.",
+    "trap": "The '1000x' headline invites reading this as a real billing win, but nobody was ever actually charged 1000x less by Replicate — only litellm's own internal ledger number was wrong; fixing it changes a reported figure, not a bill.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "FAIL",
+      "why": "Attack lands. Traced the actual code path this session: litellm_core_utils/litellm_logging.py imports from litellm.cost_calculator (the exact module with the buggy get_replicate_completion_pricing) and calls litellm.response_cost_calculator(...) to set self.model_call_details['response_cost'] (logging.py L48, L1588). That value flows into kwargs['response_cost'], which litellm/proxy/spend_tracking/spend_tracking_utils.py writes into spend logs verbatim: `spend=kwargs.get(\"response_cost\", 0)` (L411). Cumulative spend is then read by litellm/proxy/hooks/max_budget_limiter.py's async_pre_call_hook — a hook that runs BEFORE every request is dispatched and raises ProxyRateLimitError, blocking the call outright, once `curr_spend >= max_budget`. A 1000x undercount means requests that should have been blocked under a correctly-computed budget are NOT blocked and proceed to a live model; fixing the bug means some of those identical requests now get zero model response instead of one. That is squarely 'a different model answers' (verbatim automatic-FAIL category: model routing / gating) — not a claim about the immediate Replicate request, but about every subsequent request on that key/user once real accounting is restored. PASS_ABSOLUTE requires 'no request changed at all'; this fails that once the budget-gate consumer is traced rather than assumed absent."
+    }
+  },
+  {
+    "id": 271,
+    "name": "Azure GPT-5.6 Luna price-cut copy-paste regression undercharges 5x",
+    "strictVerdict": "FAIL",
+    "reasoning": "Deciding quote from the issue: \"LiteLLM Current (main & azure/gpt-5.6-luna): 2e-07 ($0.20 / 1M tokens). Actual Azure Billed Rate (and v1.95.0 rate): 1e-06 ($1.00 / 1M tokens)\" and \"PR #35258 ... correctly applied OpenAI's recent 80% price cut to the openai/ endpoints, but it inadvertently applied the exact same price cut to the azure/ and azure/us/ equivalents.\" This is a copy-paste error in the static `model_prices_and_context_window.json` table shared across provider variants. Azure's own metering and invoice are set by Microsoft, independent of litellm's local JSON file, and are unaffected either way.",
+    "savings": "None — corrects a mis-synced price-table entry; Azure's real invoice was always at the true (higher, unchanged) rate regardless of what litellm computed.",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh issue view 36094 --repo BerriAI/litellm` this session. Issue is OPEN; both the $0.20-vs-$1.00 comparison and the PR #35258 description quote are present verbatim.",
+    "telemetrySignal": "Content-blind wire audit sees nothing — identical Azure endpoint, identical request/response bytes. Only a numeric constant in a JSON file changes.",
+    "providers": [
+      "Azure OpenAI",
+      "OpenAI",
+      "BerriAI/litellm"
+    ],
+    "verifiedAgainst": "Re-fetched via `gh issue view 36094 --repo BerriAI/litellm` on 2026-08-19. Issue is OPEN; both the $0.20-vs-$1.00 comparison and the PR #35258 description quote are present verbatim.",
+    "trap": "This is the mirror image of an overcharge bug — litellm was *under*-reporting Azure spend, so the fix raises litellm's self-reported number, not lowers a bill; easy to mistake the direction for a savings technique when it corrects an under-count.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "FAIL",
+      "why": "The entry quotes only the issue BODY (reporter's initial theory) and misses that litellm's own contributors directly refuted the 'copy-paste regression' framing in the comment thread. Contributor mateo-berri posted what he called an 'official statement from the Azure team': 'Effective August 1st, Azure OpenAI customers will receive the same updated price decreases for GPT 5.6 Luna and Terra models recently announced by OpenAI... The pricing page will have ~2-week lag... The update to Azure pricing was intentional, not accidental.' This directly contradicts the entry's premise that PR #35258 'inadvertently' copied a price cut meant only for openai/ endpoints — litellm's team says Azure genuinely lowered its price to match, and the reporter's own billing discrepancy is attributed to account-specific lag, not a code bug. Issue remains OPEN with unresolved, directly conflicting claims about whether litellm's number is even wrong. The entry's central factual premise cannot be settled from the source as presented. | Attack lands via the identical traced pipeline as the Replicate entry: model_prices_and_context_window.json feeds litellm.cost_calculator -> response_cost_calculator -> model_call_details['response_cost'] -> spend_tracking_utils.py spend logs -> max_budget_limiter.py's async_pre_call_hook, which blocks (HTTPException/ProxyRateLimitError) any request once `curr_spend >= max_budget` for a key/user with a budget configured. A 5x systematic undercharge on azure/gpt-5.6-luna means a deployment with per-key budgets lets through requests that should have been cut off — once corrected, some of those identical requests get no model response at all instead of one. That is a wire-level difference in whether/which model answers, which is the automatic-FAIL 'model routing' category. The reasoning's claim that 'Azure's own metering... [is] unaffected either way' is true but irrelevant — the attack is about litellm's own pre-call gate, which is directly downstream of this exact bug."
+    }
+  },
+  {
+    "id": 272,
+    "name": "litellm silently drops custom above-200k tiered pricing overrides, ~5% margin erosion",
+    "strictVerdict": "FAIL",
+    "reasoning": "Deciding quote: \"Over a 10-day period with ~2,600 requests exceeding 200k tokens, the undercharge was ~$540 against an expected base cost of ~$10,000 — approximately 5% error on total spend, wiping out the intended 6% margin,\" backed by the worked example \"Expected: 200,000 × $0.00000625 = $1.2500; 385,659 × $0.0000125 = $4.8207; Total = $6.0707. Actual: 585,659 × $0.00000625 = $3.6604.\" This is a config-ingestion bug in the proxy's internal model-map builder that drops `model_info` tiered-pricing override fields. It changes what a self-hosted proxy operator invoices their own downstream customers — the request forwarded to the upstream provider (Vertex AI) is untouched.",
+    "savings": "None as an LLM-cost saving — this is a reseller's own margin-metering bug; the fix corrects the operator's invoice to match what they were actually billed upstream, with zero change to the request itself.",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh issue view 30135 --repo BerriAI/litellm` this session. Issue is OPEN; the financial-impact paragraph and worked-example numbers are present verbatim.",
+    "telemetrySignal": "Content-blind wire audit sees nothing — identical tokens sent to Vertex AI either way. The bug and its fix live entirely in the proxy's internal price-tier lookup used to construct an invoice line after the call completes.",
+    "providers": [
+      "Vertex AI (Anthropic Claude models)",
+      "BerriAI/litellm"
+    ],
+    "verifiedAgainst": "Re-fetched via `gh issue view 30135 --repo BerriAI/litellm` on 2026-08-19. Issue is OPEN; the financial-impact paragraph and worked-example numbers are present verbatim.",
+    "trap": "The '6% margin wiped out' framing reads like an LLM-cost technique, but it is purely a self-hosted gateway's resale pricing-tier bug — nothing about which model answers, what it's asked, or how much it thinks changes.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "FAIL",
+      "why": "Same traced pipeline applies a third time, and applies more directly here since this bug is explicitly about a self-hosted litellm proxy's own spend accounting for its downstream customers — precisely the accounting max_budget_limiter.py's async_pre_call_hook consumes via get_current_spend()/curr_spend before admitting each new request. A reseller running litellm with per-key or per-team max_budget (litellm's core budget-enforcement feature, confirmed live in litellm/proxy/hooks/max_budget_limiter.py and litellm/models/{team,user,budget}.py) would, under this bug, let requests through that a correctly-computed tiered price would have blocked once the budget cap was reached — meaning some identical requests get no model answer once the bug is fixed vs. an answer while it's live. The entry's own framing ('changes what an operator invoices their own downstream customers... request forwarded to Vertex AI is untouched') only rules out the immediate call; it doesn't address the gate this same number feeds for the operator's *next* request, which is where the wire-level change actually shows up."
+    }
+  },
+  {
+    "id": 273,
+    "name": "models.dev records Gemini 3.6 Flash at its 2027 standard rate instead of today's introductory price — exactly 2x",
+    "strictVerdict": "FAIL",
+    "reasoning": "Deciding quote from Google's pricing page as cited in the issue: \"Gemini 3.7 Flash and Gemini 3.6 Flash are offered with introductory pricing of $0.75 / $3.75 per 1M tokens input/output through December 31, 2026\" — establishing both models are billed identically today. Directly verified both TOML files at the cited commit: gemini-3.6-flash.toml carries input=1.5/output=7.5/cache_read=0.15/input_audio=1.5 (the post-2027 standard rate), gemini-3.7-flash.toml carries input=0.75/output=3.75/cache_read=0.075/input_audio=0.75 (the correct current introductory rate). This is a transcription bug against the wrong pricing epoch in a community price-registry TOML file; fixing it changes what downstream tools compute as cost, not any request to Google.",
+    "savings": "None — models.dev is a shared price database consumed by opencode and others; the fix corrects every consumer's cost estimate to match Google's actual current bill without touching a single API call.",
+    "provenance": "Primary source re-fetched during adjudication (2026-08-19 GitHub sweep): Re-fetched via `gh issue view 4938 --repo anomalyco/models.dev` and independently re-fetched both cited TOML files at commit 8b78b4eecb28797ca3952be98f9cd42ae239f5b9 via `gh api repos/anomalyco/models.dev/contents/...`. All cited cost fields (1.5/7.5/0.15/1.5 vs 0.75/3.75/0.075/0.75) and the Google pricing-page quote match verbatim; repo confirmed non-fork, 6,492 stars.",
+    "telemetrySignal": "Content-blind wire audit sees nothing — no Gemini/Vertex request changes. Only a static number in a TOML file consumed by third-party tooling changes.",
+    "providers": [
+      "Google Vertex AI (Gemini)",
+      "anomalyco/models.dev"
+    ],
+    "verifiedAgainst": "2026-08-19: Re-fetched via `gh issue view 4938 --repo anomalyco/models.dev` and independently re-fetched both cited TOML files at commit 8b78b4eecb28797ca3952be98f9cd42ae239f5b9 via `gh api repos/anomalyco/models.dev/contents/...`. All cited cost fields (1.5/7.5/0.15/1.5 vs 0.75/3.75/0.075/0.75) and the Google pricing-page quote match verbatim; repo confirmed non-fork, 6,492 stars.",
+    "trap": "Easy to misread as Google cutting Gemini 3.6 Flash's price 2x (a provider-side change) — it's the opposite: Google already prices both models identically today; only models.dev's own registry had one model transcribed against a rate that doesn't take effect until Jan 2027.",
+    "crosscheckOverride": {
+      "from": "PASS_ABSOLUTE",
+      "to": "FAIL",
+      "why": "Attack lands, confirmed by reading shipped source. Cloned sst/opencode (a primary consumer of models.dev, per the entry's own reasoning) and found packages/core/src/catalog.ts's `CatalogV2.model.small` — the function that AUTOMATICALLY PICKS which model answers lightweight/background sub-tasks. It scores every candidate model as `cost: model.cost[0].input + model.cost[0].output` (sourced straight from models.dev's TOML pricing data) and ranks candidates by `(item.cost / maxCost) * 0.8 + (item.age / maxAge) * 0.2` — cost weighted at 80% — then returns `Array.head` of the sorted list as the selected model (catalog.ts L259-276). Pricing Gemini 3.6 Flash at 2x its real introductory rate makes it score as artificially more expensive in this exact formula, which can cause a different, worse-fit model to be auto-selected in its place for opencode's small-model routing — a direct, code-verified instance of cost data changing which model answers. This is not a downstream-consumer hypothetical; it's the literal selection algorithm running against the exact field this bug misreports."
+    }
+  }
+]

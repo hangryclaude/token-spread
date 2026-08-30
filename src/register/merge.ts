@@ -1,8 +1,23 @@
 import type { Entry } from "./load";
 import { nextId } from "./ids";
 
-/** A candidate as a sweep hands it over: everything an entry needs except the id. */
-export type Candidate = Omit<Entry, "id">;
+/**
+ * A candidate as a sweep hands it over: everything an entry needs except the id.
+ * Spelled out rather than `Omit<Entry, "id">`: Entry carries a string index signature,
+ * and Omit over an index-signatured type collapses every known key to `unknown`.
+ */
+export interface Candidate {
+  name: string;
+  strictVerdict: Entry["strictVerdict"];
+  reasoning: string;
+  savings: string;
+  provenance: string;
+  telemetrySignal: string;
+  providers: string[];
+  verifiedAgainst?: string;
+  corrections?: Entry["corrections"];
+  [key: string]: unknown;
+}
 
 export interface Assignment {
   firstId: number;

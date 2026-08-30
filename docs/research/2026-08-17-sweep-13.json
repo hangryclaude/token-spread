@@ -1,7 +1,7 @@
 [
   {
     "name": "Claude Code workflow fan-out prefix staggering (CLAUDE_CODE_WORKFLOW_PREFIX_STAGGER_MS)",
-    "strictVerdict": "INSUFFICIENT_EVIDENCE",
+    "strictVerdict": "CONTRACTUAL_ONLY",
     "reasoning": "What the model reads is untouched: every staggered sibling agent still sends the byte-identical shared prompt prefix. The only thing that changes is *when* each sibling's first request is dispatched — later agents are delayed just long enough that their request arrives after the first sibling's cache write has landed server-side, so they read a cache entry instead of racing to create their own (each of which would otherwise pay full or cache-write price for an identical prefix). Quote, verified verbatim against the raw changelog: 'Improved workflow fan-outs to stagger same-prefix sibling agents so subsequent agents read the cached prompt prefix instead of re-paying it (`CLAUDE_CODE_WORKFLOW_PREFIX_STAGGER_MS=0` disables)' — found at line 161 of CHANGELOG.md under the '## 2.1.229' heading, exactly as claimed. This stops holding the moment `CLAUDE_CODE_WORKFLOW_PREFIX_STAGGER_MS=0` is set (the race the feature exists to avoid returns), or when the fixed stagger interval is shorter than the server's actual cache-write latency for that prefix length/model (silent race resumption, no error surfaced), or when sibling prompts diverge before the shared-prefix boundary (no common cache key to land on in the first place).\n\nOn challenge: both refuters overturned this. The verifiable facts — the env var, the changelog line — hold, but the mechanism narrative doing the argumentative work was uncited and, checked against the primary source, wrong in its specifics. The category is plausibly right; the submission is not sound as sourced, and this register does not publish a verdict on a narrative nobody could quote.",
     "savings": "Converts what would be an independent cache-write-priced or full-price ingestion (1x-2x base input rate) of the same prefix, for every sibling after the first, into a cache-read hit (0.1x base input rate) — purely by shifting dispatch timing into the cache-availability window, not by altering request content.",
     "provenance": "Source-derived from Anthropic's own Claude Code changelog line; not measured — this project has no ANTHROPIC_API_KEY and ran no live fan-out traffic to confirm actual cache_read_input_tokens outcomes.",
@@ -13,7 +13,14 @@
     "trap": "Teams that flip CLAUDE_CODE_WORKFLOW_PREFIX_STAGGER_MS=0 to shave perceived fan-out latency walk straight back into the cache-write race this feature shipped to fix, and every sibling silently reverts to paying full/cache-write price with nothing in the UI to flag it.",
     "settlingExperiment": "Run an N-way fan-out on a long static shared prefix, capture each sibling's usage.cache_read_input_tokens vs cache_creation_input_tokens with staggering on and with CLAUDE_CODE_WORKFLOW_PREFIX_STAGGER_MS=0, and compare hit rates. Not run in this sweep — no API key, no live traffic.",
     "crosscheckOverride": "Submitted and adjudicated PASS_SCHEDULING. Two independent refuters overturned it — one on sourcing, one proposing CONTRACTUAL_ONLY. Filed unresolved rather than at either, because what failed was the evidence, not the technique.",
-    "id": 201
+    "id": 201,
+    "corrections": [
+      {
+        "date": "2026-08-20",
+        "kind": "verdict-changed",
+        "note": "Re-verified 2026-08-20 against code.claude.com/docs/en/workflows.md, section 'Prompt caching in a fan-out' -- the primary source one of the two 2026-08-17 refuters located but which the register never re-cited. Fresh fetch confirms, byte-exact: 'When a fan-out starts several matching agents at once, Claude Code holds all but the first until the first agent's response begins, then releases the held agents together so their first requests read the shared prefix instead of each processing it uncached. Claude Code caps the hold at CLAUDE_CODE_WORKFLOW_PREFIX_STAGGER_MS milliseconds, 5000 by default.' This is a materially more precise description than the changelog bullet the entry currently cites alone, and confirms the mechanism is a pure dispatch-timing hold-then-release gate -- but it remains Anthropic's prose about its own closed-source client (the repo ships no CLI source to check it against, reconfirmed via gh api). Per this register's own rule that a documentation sentence caps at CONTRACTUAL_ONLY however clearly it reads -- and matching that the register holds zero PASS_SCHEDULING entries anywhere -- settled at CONTRACTUAL_ONLY, resolving the 2026-08-17 split between the two refuters' proposals in favor of the second. Raised from INSUFFICIENT_EVIDENCE to CONTRACTUAL_ONLY."
+      }
+    ]
   },
   {
     "name": "Claude Code fork subagents on-by-default (subagent_type: \"fork\" inherits prompt cache)",

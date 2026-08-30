@@ -32,8 +32,16 @@ export interface Entry {
   [key: string]: unknown;
 }
 
+let cachedFiles: string[] | null = null;
+
 export function cohortFiles(): string[] {
-  return JSON.parse(readFileSync(join(RESEARCH_DIR, "cohorts.json"), "utf8")) as string[];
+  // Memoized for the life of the process: register/cli.ts's `stale` verb used to read
+  // every cohort file twice — once through the unconditional `loadRegister()` at the top
+  // of the script, again through its own direct `loadCohorts()` call — for no reason
+  // beyond the two call sites not sharing a cache. The register is read-only input for
+  // the whole run, so re-reading it can only ever reproduce what is already in hand.
+  cachedFiles ??= JSON.parse(readFileSync(join(RESEARCH_DIR, "cohorts.json"), "utf8")) as string[];
+  return cachedFiles;
 }
 
 /**
@@ -47,11 +55,14 @@ export interface Cohort {
   entries: Entry[];
 }
 
+let cachedCohorts: Cohort[] | null = null;
+
 export function loadCohorts(): Cohort[] {
-  return cohortFiles().map((file) => ({
+  cachedCohorts ??= cohortFiles().map((file) => ({
     file,
     entries: JSON.parse(readFileSync(join(RESEARCH_DIR, file), "utf8")) as Entry[],
   }));
+  return cachedCohorts;
 }
 
 export function loadRegister(): Entry[] {

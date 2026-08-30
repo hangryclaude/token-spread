@@ -202,3 +202,33 @@ placement, and after any provider/proxy upgrade:
 | OpenAI `prompt_cache_key` routing hint | 83 | CONTRACTUAL_ONLY |
 | Azure OpenAI prompt caching | 105 | PASS_METADATA |
 | Accounting object (`cache_creation`/`cache_read` tokens) | 29 | PASS_ABSOLUTE |
+
+## Register ids cited
+
+| id | name | verdict |
+|----|------|---------|
+| 22 | 4-breakpoint budget algorithm (system=1, last-tool=1, message window... | PASS_METADATA |
+| 26 | Model-specific minimum-cacheable-prefix-length awareness (Haiku needs... | PASS_ABSOLUTE |
+| 27 | Bedrock cache-dialect translation fix (Anthropic cache_control <-> Be... | PASS_METADATA |
+| 29 | Anthropic API usage-object cache accounting (input_tokens / cache_cre... | PASS_ABSOLUTE |
+| 30 | Server-side TTL override / 1h-TTL-requested-but-5m-TTL-billed (Claude... | FAIL |
+| 31 | Dynamic system-prompt content as cache killer (timestamps, message ID... | FAIL |
+| 43 | OpenAI Automatic Prompt Caching | PASS_ABSOLUTE |
+| 61 | Anthropic extended 1-hour cache TTL | PASS_METADATA |
+| 68 | Anthropic prompt caching (cache reads) | PASS_METADATA |
+| 74 | Prompt cache minimum-token table + 5m/1h TTL pricing | CONTRACTUAL_ONLY |
+| 75 | Cache breakpoint lookback window (20 blocks) + concurrent-request cac... | PASS_METADATA |
+| 82 | OpenAI automatic prompt caching (cache reads) | PASS_METADATA |
+| 83 | prompt_cache_key (OpenAI cache-warm routing hint) | CONTRACTUAL_ONLY |
+| 93 | Gemini implicit context caching (Developer API & Vertex AI) | INSUFFICIENT_EVIDENCE |
+| 94 | Gemini explicit context caching | CONTRACTUAL_ONLY |
+| 98 | AWS Bedrock prompt caching | PASS_METADATA |
+| 105 | Azure OpenAI prompt caching | PASS_METADATA |
+| 165 | 20-block cache lookback limit and its interaction with tool-heavy turns | PASS_METADATA |
+| 167 | Canonical 4-breakpoint pattern: system + tools + last-2-user-turns | PASS_METADATA |
+| 169 | Cross-provider trap: explicit cache_control markers actively HURT Gemini | PASS_METADATA |
+| 173 | 1-hour vs 5-minute cache TTL selection for long-latency agent loops | PASS_METADATA |
+| 250 | LiteLLM Bedrock 1h-TTL cache-write mispricing correction | INSUFFICIENT_EVIDENCE |
+| 253 | LiteLLM Bedrock guardrails silently drop cache_control when rewriting... | INSUFFICIENT_EVIDENCE |
+| 254 | LiteLLM proxy mutated the caller's shared message/tool list, silently... | INSUFFICIENT_EVIDENCE |
+| 279 | AWS Bedrock GPT-5.6 caching: writes go from free (auto-cache) to 1.25... | INSUFFICIENT_EVIDENCE |

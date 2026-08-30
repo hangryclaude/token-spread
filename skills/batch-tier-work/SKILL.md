@@ -243,3 +243,45 @@ two lower-severity siblings that mislabel status but don't lose or re-bill resul
 | Orchestrator might crash mid-submit | Use the provider's native idempotency key if one exists (lever 6, Bedrock only) | Build your own crash-recovery ledger (id 38 — self-defeating by construction) |
 | Need batch-rate pricing but can't tolerate 24h queue latency | OpenAI flex processing (lever 9) if request-level retry is acceptable | Anthropic Priority Tier, expecting a discount (id 123 — it's a premium) |
 | Building a resubmission/checkpoint layer yourself | Hash the full rendered request, byte-identical (id 258's shape) | Hash a "recipe" — function source, config fields — that can drift from the real request (ids 259, 306) |
+
+## Register ids cited
+
+| id | name | verdict |
+|----|------|---------|
+| 30 | Server-side TTL override / 1h-TTL-requested-but-5m-TTL-billed (Claude... | FAIL |
+| 34 | Async/batch billing path — 50% discount vs synchronous API, same mode... | CONTRACTUAL_ONLY |
+| 36 | AWS Bedrock CreateModelInvocationJob clientRequestToken — provider-na... | CONTRACTUAL_ONLY |
+| 38 | Local idempotency ledger over non-idempotent Batches.create (crash-re... | FAIL |
+| 63 | Batch API (async, 50% flat discount) | CONTRACTUAL_ONLY |
+| 69 | OpenAI / Anthropic / Google Batch APIs | CONTRACTUAL_ONLY |
+| 77 | Batch API: 50% discount, availability, and stacking with prompt-cache... | CONTRACTUAL_ONLY |
+| 78 | Service tiers: Priority Tier status change, Standard, Batch; Fast mod... | INSUFFICIENT_EVIDENCE |
+| 85 | Batch API (asynchronous 50% discount) | CONTRACTUAL_ONLY |
+| 86 | Flex processing (service_tier=flex) | CONTRACTUAL_ONLY |
+| 97 | Gemini Batch API / Vertex Batch prediction | CONTRACTUAL_ONLY |
+| 99 | AWS Bedrock batch inference — and the 'Bedrock lacks Anthropic Batch... | CONTRACTUAL_ONLY |
+| 104 | Azure OpenAI Batch API | CONTRACTUAL_ONLY |
+| 123 | Priority/Scale tiers as capacity levers (commonly mis-bought as 'savi... | CONTRACTUAL_ONLY |
+| 128 | Batch API discount — flagged as technical/boundary item | CONTRACTUAL_ONLY |
+| 137 | Async Batch API vs synchronous real-time API | CONTRACTUAL_ONLY |
+| 146 | Trimming tool or function schema description verbosity for token savings | FAIL |
+| 157 | Zombie context in scheduled/cron agents (unused tool schemas + memory... | FAIL |
+| 171 | Batching multiple tool calls into one model turn ("parallel tool call... | FAIL |
+| 173 | 1-hour vs 5-minute cache TTL selection for long-latency agent loops | PASS_METADATA |
+| 174 | OpenAI prompt_cache_key routing hint and MCP cache_tools_list | FAIL |
+| 176 | Zero-output refusals are not billed (Anthropic, from 2026-06-02) | CONTRACTUAL_ONLY |
+| 181 | Message Batches: errored, canceled and expired requests bill at zero | CONTRACTUAL_ONLY |
+| 187 | K8s CronJob concurrencyPolicy: Forbid — skip-on-overlap, valid only w... | PASS_ABSOLUTE |
+| 188 | K8s CronJob concurrencyPolicy: Replace — kill-and-restart on overlap | FAIL |
+| 217 | AWS SQS FIFO ContentBasedDeduplication — SHA-256 of message body | CONTRACTUAL_ONLY |
+| 222 | Embedding-based semantic response caching shipped as a first-class fe... | FAIL |
+| 223 | Higress "AI Cache" plugin's default cache key covers only the final m... | FAIL |
+| 238 | SEP-1576: schema $ref dedup + optional-field trimming + embedding-sim... | FAIL |
+| 258 | Partial-batch resubmission on failure/expiry (only resend the unfinis... | PASS_REPLAY |
+| 259 | Whole-pipeline resume cache keyed on prompt-function source hash | FAIL |
+| 261 | Native transparent auto-batcher: size/time-threshold scheduling layer... | CONTRACTUAL_ONLY |
+| 263 | Queue-threshold / time-threshold accumulation dispatcher for moving s... | CONTRACTUAL_ONLY |
+| 303 | instructor (567-labs) Anthropic batch provider: dead processing_statu... | FAIL |
+| 304 | langbatch (EasyLLM) AnthropicBatch.retry() resubmits the full origina... | FAIL |
+| 305 | batchata (agamm) Anthropic get_batch_status(): same dead processing_s... | FAIL |
+| 306 | BatchLLM (he-yufeng) — SHA-256 checkpoint fingerprint gates crash-res... | FAIL |

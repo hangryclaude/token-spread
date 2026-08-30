@@ -24,7 +24,7 @@ async function run(args: string[]) {
 test("--help lists every flag the program actually accepts", async () => {
   const { code, stdout } = await run(["--help"]);
   expect(code).toBe(0);
-  for (const flag of ["--dir", "--admin", "--html", "--json", "--cache-target", "--write-overhead", "--only"]) {
+  for (const flag of ["--dir", "--admin", "--html", "--json", "--cache-target", "--write-overhead", "--batch-share", "--only"]) {
     expect(stdout).toContain(flag);
   }
 });
@@ -94,4 +94,14 @@ test("the CLI's provenance literal carries every counter the importer keeps", ()
   const source = readFileSync(join(import.meta.dir, "..", "src", "cli.ts"), "utf8");
   const missing = Object.keys(provenance).filter((k) => !source.includes(`${k}:`));
   expect(missing, `cli.ts never accumulates: ${missing.join(", ")}`).toEqual([]);
+});
+
+test("a non-integer or out-of-range percent flag is refused cleanly, never crashed through", async () => {
+  for (const args of [["--batch-share", "abc"], ["--batch-share", "12.5"], ["--batch-share", "101"],
+                      ["--cache-target", "abc"], ["--write-overhead", "-3"]]) {
+    const { code, stderr } = await run(args);
+    expect(code, `${args.join(" ")} should exit 2`).toBe(2);
+    expect(stderr).toContain("integer percent 0-100");
+    expect(stderr).not.toContain("error: Uncaught");
+  }
 });

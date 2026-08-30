@@ -4,6 +4,8 @@ import { computeMetrics } from "../src/metrics";
 import { simulate } from "../src/simulate";
 import { buildReport } from "../src/report";
 import { detectTtlRightSizing } from "../src/detect/ttlRightSizing";
+import { detectTtlCrossing } from "../src/detect/ttlCrossing";
+import { detectSpendAnomaly } from "../src/detect/spendAnomaly";
 import { renderAuditHtml } from "../src/render/auditHtml";
 import { RATE_CARD_2026_08_08 as CARD } from "../src/rates";
 
@@ -33,14 +35,16 @@ const line = (req: string, over: Record<string, unknown> = {}) => JSON.stringify
   },
 });
 
-const build = (lines: string[]) => {
+const build = (lines: string[], targetCacheHitPct = 90) => {
   const imported = importClaudeCodeJsonl(lines, { projectId: "p", seen: new Set() });
   const metrics = computeMetrics(imported.events, CARD);
-  const A = { targetCacheHitPct: 90 };
+  const A = { targetCacheHitPct };
   return buildReport({
     metrics, simulation: simulate(metrics, CARD, A), assumptions: A,
     provenance: imported.provenance,
     ttlRightSizing: detectTtlRightSizing(imported.events, CARD),
+    ttlCrossing: detectTtlCrossing(imported.events),
+    spendAnomaly: detectSpendAnomaly(metrics),
     card: CARD, generatedAt: new Date("2026-08-13T00:00:00Z"),
   });
 };
@@ -91,4 +95,51 @@ test("the disjointness assumption behind adding rather than compounding still ho
   const unexpected = levers.filter((l) => l !== "cache-write TTL right-sizing");
   expect(unexpected, `new priced lever(s) ${unexpected.join(", ")} — adding may now double-count; compound instead`)
     .toEqual([]);
+});
+
+// A 1-hour write re-read two minutes later — the one fixture in this file guaranteed to
+// produce a real TTL right-sizing finding, not just cache headroom. `line()`'s traffic
+// carries no cache writes at all, so `r.findings` is empty for it as often as not.
+const writes1h = JSON.stringify({
+  type: "assistant", timestamp: "2026-08-01T10:00:00Z", requestId: "w", sessionId: "s",
+  message: { model: "claude-opus-5", usage: {
+    input_tokens: 1_000, cache_read_input_tokens: 0, cache_creation_input_tokens: 100_000,
+    cache_creation: { ephemeral_5m_input_tokens: 0, ephemeral_1h_input_tokens: 100_000 },
+    output_tokens: 100, service_tier: "standard" } } });
+const reread = JSON.stringify({
+  type: "assistant", timestamp: "2026-08-01T10:02:00Z", requestId: "r", sessionId: "s",
+  message: { model: "claude-opus-5", usage: {
+    input_tokens: 1_000, cache_read_input_tokens: 100_000, cache_creation_input_tokens: 0,
+    output_tokens: 100, service_tier: "standard" } } });
+
+test("a finding carries whether its evidence is independently provable, not just the tag name", () => {
+  // evidence.ts's own docstring calls this the load-bearing distinction: PASS_METADATA rests
+  // on Anthropic's documented promise that cache_control does not change output, which is a
+  // different act from verifying a hash. isProvable() existed and was unit-tested but never
+  // reached a finding until now — this pins it reaching the actual report the CLI builds.
+  const r = build([writes1h, reread], 99);
+  expect(r.findings.length).toBeGreaterThan(0);
+  for (const f of r.findings) {
+    expect(f.evidence).toBe("PASS_METADATA");
+    expect(f.provable).toBe(false);
+  }
+});
+
+test("the rendered document says so when a lever rests on provider documentation, not proof", () => {
+  const r = build([writes1h, reread], 99);
+  const html = renderAuditHtml(r);
+  expect(r.findings.every((f) => !f.provable)).toBe(true);
+  expect(html).toContain("Rests on the provider's own documentation");
+});
+
+test("the headline can never exceed the bill it claims to reduce", () => {
+  /* The overbought-1h case: a 1-hour write re-read two minutes later, with a target hit rate
+     above observed. The simulation used to reprice its synthetic write volume 100% at the
+     5-minute rate — silently absorbing the TTL lever that allMeasured then ADDED again, so the
+     "Recoverable" tile could print more than 100% of the bill on a document whose whole claim
+     is that it only states what it can prove. Found 2026-08-21 by an adversarial review pass. */
+  const r = build([writes1h, reread], 99);
+  expect(r.savings.allMeasured.cents,
+    `headline ${r.savings.allMeasured.formatted} exceeds the whole bill ${r.currentCost.formatted}`)
+    .toBeLessThanOrEqual(r.currentCost.cents);
 });

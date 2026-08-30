@@ -1,4 +1,4 @@
-import type { Report } from "../report";
+import type { Money, Report } from "../report";
 import { PLEX_MONO_400, PLEX_MONO_600, PLEX_SANS_VAR } from "./fonts";
 
 /**
@@ -137,7 +137,18 @@ ${r.savings.cacheOnly.cents > 0 ? `<div class="lever">
 ${r.findings.map((f) => `<div class="lever">
   <h3>${esc(f.lever)} <span class="tag">${esc(f.evidence)}</span></h3>
   <p><span class="amt">${esc(money(f.saved))}</span> — ${esc(f.detail)}</p>
+  ${f.provable ? "" : `<p class="note">Rests on the provider's own documentation of ${esc(f.evidence)}, not an independently verifiable proof — see "What this audit checked" below.</p>`}
 </div>`).join("\n")}
+
+${r.batchTier ? `<h2>Opt-in: Batch tier</h2>
+<div class="lever">
+  <h3>Message Batches API <span class="tag">CONTRACTUAL_ONLY</span></h3>
+  <p><span class="amt">${esc(money(r.batchTier.saved))}</span> — moving ${r.batchTier.targetSharePct}% of
+    standard-tier traffic to async batch processing, computed on top of the measured levers.
+    Opt-in and contractual: the 50% is the provider's published price, and identity across the
+    async boundary rests on the provider's word — so this figure is excluded from the Recoverable
+    tile above and never added to a measured one.</p>
+</div>` : ""}
 
 ${r.ttlRightSizing.exposedTokens > 0 && !r.ttlRightSizing.computable ? `<div class="warn">
   <strong>${num(r.ttlRightSizing.exposedTokens)} tokens were written at the 1-hour cache TTL</strong>,
@@ -146,19 +157,11 @@ ${r.ttlRightSizing.exposedTokens > 0 && !r.ttlRightSizing.computable ? `<div cla
   turns in a session. This is <em>exposure</em>, not a saving, and it is stated rather than dropped.
 </div>` : ""}
 
-<h2>By workspace</h2>
-<div class="scroll"><table>
-  <thead><tr><th>Workspace</th><th class="n">Cost</th></tr></thead>
-  <tbody>${Object.entries(r.byProject).sort((a, b) => b[1].cents - a[1].cents)
-    .map(([k, v]) => `<tr><td>${esc(k)}</td><td class="n">${esc(money(v))}</td></tr>`).join("")}</tbody>
-</table></div>
+${byXTable("By workspace", "Workspace", r.byProject, false)}
 
-<h2>By model</h2>
-<div class="scroll"><table>
-  <thead><tr><th>Model</th><th class="n">Cost</th></tr></thead>
-  <tbody>${Object.entries(r.byModel).sort((a, b) => b[1].cents - a[1].cents)
-    .map(([k, v]) => `<tr><td><code>${esc(k)}</code></td><td class="n">${esc(money(v))}</td></tr>`).join("")}</tbody>
-</table></div>
+${byXTable("By model", "Model", r.byModel, true)}
+
+${byXTable("By service tier", "Tier", r.byTier, true)}
 
 <h2>Tokens</h2>
 <div class="scroll"><table>
@@ -173,6 +176,16 @@ ${r.ttlRightSizing.exposedTokens > 0 && !r.ttlRightSizing.computable ? `<div cla
 
 ${r.warnings.length ? `<h2>What you should know</h2>
 ${r.warnings.map((w) => `<div class="warn">${esc(w)}</div>`).join("\n")}` : ""}
+
+<h2>What this audit checked</h2>
+<p class="note">Each lever family below cites the public register entries behind it
+  (<code>hangryclaude/token-spread</code>, docs/research). The rows marked
+  <em>invisible</em> are load-bearing: they say what token-count data structurally cannot
+  see, so an absence in this document reads as "checked and not visible", never "not checked".</p>
+<div class="scroll"><table>
+  <thead><tr><th>Family</th><th>Status</th><th>Register ids</th><th>What that means here</th></tr></thead>
+  <tbody>${r.coverage.map((c) => `<tr><td>${esc(c.family)}</td><td><code>${esc(c.status)}</code></td><td class="n">${c.registerIds.map(esc).join(", ")}</td><td>${esc(c.note)}</td></tr>`).join("")}</tbody>
+</table></div>
 
 <h2>How this was measured</h2>
 <div class="scroll"><table>
@@ -212,3 +225,19 @@ function esc(v: unknown): string {
 
 const num = (n: number): string => n.toLocaleString("en-US");
 const money = (m: { formatted: string }): string => m.formatted;
+
+/**
+ * The three cost-by-key tables (workspace, model, tier) differ only in the heading, the
+ * column label, and whether the key is a model/tier id worth setting in `<code>`. One
+ * renderer, so the three cannot drift into three different sort orders or escaping rules.
+ */
+function byXTable(heading: string, column: string, data: Record<string, Money>, code: boolean): string {
+  const rows = Object.entries(data).sort((a, b) => b[1].cents - a[1].cents)
+    .map(([k, v]) => `<tr><td>${code ? `<code>${esc(k)}</code>` : esc(k)}</td><td class="n">${esc(money(v))}</td></tr>`)
+    .join("");
+  return `<h2>${esc(heading)}</h2>
+<div class="scroll"><table>
+  <thead><tr><th>${esc(column)}</th><th class="n">Cost</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table></div>`;
+}

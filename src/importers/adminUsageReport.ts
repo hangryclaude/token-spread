@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { ServiceTier, UsageEvent } from "../types";
+import { isCount, TIERS } from "./shared";
 
 export interface AdminImportProvenance {
   pages: number;
@@ -16,12 +17,6 @@ export interface AdminImportResult {
   events: UsageEvent[];
   provenance: AdminImportProvenance;
 }
-
-const isCount = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0;
-
-const TIERS: readonly string[] = [
-  "standard", "batch", "flex", "flex_discount", "priority", "priority_on_demand",
-];
 
 /**
  * Anthropic's Admin usage report, `GET /v1/organizations/usage_report/messages`.

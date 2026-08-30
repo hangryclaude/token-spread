@@ -4,6 +4,8 @@ import { buildReport } from "../src/report";
 import { computeMetrics } from "../src/metrics";
 import { simulate } from "../src/simulate";
 import { detectTtlRightSizing } from "../src/detect/ttlRightSizing";
+import { detectTtlCrossing } from "../src/detect/ttlCrossing";
+import { detectSpendAnomaly } from "../src/detect/spendAnomaly";
 import { importAdminUsageReport } from "../src/importers/adminUsageReport";
 import { RATE_CARD_2026_08_08 as CARD } from "../src/rates";
 
@@ -18,7 +20,7 @@ const RESULT = {
   output_tokens: 9_000_000,
 };
 
-function report(results: unknown[] = [RESULT]) {
+function report(results: unknown[] = [RESULT], extraAssumptions: Record<string, unknown> = {}) {
   const r = importAdminUsageReport([{
     data: [{ starting_at: "2026-08-01T00:00:00Z", ending_at: "2026-08-02T00:00:00Z", results }],
     has_more: false, next_page: null,
@@ -26,7 +28,7 @@ function report(results: unknown[] = [RESULT]) {
   const metrics = computeMetrics(r.events, CARD);
   // Same rule the CLI uses: you cannot target below what the traffic already achieves.
   const observed = Math.round(metrics.cacheHitRate * 100);
-  const assumptions = { targetCacheHitPct: Math.max(observed, 90) };
+  const assumptions = { targetCacheHitPct: Math.max(observed, 90), ...extraAssumptions };
   return buildReport({
     metrics,
     simulation: simulate(metrics, CARD, assumptions),
@@ -35,9 +37,12 @@ function report(results: unknown[] = [RESULT]) {
       linesSeen: r.provenance.results, imported: r.provenance.imported,
       malformed: r.provenance.malformed, deduped: 0, synthesizedKeys: 0,
       skippedNonAssistant: 0, compactionEvents: 0, hiddenInputTokens: 0,
-      hiddenOutputTokens: 0, unknownTtlWrites: 0,
+      hiddenOutputTokens: 0, unknownTtlWrites: 0, thinkingDetailRecords: 0,
+      pages: 0, buckets: 0, unpriceableTier: 0,
     },
     ttlRightSizing: detectTtlRightSizing(r.events, CARD),
+    ttlCrossing: detectTtlCrossing(r.events),
+    spendAnomaly: detectSpendAnomaly(metrics),
     card: CARD,
     generatedAt: new Date("2026-08-11T12:00:00Z"),
   });
@@ -102,4 +107,37 @@ test("carries its own type rather than fetching it", () => {
   expect(html).toContain("rel=\"icon\" href=\"data:image/svg+xml");
   expect(html).toContain("url(data:font/woff2;base64,");
   expect(html).not.toMatch(/fonts\.googleapis|fonts\.gstatic|url\(['"]?https?:/);
+});
+
+test("renders the batch-tier lever as opt-in and contractual, apart from the measured levers", () => {
+  const html = renderAuditHtml(report([RESULT], { batchShareTargetPct: 40 }));
+  expect(html).toContain("Batch tier");
+  expect(html).toContain("CONTRACTUAL_ONLY");
+  expect(html.toLowerCase()).toContain("opt-in");
+  expect(html).toContain("excluded from the Recoverable");
+});
+
+test("no batch share requested renders no batch block", () => {
+  // The coverage table names the batch FAMILY in every document — that is a statement
+  // about what the audit can check, not a simulated figure. What must not render without
+  // the flag is the lever block itself.
+  expect(renderAuditHtml(report())).not.toContain("Opt-in: Batch tier");
+});
+
+test("renders spend by service tier", () => {
+  const html = renderAuditHtml(report([
+    RESULT,
+    { ...RESULT, service_tier: "batch" },
+  ]));
+  expect(html).toContain("By service tier");
+  expect(html).toContain("batch");
+});
+
+test("states what it checked against the register, family by family", () => {
+  const html = renderAuditHtml(report());
+  expect(html).toContain("What this audit checked");
+  expect(html).toContain("Cache-hit headroom");
+  expect(html).toContain("invisible");
+  // The invisible rows are the credibility: a tool that only lists what it can see is advertising.
+  expect(html).toContain("Waste: retries, duplicates, zombie loops");
 });

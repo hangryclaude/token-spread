@@ -12,44 +12,36 @@
  *
  *   bun run bench/snapshot.ts [--dir <path>] [--out bench/.snapshot.json]
  */
-import { basename, join } from "node:path";
-import { readdirSync, statSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+import { findTranscripts } from "../src/walk";
 import { importClaudeCodeJsonl } from "../src/importers/claudeCode";
 import type { UsageEvent } from "../src/types";
-
-const arg = (n: string, d?: string) => {
-  const i = process.argv.indexOf(`--${n}`);
-  return i === -1 ? d : process.argv[i + 1];
-};
+import { arg } from "./util";
 
 const dir = arg("dir", join(process.env.HOME ?? "", ".claude", "projects"))!;
 const out = arg("out", join(import.meta.dir, ".snapshot.json"))!;
 
-function* transcripts(root: string): Generator<{ path: string; projectId: string }> {
-  for (const entry of readdirSync(root)) {
-    const full = join(root, entry);
-    if (statSync(full).isDirectory()) {
-      for (const f of readdirSync(full)) if (f.endsWith(".jsonl")) yield { path: join(full, f), projectId: entry };
-    } else if (entry.endsWith(".jsonl")) yield { path: full, projectId: basename(root) };
-  }
-}
-
 const seen = new Set<string>();
 const events: UsageEvent[] = [];
 let files = 0;
-for (const { path, projectId } of transcripts(dir)) {
+for (const { path, projectId } of findTranscripts(dir)) {
   files++;
   events.push(...importClaudeCodeJsonl(readFileSync(path, "utf8").split("\n"), { projectId, seen }).events);
 }
 events.sort((a, b) => a.ts.localeCompare(b.ts));
 
-// Only what pricing needs. Nothing here can carry content even by accident.
+// Only what pricing needs. Nothing here can carry content even by accident. w5/w1 and
+// tier are carried (not just the write total) because costOfEvent needs the TTL split
+// and the tier multiplier — collapsing either loses information demo.ts must reconstruct.
 const lean = events.map((e) => ({
   m: e.model,
   i: e.inputTokens,
   r: e.cacheReadTokens,
-  w: e.cacheCreationTokens,
+  w5: e.cacheCreation5mTokens,
+  w1: e.cacheCreation1hTokens,
   o: e.outputTokens,
+  tier: e.serviceTier,
 }));
 
 writeFileSync(out, JSON.stringify({ takenAt: new Date().toISOString(), files, events: lean }));

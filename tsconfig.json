@@ -15,5 +15,5 @@
     "noUncheckedIndexedAccess": false,
     "types": ["bun-types"]
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "bench"]
 }

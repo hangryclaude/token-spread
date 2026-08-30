@@ -2,12 +2,14 @@
 import { basename, join } from "node:path";
 import { readdirSync, statSync } from "node:fs";
 import { importClaudeCodeJsonl, type ImportProvenance } from "./importers/claudeCode";
-import { importAdminUsageReport } from "./importers/adminUsageReport";
+import { importAdminUsageReport, type AdminImportProvenance } from "./importers/adminUsageReport";
 import { findTranscripts } from "./walk";
 import { computeMetrics, measuredCacheWriteOverheadPct } from "./metrics";
 import { buildReport } from "./report";
 import { RATE_CARD_2026_08_08 as CARD } from "./rates";
 import { detectTtlRightSizing } from "./detect/ttlRightSizing";
+import { detectTtlCrossing } from "./detect/ttlCrossing";
+import { detectSpendAnomaly } from "./detect/spendAnomaly";
 import { renderAuditHtml } from "./render/auditHtml";
 import { simulate } from "./simulate";
 import type { UsageEvent } from "./types";
@@ -22,6 +24,7 @@ const FLAGS = [
   { name: "json", arg: "", desc: "emit the full report object" },
   { name: "cache-target", arg: "<n>", desc: "simulated cache-hit target, integer percent" },
   { name: "write-overhead", arg: "<n>", desc: "cache-write overhead assumption, integer percent" },
+  { name: "batch-share", arg: "<n>", desc: "standard-tier share priced via Message Batches, integer percent (opt-in, contractual)" },
   { name: "only", arg: "<file>", desc: "restrict to one transcript file" },
   { name: "help", arg: "", desc: "this" },
   { name: "version", arg: "", desc: "print the version" },
@@ -96,8 +99,26 @@ const only = arg("only");
  * is read here, and nothing is sent anywhere: the report is counts and dimensions only.
  */
 const adminFiles = arg("admin");
-const cacheTargetRaw = arg("cache-target");
-const writeOverheadRaw = arg("write-overhead");
+/**
+ * A percent-valued flag: integer 0-100, or a clean one-line refusal. Number("abc") is NaN
+ * and used to ride straight into simulate(), which threw a raw stack trace — the same
+ * class of crash the missing-value guard in arg() already prevents.
+ */
+function intPct(name: string): number | undefined {
+  const raw = arg(name);
+  if (raw === undefined) return undefined;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n > 100) {
+    console.error(`--${name} must be an integer percent 0-100, got ${raw}\nrun with --help to see what is accepted`);
+    process.exit(2);
+  }
+  return n;
+}
+
+const cacheTarget = intPct("cache-target");
+const writeOverhead = intPct("write-overhead");
+/** Opt-in by construction: absent flag means the batch lever never appears in any output. */
+const batchShare = intPct("batch-share");
 /** `--html <path>` writes the audit as a standalone document — the thing a buyer forwards. */
 const htmlOut = arg("html");
 
@@ -116,16 +137,28 @@ const events: UsageEvent[] = [];
 const provenance: ImportProvenance = {
   linesSeen: 0, imported: 0, malformed: 0, deduped: 0, synthesizedKeys: 0, skippedNonAssistant: 0,
   compactionEvents: 0, hiddenInputTokens: 0, hiddenOutputTokens: 0, unknownTtlWrites: 0,
-  // Every field must be listed here: the merge below iterates Object.keys(provenance), so a
-  // counter missing from this literal is silently never accumulated and reads as undefined
-  // downstream. thinkingDetailRecords did exactly that until 2026-08-12 — the tests passed and
-  // the real run stayed quiet, which is the worst combination available.
-  thinkingDetailRecords: 0,
+  // Every field must be listed here: both merges below iterate Object.keys(provenance) or a
+  // typed key map derived from it, so a counter missing from this literal is silently never
+  // accumulated and reads as undefined downstream. thinkingDetailRecords did exactly that
+  // until 2026-08-12, and pages/buckets/unpriceableTier did it again until 2026-08-21 — the
+  // tests passed and the real run stayed quiet, which is the worst combination available.
+  thinkingDetailRecords: 0, pages: 0, buckets: 0, unpriceableTier: 0,
 };
 
 // One dedup set for the whole run: the same requestId can appear in two files, and the
 // same admin bucket can appear in two exports of overlapping windows.
 const seen = new Set<string>();
+
+/**
+ * Where every `AdminImportProvenance` counter lands on the merged `ImportProvenance` shape.
+ * A `Record` keyed by `keyof AdminImportProvenance` — so adding a field to that interface
+ * without adding it here is a compile error, not a silent drop.
+ */
+const ADMIN_PROVENANCE_KEYS: Record<keyof AdminImportProvenance, keyof ImportProvenance> = {
+  pages: "pages", buckets: "buckets", results: "linesSeen",
+  imported: "imported", malformed: "malformed", deduped: "deduped",
+  unpriceableTier: "unpriceableTier",
+};
 
 if (adminFiles !== undefined) {
   const pages = [];
@@ -139,10 +172,16 @@ if (adminFiles !== undefined) {
   }
   const r = importAdminUsageReport(pages, { seen });
   events.push(...r.events);
-  provenance.linesSeen += r.provenance.results;
-  provenance.imported += r.provenance.imported;
-  provenance.malformed += r.provenance.malformed;
-  provenance.deduped += r.provenance.deduped;
+  // Object.keys(r.provenance) as (keyof AdminImportProvenance)[], so ADMIN_PROVENANCE_KEYS
+  // must cover every one of them — TypeScript, not an adversarial review, catches the next
+  // field AdminImportProvenance gains and this loop would otherwise drop on the floor. The
+  // same discipline as the transcript merge's exhaustive Object.keys loop below, adapted for
+  // the one field that changes name at this boundary: `results` (the admin report's own term
+  // for a row inside a bucket) becomes `linesSeen` (the transcript-shaped term everything
+  // downstream reads).
+  for (const k of Object.keys(r.provenance) as (keyof AdminImportProvenance)[]) {
+    provenance[ADMIN_PROVENANCE_KEYS[k]] += r.provenance[k];
+  }
 }
 
 for (const { path, projectId } of adminFiles === undefined ? findTranscripts(dir) : []) {
@@ -194,17 +233,20 @@ const observedPct = Math.round(metrics.cacheHitRate * 100);
 // assumptions in favour of real numbers is the whole point of this slice. The pure
 // simulate() keeps the 5% fallback so the spec's worked example still reproduces.
 const measuredOverhead = measuredCacheWriteOverheadPct(metrics);
-const writeOverheadPct = writeOverheadRaw !== undefined ? Number(writeOverheadRaw) : measuredOverhead;
+const writeOverheadPct = writeOverhead ?? measuredOverhead;
 
 const assumptions = {
-  targetCacheHitPct: cacheTargetRaw === undefined ? Math.max(observedPct, 90) : Number(cacheTargetRaw),
+  targetCacheHitPct: cacheTarget ?? Math.max(observedPct, 90),
   ...(writeOverheadPct === null ? {} : { cacheWriteOverheadPct: writeOverheadPct }),
+  ...(batchShare === undefined ? {} : { batchShareTargetPct: batchShare }),
 };
 
 const report = buildReport({
   metrics,
   simulation: simulate(metrics, CARD, assumptions),
   ttlRightSizing: detectTtlRightSizing(events, CARD),
+  ttlCrossing: detectTtlCrossing(events),
+  spendAnomaly: detectSpendAnomaly(metrics),
   assumptions,
   provenance,
   card: CARD,

@@ -20,36 +20,22 @@
  *
  *   bun run bench/counterfactual.ts [--dir <path>] [--top 12]
  */
-import { basename, join } from "node:path";
-import { readdirSync, statSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { readFileSync } from "node:fs";
+import { findTranscripts } from "../src/walk";
 import { importClaudeCodeJsonl } from "../src/importers/claudeCode";
 import { costOfEvent } from "../src/pricing";
 import { RATE_CARD_2026_08_08 as CARD } from "../src/rates";
 import type { UsageEvent } from "../src/types";
-
-const arg = (n: string, d?: string) => {
-  const i = process.argv.indexOf(`--${n}`);
-  return i === -1 ? d : process.argv[i + 1];
-};
+import { arg, usd, n } from "./util";
 
 const dir = arg("dir", join(process.env.HOME ?? "", ".claude", "projects"))!;
 const topN = Number(arg("top", "12"));
 
-function* transcripts(root: string): Generator<{ path: string; projectId: string }> {
-  for (const entry of readdirSync(root)) {
-    const full = join(root, entry);
-    if (statSync(full).isDirectory()) {
-      for (const f of readdirSync(full)) if (f.endsWith(".jsonl")) yield { path: join(full, f), projectId: entry };
-    } else if (entry.endsWith(".jsonl")) {
-      yield { path: full, projectId: basename(root) };
-    }
-  }
-}
-
 const seen = new Set<string>();
 const events: UsageEvent[] = [];
 let files = 0;
-for (const { path, projectId } of transcripts(dir)) {
+for (const { path, projectId } of findTranscripts(dir)) {
   files++;
   const lines = readFileSync(path, "utf8").split("\n");
   events.push(...importClaudeCodeJsonl(lines, { projectId, seen }).events);
@@ -63,6 +49,11 @@ const uncached = (e: UsageEvent): UsageEvent => ({
   // A run that never caches never pays the write premium either. Charging arm A for
   // writes it would not have made is the thing that would make this number a lie.
   cacheCreationTokens: 0,
+  // The TTL split must still sum to cacheCreationTokens or costOfEvent refuses the
+  // event as malformed — zeroing the total without zeroing the split silently drops
+  // every cached event from arm A instead of pricing it.
+  cacheCreation5mTokens: 0,
+  cacheCreation1hTokens: 0,
 });
 
 interface Row { withCache: number; without: number; events: number; tokens: number }
@@ -86,8 +77,6 @@ for (const e of events) {
   total.withCache += b.microCents; total.without += a.microCents; total.events++; total.tokens += tok;
 }
 
-const usd = (uc: number) => "$" + (uc / 1e8).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const n = (x: number) => x.toLocaleString("en-US");
 const pct = (r: Row) => r.without === 0 ? 0 : ((r.without - r.withCache) / r.without) * 100;
 
 const W = 74;

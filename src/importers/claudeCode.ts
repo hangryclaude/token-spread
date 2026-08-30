@@ -1,9 +1,6 @@
 import { createHash } from "node:crypto";
 import type { ServiceTier, UsageEvent } from "../types";
-
-const TIERS: readonly string[] = [
-  "standard", "batch", "flex", "flex_discount", "priority", "priority_on_demand",
-];
+import { isCount, TIERS } from "./shared";
 
 export interface ImportProvenance {
   linesSeen: number;
@@ -33,14 +30,24 @@ export interface ImportProvenance {
    * claims and only one of them belongs in a report that sells traceability.
    */
   thinkingDetailRecords: number;
+  /**
+   * Paginated API responses and their `bucket_width` time windows read — an admin-usage-report
+   * concept with no transcript analogue, always 0 on a transcript-only run. Carried on this
+   * shared shape, not a separate one, so cli.ts's provenance merge is the same exhaustive
+   * Object.keys loop for both sources; a second shape would need its own merge and its own
+   * chance to drop a field silently, which is exactly how `pages` and `buckets` went missing
+   * from the report until 2026-08-21.
+   */
+  pages: number;
+  buckets: number;
+  /** Results whose service tier carried no published price multiplier. Admin-only, like `pages`. */
+  unpriceableTier: number;
 }
 
 export interface ImportResult {
   events: UsageEvent[];
   provenance: ImportProvenance;
 }
-
-const isCount = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0;
 
 /** The token counts read off a `usage` object or one `usage.iterations` entry. */
 interface Counts {
@@ -167,7 +174,7 @@ export function importClaudeCodeJsonl(
     linesSeen: 0, imported: 0, malformed: 0,
     deduped: 0, synthesizedKeys: 0, skippedNonAssistant: 0,
     compactionEvents: 0, hiddenInputTokens: 0, hiddenOutputTokens: 0,
-    unknownTtlWrites: 0, thinkingDetailRecords: 0,
+    unknownTtlWrites: 0, thinkingDetailRecords: 0, pages: 0, buckets: 0, unpriceableTier: 0,
   };
 
   for (const line of lines) {

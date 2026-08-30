@@ -7,6 +7,8 @@ import { computeMetrics } from "../src/metrics";
 import { simulate } from "../src/simulate";
 import { buildReport } from "../src/report";
 import { detectTtlRightSizing } from "../src/detect/ttlRightSizing";
+import { detectTtlCrossing } from "../src/detect/ttlCrossing";
+import { detectSpendAnomaly } from "../src/detect/spendAnomaly";
 import { renderAuditHtml } from "../src/render/auditHtml";
 import { importAdminUsageReport } from "../src/importers/adminUsageReport";
 import { RATE_CARD_2026_08_08 as CARD } from "../src/rates";
@@ -60,7 +62,7 @@ const reportFor = (lines: string[]) => {
   const A = { targetCacheHitPct: 90 };
   return buildReport({
     metrics, simulation: simulate(metrics, CARD, A), assumptions: A,
-    provenance: imported.provenance, ttlRightSizing: detectTtlRightSizing([], CARD),
+    provenance: imported.provenance, ttlRightSizing: detectTtlRightSizing([], CARD), ttlCrossing: detectTtlCrossing([]), spendAnomaly: detectSpendAnomaly(computeMetrics([], CARD)),
     card: CARD, generatedAt: new Date("2026-08-12T00:00:00Z"),
   });
 };
@@ -100,9 +102,9 @@ test("and an admin-report audit still says admin_usage_report", () => {
     provenance: {
       linesSeen: 1, imported: 1, malformed: 0, deduped: 0, synthesizedKeys: 0,
       skippedNonAssistant: 0, compactionEvents: 0, hiddenInputTokens: 0, hiddenOutputTokens: 0,
-      unknownTtlWrites: 0, thinkingDetailRecords: 1,
+      unknownTtlWrites: 0, thinkingDetailRecords: 1, pages: 0, buckets: 0, unpriceableTier: 0,
     },
-    ttlRightSizing: detectTtlRightSizing([], CARD), card: CARD,
+    ttlRightSizing: detectTtlRightSizing([], CARD), ttlCrossing: detectTtlCrossing([]), spendAnomaly: detectSpendAnomaly(computeMetrics([], CARD)), card: CARD,
     generatedAt: new Date("2026-08-12T00:00:00Z"),
   });
   const html = renderAuditHtml(r);

@@ -1,8 +1,12 @@
+import { isProvable, shipsByDefault } from "./evidence";
 import type { ImportProvenance } from "./importers/claudeCode";
 import { measuredCacheWriteOverheadPct, type Metrics } from "./metrics";
 import { formatCents, microCentsToCents } from "./pricing";
 import { cardAgeDays, lapsesDue, type RateCard } from "./rates";
 import type { TtlRightSizingFinding } from "./detect/ttlRightSizing";
+import type { TtlCrossingFinding } from "./detect/ttlCrossing";
+import { MIN_HISTORY_DAYS, type SpendAnomalyFinding } from "./detect/spendAnomaly";
+import { COVERAGE, type CoverageRow } from "./coverage";
 import { DEFAULT_CACHE_WRITE_OVERHEAD_PCT, type Assumptions, type Simulation, type Unquantified } from "./simulate";
 
 const STALE_AFTER_DAYS = 30;
@@ -55,6 +59,12 @@ export interface Report {
   byModel: Record<string, Money>;
   byProject: Record<string, Money>;
   byAccount: Record<string, Money>;
+  /**
+   * Spend by service tier, `unspecified` for events that carried none. The axis the batch
+   * lever prices against — a bill that cannot say how much of it runs standard cannot say
+   * what a batch migration is worth. Register exposure, not a saving (ids 76, 86, 123).
+   */
+  byTier: Record<string, Money>;
   tokens: TokenTotals;
   /** `combined` is cache headroom alone; `allMeasured` includes every priced finding. */
   savings: { cacheOnly: Money; wasteOnly: Unquantified; combined: Money; allMeasured: Money };
@@ -62,10 +72,26 @@ export interface Report {
   /** Blended cost per million tokens, before and after the measured levers. */
   effectiveRatePerMTok: { before: Money; after: Money };
   cacheHeadroom: { targetCacheHitPct: number; cost: Money; saved: Money } | null;
+  /**
+   * The opt-in contractual lever, present only when the operator set a batch share.
+   * `saved` is the step down from the post-cache cost — levers compound, never add — and
+   * the figure stays out of `savings` entirely: that block is measured levers only, and
+   * the batch discount is the provider's published price, not a measurement.
+   */
+  batchTier: { targetSharePct: number; cost: Money; saved: Money } | null;
   /** Measured levers that are not cache-hit headroom. */
   findings: Array<{
     lever: string;
     evidence: string;
+    /**
+     * `isProvable(evidence)` — true when the claim can be demonstrated without trusting a
+     * provider's prose (a hash-verified replay, or nothing on the wire changing at all),
+     * false when it rests on a documented promise instead. Carried onto the finding rather
+     * than left implicit in the tag: `evidence.ts`'s own docstring calls this the load-bearing
+     * distinction, and a buyer reading `PASS_METADATA` off a badge should not have to know the
+     * evidence hierarchy by heart to learn it is one of the classes we take on faith.
+     */
+    provable: boolean;
     saved: Money;
     detail: string;
   }>;
@@ -73,6 +99,10 @@ export interface Report {
   provenance: ImportProvenance & { skipped: Metrics["skipped"] };
   /** Kept on the report so a rendered document can state exposure it cannot price. */
   ttlRightSizing: TtlRightSizingFinding;
+  ttlCrossing: TtlCrossingFinding;
+  spendAnomaly: SpendAnomalyFinding;
+  /** The register-backed coverage table — what was modeled, detected, exposed, or is invisible. */
+  coverage: readonly CoverageRow[];
   warnings: string[];
   humanSummary: string;
 }
@@ -107,6 +137,8 @@ export function buildReport(input: {
   assumptions: Assumptions;
   provenance: ImportProvenance;
   ttlRightSizing: TtlRightSizingFinding;
+  ttlCrossing: TtlCrossingFinding;
+  spendAnomaly: SpendAnomalyFinding;
   card: RateCard;
   generatedAt: Date;
 }): Report {
@@ -136,7 +168,7 @@ export function buildReport(input: {
     // 5m writes bill at 1.25x base input, 1h at 2x. A source that omits the split is
     // billed here at the cheaper rate, so the reported cost is a floor, not a fact.
     warnings.push(
-      `${provenance.unknownTtlWrites.toLocaleString("en-US")} cache-write tokens came with no TTL — ` +
+      `${group(provenance.unknownTtlWrites)} cache-write tokens came with no TTL — ` +
       `billed here at the 5-minute rate (1.25x); if they were 1-hour writes (2x) the real cost is higher`,
     );
   }
@@ -148,7 +180,7 @@ export function buildReport(input: {
     // "imported", not "priced" — the two differ whenever pricing skips events, and this warning
     // once said "1 priced records" beside a summary reading "0 priced events".
     warnings.push(
-      `none of the ${provenance.imported.toLocaleString("en-US")} imported records carried ` +
+      `none of the ${group(provenance.imported)} imported records carried ` +
       `usage.output_tokens_details, so the extended-thinking share of output cannot be separated ` +
       `here — the totals are unaffected, the thinking-vs-answer split is simply not in this source`,
     );
@@ -159,7 +191,7 @@ export function buildReport(input: {
     const hidden = provenance.hiddenInputTokens + provenance.hiddenOutputTokens;
     warnings.push(
       `${provenance.compactionEvents} requests ran a compaction sampling step billing ` +
-      `${hidden.toLocaleString("en-US")} tokens that the top-level usage fields do not report — ` +
+      `${group(hidden)} tokens that the top-level usage fields do not report — ` +
       `this report counts them, a dashboard reading usage.input_tokens does not`,
     );
   }
@@ -198,6 +230,75 @@ export function buildReport(input: {
       `the simulated cache figures are driven by the assumption, not the measurement`,
     );
   }
+  // A check that could not run must say so — an absent warning otherwise reads as
+  // "checked and clean", which is the most expensive kind of wrong.
+  if (ttl.skippedUnknownModel > 0) {
+    // Computed and then dropped is the same failure mode as the metrics.skipped block
+    // above: skippedUnknownModel narrows the recoverable figure without saying so unless
+    // this fires. It is a different, smaller count than metrics.skipped.unknown_model —
+    // only the writes that were otherwise eligible for TTL right-sizing.
+    const n = ttl.skippedUnknownModel;
+    warnings.push(
+      `${n} cache-write ${n === 1 ? "event" : "events"} eligible for TTL right-sizing used a model absent ` +
+      `from the rate card and ${n === 1 ? "was" : "were"} excluded from that figure — the real recoverable ` +
+      `amount is higher`,
+    );
+  }
+  if (!input.ttlCrossing.computable) {
+    warnings.push(
+      `this source carries no sessions, so the 1-hour to 5-minute billing-crossing check ` +
+      `(register id 184) could not run on it — not checked here is not the same as checked and clean`,
+    );
+  }
+  if (!input.spendAnomaly.computable) {
+    warnings.push(
+      `only ${input.spendAnomaly.days} day${input.spendAnomaly.days === 1 ? "" : "s"} of priced history — ` +
+      `day-spike screening needs ${MIN_HISTORY_DAYS}, so the spend-anomaly check did not run`,
+    );
+  }
+  if (input.spendAnomaly.skippedUnpriceable > 0) {
+    // Same shape as the ttl warning above: skippedUnpriceable was computed into the
+    // finding and then never spoken — a day the check flags could be a floor, and a
+    // quiet day could be hiding spend the check never saw.
+    const n = input.spendAnomaly.skippedUnpriceable;
+    warnings.push(
+      `${n} event${n === 1 ? "" : "s"} could not be priced and ${n === 1 ? "was" : "were"} excluded from the ` +
+      `day-by-day totals the spend-anomaly check reads — a flagged day's real total could be higher than shown, ` +
+      `and a quiet day could be hiding one`,
+    );
+  }
+  {
+    // Money already spent is not recoverable, so an anomaly is dated and dollared, never
+    // priced. Capped at three lines: a report is not a pager.
+    const an = input.spendAnomaly.anomalies;
+    for (const a of an.slice(0, 3)) {
+      warnings.push(
+        `spend anomaly: ${formatCents(microCentsToCents(a.microCents))} on ${a.day} against a ` +
+        `trailing-median ${formatCents(microCentsToCents(a.trailingMedianMicroCents))} — more than 3x. ` +
+        `Budget caps and alerts change nothing on the wire (register ids 126, 127); this is a warning, not a saving.`,
+      );
+    }
+    if (an.length > 3) warnings.push(`…and ${an.length - 3} more anomalous days like the above`);
+  }
+  if (input.ttlCrossing.flippedSessions > 0) {
+    const n = input.ttlCrossing.flippedSessions;
+    warnings.push(
+      `${n} ${n === 1 ? "session" : "sessions"} flipped from 1-hour to 5-minute cache writes mid-session — ` +
+      `the signature of crossing from subscription into usage-credit billing. ` +
+      `${group(input.ttlCrossing.affectedWriteTokens)} write tokens landed on the 5-minute TTL after the flip, ` +
+      `where every pause longer than five minutes re-bills the full context. ` +
+      `ENABLE_PROMPT_CACHING_1H=1 restores the 1-hour TTL (register id 184). A signature, not a proof — stated as exposure, never priced.`,
+    );
+  }
+  // Keyed to the traffic, not to the priced result: a tiny standard spend can floor the
+  // saving to $0 micro-cents, and blaming that on absent standard traffic would be a lie.
+  const movableExists = metrics.byModelTier.some((c) => c.tier === null || c.tier === "standard");
+  if (sim.batchTier && sim.batchTier.targetSharePct > 0 && !movableExists) {
+    warnings.push(
+      `a batch share of ${sim.batchTier.targetSharePct}% is set but there is no standard-tier traffic to move — ` +
+      `traffic already on the batch tier has no discount left`,
+    );
+  }
   if (sim.cacheHeadroom && sim.cacheHeadroom.savedMicroCents < 0) {
     warnings.push(
       `simulated cache headroom is negative: the observed hit rate is already ${observedPct}%, ` +
@@ -215,15 +316,45 @@ export function buildReport(input: {
     // each token bills at, so a "tokens saved" figure would be zero by construction.
     `Tokens: ${group(totalTokens)} priced (${group(o.cacheReadTokens)} cache reads, ${group(o.inputTokens)} fresh input, ${group(o.outputTokens)} output).`,
     ...(!ttl.computable && ttl.exposedTokens > 0 ? [
-      `Cache-write TTL: ${ttl.exposedTokens.toLocaleString("en-US")} tokens were written at the 1-hour TTL (2x base input vs 1.25x at 5 minutes). Whether 5 minutes would have served cannot be answered from an aggregate usage report — it needs the gap between consecutive turns in a session. Exposure, not a saving.`,
+      `Cache-write TTL: ${group(ttl.exposedTokens)} tokens were written at the 1-hour TTL (2x base input vs 1.25x at 5 minutes). Whether 5 minutes would have served cannot be answered from an aggregate usage report — it needs the gap between consecutive turns in a session. Exposure, not a saving.`,
     ] : []),
     ...(ttl.recoverableMicroCents > 0 ? [
-      `Cache-write TTL right-sizing: ${formatCents(microCentsToCents(ttl.recoverableMicroCents))} — ${pct1(ttl.recoverableMicroCents, baseline)}% of the bill. ${ttl.overBoughtTokens.toLocaleString("en-US")} tokens bought a 1-hour TTL at 2x base input and were re-read inside 5 minutes, where 1.25x would have served. ttl is metadata the model never reads: same prompt, same model, same output.`,
+      `Cache-write TTL right-sizing: ${formatCents(microCentsToCents(ttl.recoverableMicroCents))} — ${pct1(ttl.recoverableMicroCents, baseline)}% of the bill. ${group(ttl.overBoughtTokens)} tokens bought a 1-hour TTL at 2x base input and were re-read inside 5 minutes, where 1.25x would have served. ttl is metadata the model never reads: same prompt, same model, same output.`,
     ] : []),
     `Percent of cost saved: cache-only ${pct1(sim.attribution.cacheOnlySavedMicroCents, baseline)}%, all measured levers ${pct1(sim.attribution.combinedSavedMicroCents, baseline)}%.`,
+    ...(sim.batchTier ? [
+      // Named as what it is: the provider's contractual price, opted into by the operator,
+      // and excluded from every measured figure so nobody can add it to them by accident.
+      `Batch tier (opt-in, contractual — the 50% is the provider's published price; identity across the async boundary is the provider's word): moving ${sim.batchTier.targetSharePct}% of standard-tier traffic to the Message Batches API would save a further ${formatCents(microCentsToCents(sim.batchTier.savedMicroCents))} on top of the measured levers. Excluded from every measured figure above.`,
+    ] : []),
     `Blended rate: ${formatCents(microCentsToCents(ratePerMTok(baseline, totalTokens)))} per MTok today → ${formatCents(microCentsToCents(ratePerMTok(baseline - sim.attribution.combinedSavedMicroCents, totalTokens)))} per MTok under the measured levers.`,
     `Rate card captured ${card.capturedAt}. ${card.notes.join(" ")}`,
   ].join("\n");
+
+  const findings = ttl.recoverableMicroCents > 0 ? [{
+    lever: "cache-write TTL right-sizing",
+    evidence: ttl.evidence,
+    provable: isProvable(ttl.evidence),
+    saved: money(ttl.recoverableMicroCents),
+    detail:
+      `${group(ttl.overBoughtTokens)} tokens were written at the 1-hour TTL (2x base input) ` +
+      `and re-read within 5 minutes, where the 5-minute TTL (1.25x) would have served. ` +
+      `ttl is metadata the model never reads: same prompt, same model, same output.` +
+      (ttl.neverReReadTokens > 0
+        ? ` A further ${group(ttl.neverReReadTokens)} 1-hour tokens were never re-read at all — that is waste, a separate lever, and is not counted here.`
+        : ""),
+  }] : [];
+  // `CONTRACTUAL_ONLY` evidence must never reach a finding that ships unconditionally — that
+  // is the whole rule `shipsByDefault` states. No detector emits that class into `findings`
+  // today (the one CONTRACTUAL_ONLY lever, batch tier, is a separate opt-in field, gated by
+  // the operator setting `--batch-share`), so this can only fire if a future one tries to.
+  // Thrown here rather than filtered silently: a dropped finding is the exact failure mode
+  // this report exists to refuse elsewhere, and it should not become the exception for this.
+  for (const f of findings) {
+    if (!shipsByDefault(f.evidence)) {
+      throw new Error(`finding "${f.lever}" carries ${f.evidence} evidence and cannot ship by default`);
+    }
+  }
 
   return {
     generatedAt: generatedAt.toISOString(),
@@ -234,6 +365,13 @@ export function buildReport(input: {
     byModel: mapMoney(metrics.byModel),
     byProject: mapMoney(metrics.byProject),
     byAccount: mapMoney(metrics.byAccount),
+    byTier: mapMoney(
+      metrics.byModelTier.reduce<Record<string, { microCents: number }>>((acc, { tier, totals }) => {
+        const key = tier ?? "unspecified";
+        acc[key] = { microCents: (acc[key]?.microCents ?? 0) + totals.microCents };
+        return acc;
+      }, {}),
+    ),
     tokens: {
       total: totalTokens,
       input: o.inputTokens,
@@ -254,15 +392,27 @@ export function buildReport(input: {
        * that tile read "$0.00, 0% of the bill" directly above a finding worth $374.93. The
        * first number a buyer reads contradicted the body of the same page.
        *
-       * These two levers may be added rather than compounded, and that is a claim about the
-       * token classes rather than a convenience: cache headroom re-prices FRESH INPUT tokens
-       * into cache reads; TTL right-sizing re-prices CACHE-WRITE tokens from 2x to 1.25x. The
-       * sets are disjoint, so no token is discounted twice and the sum is exact. Any future
-       * finding that touches fresh input must compound here instead — the register's own rule
-       * is that levers multiply and a sum overstates. tests/recoverable.test.ts pins both the
-       * arithmetic and the disjointness assumption.
+       * These two levers COMPOUND — they are not a plain sum. The earlier claim here, that
+       * cache headroom touches only fresh input while TTL right-sizing touches only cache
+       * writes, was false: the headroom simulation replaces the observed write volume with
+       * a synthetic one, so it also removes cache-write cost — and adding the full TTL
+       * premium back on top could put "Recoverable" above 100% of the bill (found
+       * 2026-08-21 by an adversarial review pass; the register's own rule is that levers
+       * multiply and a sum overstates). So the TTL premium is scaled, per model, by the
+       * share of one-hour write volume the simulated regime actually keeps — a premium
+       * cannot be recovered on a write the simulation already removed.
+       *
+       * The headline is the better of the two provable roadmaps: (target cache regime +
+       * TTL right-sizing on the writes that survive it) or (keep traffic as-is and only
+       * right-size the TTLs). Both are real offers; printing the larger one never
+       * overstates either. tests/recoverable.test.ts pins the arithmetic, the bill
+       * ceiling, and the headline-vs-finding ordering.
        */
-      allMeasured: money(sim.attribution.combinedSavedMicroCents + Math.max(0, ttl.recoverableMicroCents)),
+      allMeasured: money(Math.max(
+        sim.attribution.combinedSavedMicroCents + Object.entries(ttl.recoverableMicroCentsByModel).reduce(
+          (s, [model, mc]) => s + Math.round(Math.max(0, mc) * (sim.attribution.surviving1hWriteRatioByModel[model] ?? 1)), 0),
+        Math.max(0, ttl.recoverableMicroCents),
+      )),
     },
     savingsPct: {
       cacheOnly: pct1(sim.attribution.cacheOnlySavedMicroCents, baseline),
@@ -277,18 +427,12 @@ export function buildReport(input: {
       cost: money(sim.cacheHeadroom.microCents),
       saved: money(sim.cacheHeadroom.savedMicroCents),
     },
-    findings: ttl.recoverableMicroCents > 0 ? [{
-      lever: "cache-write TTL right-sizing",
-      evidence: ttl.evidence,
-      saved: money(ttl.recoverableMicroCents),
-      detail:
-        `${ttl.overBoughtTokens.toLocaleString("en-US")} tokens were written at the 1-hour TTL (2x base input) ` +
-        `and re-read within 5 minutes, where the 5-minute TTL (1.25x) would have served. ` +
-        `ttl is metadata the model never reads: same prompt, same model, same output.` +
-        (ttl.neverReReadTokens > 0
-          ? ` A further ${ttl.neverReReadTokens.toLocaleString("en-US")} 1-hour tokens were never re-read at all — that is waste, a separate lever, and is not counted here.`
-          : ""),
-    }] : [],
+    batchTier: sim.batchTier && {
+      targetSharePct: sim.batchTier.targetSharePct,
+      cost: money(sim.batchTier.microCents),
+      saved: money(sim.batchTier.savedMicroCents),
+    },
+    findings,
     assumptions: [
       { name: "cacheHitRate", value: `${observedPct}%`, kind: "measured",
         note: "computed from real cache_read vs input tokens" },
@@ -303,11 +447,18 @@ export function buildReport(input: {
         note: "observed per-project split" },
       { name: "cacheWriteOverhead", value: `${writeOverheadPct}%`, kind: "operator_set",
         note: "writes needed to sustain the simulated hit rate, as a share of cache-eligible input; the observed write volume describes the old regime and cannot be carried over" },
+      ...(sim.batchTier ? [{
+        name: "batchShareTarget", value: `${sim.batchTier.targetSharePct}%`, kind: "operator_set" as const,
+        note: "share of standard-tier traffic asserted to tolerate async batch processing; the 50% is the provider's published price, not a measurement",
+      }] : []),
       { name: "rateCard", value: card.capturedAt, kind: "operator_set",
         note: "list prices, refreshed by hand" },
     ],
     provenance: { ...provenance, skipped: metrics.skipped },
     ttlRightSizing: ttl,
+    ttlCrossing: input.ttlCrossing,
+    spendAnomaly: input.spendAnomaly,
+    coverage: COVERAGE,
     warnings,
     humanSummary,
   };

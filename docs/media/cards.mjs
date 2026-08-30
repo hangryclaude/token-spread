@@ -24,12 +24,11 @@ const ROOT = join(HERE, "..", "..");
 const ART = join(HERE, "art");
 const OUT = join(HERE, "cards");
 
-/* Both cohorts, same list the site publishes and tests/publishedCounts.test.ts reconciles.
-   Reading only the first file rendered a card that disagreed with every page around it. */
-const entries = [
-  "docs/research/2026-08-10-verdicts-final.json",
-  "docs/research/2026-08-12-addendum.json",
-].flatMap((f) => JSON.parse(readFileSync(join(ROOT, f), "utf8")));
+/* The manifest, not a hand-list. This file used to name two cohorts while cohorts.json grew to
+   seven — the exact "cohort added to two of the three lists" drift publishedCounts.test.ts warns
+   about, and the card was quietly drawing a 187-era tally under a README that said 335. */
+const entries = JSON.parse(readFileSync(join(ROOT, "docs/research/cohorts.json"), "utf8"))
+  .flatMap((f) => JSON.parse(readFileSync(join(ROOT, "docs/research", f), "utf8")));
 const tally = (v) => entries.filter((e) => e.strictVerdict === v).length;
 const PASSING = ["PASS_ABSOLUTE", "PASS_METADATA", "PASS_SCHEDULING", "PASS_REPLAY"];
 const N = {

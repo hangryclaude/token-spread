@@ -18,6 +18,12 @@
     display:flex;flex-direction:column;justify-content:center;padding:0 88px;position:relative;
     overflow:hidden;-webkit-font-smoothing:antialiased}
 
+  /* Higgsfield backdrop (docs/media/art/hero.jpg, provenance.json) — banner.mjs inlines it as
+     base64 at render time. The left of the frame is near-black by prompt, so the type needs no
+     scrim; the veil is insurance against a future, busier backdrop. */
+  .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:right center}
+  .veil{position:absolute;inset:0;background:linear-gradient(90deg,rgba(12,17,16,.92) 0%,rgba(12,17,16,.55) 46%,rgba(12,17,16,0) 78%)}
+
   /* a 28px grid — the unit Claude bills vision in, and the unit this repo is about */
   .grid{position:absolute;inset:0;
     background:
@@ -46,6 +52,8 @@
   .stat b.acc{color:var(--acc)}
 </style></head>
 <body>
+  <img class="bg" data-backdrop alt="">
+  <div class="veil"></div>
   <div class="grid"></div>
 
   <div class="top"><div class="dot"></div><div class="name">token-spread</div></div>
@@ -55,10 +63,13 @@
   <p class="sub">A read-only audit of what your Claude usage actually costs — and which
     savings survive the test that the model must read the same bytes.</p>
 
+  <!-- Live slots: banner.mjs computes these from the register and the suite at render time.
+       The em-dashes are deliberate — a hand-render of this file publishes placeholders, not
+       stale digits. 66/123 sat here hand-typed for weeks while the truth moved to 335/276. -->
   <div class="row">
-    <div class="stat"><b class="acc">66</b><span>levers adjudicated</span></div>
-    <div class="stat"><b>123</b><span>tests passing</span></div>
+    <div class="stat"><b class="acc" data-live="total">—</b><span>techniques adjudicated</span></div>
+    <div class="stat"><b data-live="pass">—</b><span>pass the identity bar</span></div>
+    <div class="stat"><b data-live="tests">—</b><span>tests passing</span></div>
     <div class="stat"><b>0</b><span>bytes written</span></div>
-    <div class="stat"><b>0</b><span>prompts read</span></div>
   </div>
 </body></html>

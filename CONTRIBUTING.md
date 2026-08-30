@@ -28,7 +28,7 @@ advertising. If you can make the number go down, you have done the most useful p
 
 Same shape, titled `technique: <name>`. Bring the mechanism, the source with a quote, and your
 own read on which verdict class it lands in. Expect it to be adjudicated adversarially — roughly
-a third of what fourteen research sweeps proposed died on verification, most often because a
+over a third of what seventeen research sweeps proposed died on verification, most often because a
 cited tool could not be found or a quote was inflated into a stronger claim than the source made.
 
 Techniques that **change** what the model reads are welcome and are not second-class: they go in

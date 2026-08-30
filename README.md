@@ -11,7 +11,7 @@ zero margin). By serving the **same request to the same model** more cheaply tha
 customer can buy it direct. That gap is the business — and it survives scrutiny only
 because nothing about the request changes.
 
-`210 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
+`268 tests` &nbsp;·&nbsp; `0 bytes written` &nbsp;·&nbsp; `0 prompts read` &nbsp;·&nbsp; `no runtime dependencies` &nbsp;·&nbsp; `bun + TypeScript`
 
 <sub>Code **[MIT](LICENSE)** · the register **[CC BY 4.0](docs/research/LICENSE)** — quote any
 verdict, credit the source, so a correction can reach you. [How to cite](CITATION.cff)</sub>
@@ -48,8 +48,8 @@ out the largest number anyone can put on a slide. What is left is smaller, and t
 | Compaction accounting | `PASS_ABSOLUTE` | nothing — it corrects a mis-read bill |
 | Batch tier | `CONTRACTUAL_ONLY` | when the work runs. Off by default |
 
-226 candidate techniques were adjudicated against that question — **47 pass**, **61 pass on
-the provider's word alone**, **69 rejected**, **49 unresolved**. Those four add to 226; a
+335 candidate techniques were adjudicated against that question — **73 pass**, **84 pass on
+the provider's word alone**, **118 rejected**, **60 unresolved**. Those four add to 335; a
 register that quietly drops a category is doing the thing it exists to prevent. The working is in
 [`docs/research/2026-08-10-strict-identity-register.md`](docs/research/2026-08-10-strict-identity-register.md).
 
@@ -62,6 +62,9 @@ curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/r
 curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-12-addendum.json
 curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-17-sweep-12-recovered.json
 curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-17-sweep-13.json
+curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-19-sweep-14.json
+curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-20-sweep-15.json
+curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-21-sweep-16.json
 ```
 
 The format is documented in [`SCHEMA.md`](docs/research/SCHEMA.md) and enforced by
@@ -71,7 +74,7 @@ month can be checked against what it says today.
 
 <div align="center">
 
-<img src="docs/media/register.gif" alt="The question, then 226 candidates sorting into 47 that pass the bar, 61 that pass on the provider's word alone, 69 rejected and 49 unresolved" width="820">
+<img src="docs/media/register.gif" alt="The question, then 335 candidates sorting into 73 that pass the bar, 84 that pass on the provider's word alone, 118 rejected and 60 unresolved" width="820">
 
 <sub>Rendered by <a href="docs/media/render.mjs"><code>docs/media/render.mjs</code></a> — the four
 counts are read from the verdict file at render time, never typed into the film.</sub>
@@ -275,7 +278,7 @@ traffic. The example is the shape, not your bill.
 
 ```bash
 bun install                              # no runtime deps
-bun run test        # 210 tests
+bun run test        # 268 tests
 bun run typecheck   # no type errors
 bun run src/cli.ts --dir ~/.claude/projects
 ```
@@ -340,7 +343,7 @@ docs/specs/              the design spec (+ a rendered HTML copy)
 
 ## Research
 
-<img src="docs/media/cards/register.jpg" alt="226 techniques adjudicated: 47 pass the bar, 61 pass on the provider's word alone, 69 rejected outright, 49 unresolved and stated as unresolved." width="820">
+<img src="docs/media/cards/register.jpg" alt="335 techniques adjudicated: 73 pass the bar, 84 pass on the provider's word alone, 118 rejected outright, 60 unresolved and stated as unresolved." width="820">
 
 | Document | |
 |---|---|

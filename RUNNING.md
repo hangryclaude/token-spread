@@ -68,6 +68,7 @@ something this machine has exercised — use `bun run audit` for anything that m
 | `--json` | off | emit the full report object |
 | `--cache-target <n>` | `max(observed, 90)` | simulated cache-hit target, integer percent |
 | `--write-overhead <n>` | measured | cache-write overhead assumption, integer percent |
+| `--batch-share <n>` | off | standard-tier share priced via Message Batches — opt-in, contractual 50%, never in a measured figure |
 | `--only <file>` | — | restrict to one transcript file |
 | `--help` | — | every flag, with examples |
 | `--version` | — | the version |
@@ -110,7 +111,7 @@ asserted by a test.
 ## Verify the build
 
 ```bash
-bun run test        # 210 tests
+bun run test        # 268 tests
 bunx tsc --noEmit   # no type errors
 ```
 

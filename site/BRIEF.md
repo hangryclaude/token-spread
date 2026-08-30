@@ -84,7 +84,7 @@ Truth rules, not the budget.
   iteration usage."*
 
 ### The tool itself
-- **276 tests**, **0 bytes written** to any input, **0 prompts read**, no runtime dependencies.
+- **360 tests**, **0 bytes written** to any input, **0 prompts read**, no runtime dependencies.
 - Five tests spawn the real CLI and assert every input file is byte-identical afterwards.
 - Reads local Claude Code transcripts at every depth, **or** an organisation's Admin usage report.
 

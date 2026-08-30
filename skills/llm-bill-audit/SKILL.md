@@ -102,7 +102,7 @@ Each is pitched as billing hygiene or budget safety. Every one fails the bar: th
 | 229 | Synthetic max_tokens=1 keep-alive pings (aider) | FAIL |
 | 230 | Client-side double-counting of Anthropic cache tokens (aider) | PASS_ABSOLUTE (mostly retracted/dead code) |
 | 231 | OpenAI-compatible gateway loses cache-write accounting (opencode) | PASS_ABSOLUTE |
-| 250 | LiteLLM Bedrock 1h-TTL cache-write mispricing PR | INSUFFICIENT_EVIDENCE |
+| 250 | LiteLLM Bedrock 1h-TTL cache-write mispricing PR | PASS_ABSOLUTE |
 | 264 | Anthropic long-context cache tiering bug (Helicone) | PASS_ABSOLUTE |
 | 265 | Threshold-pricing dead code for OpenAI/Azure/OpenRouter (Helicone) | PASS_ABSOLUTE |
 | 266 | Gemini thinking-token omission undercounts Langfuse cost ~2.2x | PASS_ABSOLUTE |

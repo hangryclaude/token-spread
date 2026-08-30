@@ -228,7 +228,7 @@ placement, and after any provider/proxy upgrade:
 | 167 | Canonical 4-breakpoint pattern: system + tools + last-2-user-turns | PASS_METADATA |
 | 169 | Cross-provider trap: explicit cache_control markers actively HURT Gemini | PASS_METADATA |
 | 173 | 1-hour vs 5-minute cache TTL selection for long-latency agent loops | PASS_METADATA |
-| 250 | LiteLLM Bedrock 1h-TTL cache-write mispricing correction | INSUFFICIENT_EVIDENCE |
+| 250 | LiteLLM Bedrock 1h-TTL cache-write mispricing correction | PASS_ABSOLUTE |
 | 253 | LiteLLM Bedrock guardrails silently drop cache_control when rewriting... | INSUFFICIENT_EVIDENCE |
 | 254 | LiteLLM proxy mutated the caller's shared message/tool list, silently... | INSUFFICIENT_EVIDENCE |
 | 279 | AWS Bedrock GPT-5.6 caching: writes go from free (auto-cache) to 1.25... | INSUFFICIENT_EVIDENCE |

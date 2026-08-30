@@ -63,7 +63,7 @@ running the challenge both ways:
 | id | technique | proposed | votes | retained |
 |---:|---|---|---|---|
 | 13 | prompt-cache-key / prompt-cache-key-rs — canonical hash of cacheable scope | PASS_ABSOLUTE | refute/refute | **INSUFFICIENT_EVIDENCE** |
-| 15 | cachebench / cachebench-rs — per-call hit-ratio + cost instrumentation | PASS_ABSOLUTE | refute/refute | **INSUFFICIENT_EVIDENCE** |
+| 15 | cachebench / cachebench-rs — per-call hit-ratio + cost instrumentation | PASS_ABSOLUTE | refute/refute | **PASS_METADATA** |
 | 17 | prompt-pillar — find_stable_prefix() diagnostic | PASS_ABSOLUTE | allow/refute | **INSUFFICIENT_EVIDENCE** |
 | 19 | cache-audit — 6-rule static audit | PASS_ABSOLUTE | refute/refute | **INSUFFICIENT_EVIDENCE** |
 | 20 | cache-refund — gap-classification of recoverable cache misses | PASS_ABSOLUTE | refute/refute | **INSUFFICIENT_EVIDENCE** |

@@ -5,3 +5,4 @@ dist/
 bench/result.json
 site/out/
 bench/.snapshot.json
+site/assets/film-src/

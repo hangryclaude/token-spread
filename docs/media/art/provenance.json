@@ -1,37 +1,41 @@
 {
+  "_generator": "Higgsfield Soul 2.0 (text2image_soul_v2, quality 2k, aspect 16:9), higgsfield CLI, generated 2026-08-30. Downscaled to 1280x720 with ffmpeg. Previous fal-ai/flux/dev set lives in git history before this date. Backdrops only — every word and number is composed on top by docs/media/cards.mjs, never generated.",
   "bar": {
-    "model": "fal-ai/flux/dev",
-    "prompt": "abstract non-representational technical illustration, no text, no letters, no numbers, no logos, no user interface, deep near-black background #0b0f0d, a single restrained emerald green accent #0a7d45, fine hairline geometry, generous empty space, matte, calm, editorial, flat depth, no lens flare, no 3d render sheen, two identical parallel horizontal lines held in perfect register against a dark field, one faint vertical measure between them, the composition of a comparison that finds no difference",
-    "seed": 442058306,
-    "width": 1280,
-    "height": 720
+    "model": "higgsfield/text2image_soul_v2",
+    "job": "2f03d647-d02f-4a76-be69-5ba03bcd31ca",
+    "prompt": "abstract non-representational technical illustration, no text, no letters, no numbers, no logos, no user interface, deep near-black background, obsidian and graphite tones, a single luminous emerald green accent, two identical parallel horizontal light filaments held in perfect register against a vast dark field, one faint vertical measuring hairline between them, ultra-fine micro-detail, subtle volumetric glow, cinematic depth, premium editorial sci-fi minimalism, matte surfaces, generous empty space, the composition of a comparison that finds no difference",
+    "seed": 442058
   },
   "register": {
-    "model": "fal-ai/flux/dev",
-    "prompt": "abstract non-representational technical illustration, no text, no letters, no numbers, no logos, no user interface, deep near-black background #0b0f0d, a single restrained emerald green accent #0a7d45, fine hairline geometry, generous empty space, matte, calm, editorial, flat depth, no lens flare, no 3d render sheen, a dense field of small uniform marks sorted into four unequal vertical bands of differing density, the largest band sparse and the smallest dense, an act of adjudication seen from above",
-    "seed": 429457749,
-    "width": 1280,
-    "height": 720
+    "model": "higgsfield/text2image_soul_v2",
+    "job": "67d6234c-3b8c-4b90-82a5-de0cc08bd860",
+    "prompt": "abstract non-representational technical illustration, no text, no letters, no numbers, no logos, no user interface, deep near-black background, obsidian and graphite tones, a single luminous emerald green accent, ultra-fine micro-detail, subtle volumetric glow, cinematic depth, premium editorial sci-fi minimalism, matte surfaces, generous empty space, a dense field of thousands of small uniform luminous marks sorted into four unequal vertical bands of differing density, the largest band sparse and the smallest dense, seen from above like an act of adjudication, faint emerald light rising from the densest band",
+    "seed": 429457
   },
   "reads": {
-    "model": "fal-ai/flux/dev",
-    "prompt": "abstract non-representational technical illustration, no text, no letters, no numbers, no logos, no user interface, deep near-black background #0b0f0d, a single restrained emerald green accent #0a7d45, fine hairline geometry, generous empty space, matte, calm, editorial, flat depth, no lens flare, no 3d render sheen, a stream of small particles passing through a narrow aperture where almost all of them are turned away and only a thin filtered remainder continues, restraint rather than capture",
-    "seed": 2097425868,
-    "width": 1280,
-    "height": 720
+    "model": "higgsfield/text2image_soul_v2",
+    "job": "9b316499-ae2b-45de-92c9-f4766966f28e",
+    "prompt": "abstract non-representational technical illustration, no text, no letters, no numbers, no logos, no user interface, deep near-black background, obsidian and graphite tones, a single luminous emerald green accent, ultra-fine micro-detail, subtle volumetric glow, cinematic depth, premium editorial sci-fi minimalism, matte surfaces, generous empty space, a stream of small luminous particles flowing toward a narrow aperture in a dark wall where almost all of them are turned away and dim, only a thin filtered emerald remainder continuing through, restraint rather than capture",
+    "seed": 209742
   },
   "gate": {
-    "model": "fal-ai/flux/dev",
-    "prompt": "abstract non-representational technical illustration, no text, no letters, no numbers, no logos, no user interface, deep near-black background #0b0f0d, a single restrained emerald green accent #0a7d45, fine hairline geometry, generous empty space, matte, calm, editorial, flat depth, no lens flare, no 3d render sheen, a single closed horizontal barrier across an otherwise empty field with one mark stopped hard against it, the emerald accent used only at the point of contact",
-    "seed": 1523702993,
-    "width": 1280,
-    "height": 720
+    "model": "higgsfield/text2image_soul_v2",
+    "job": "df3b3f22-2a8f-4b7d-9745-cc27f4a569db",
+    "prompt": "abstract non-representational technical illustration, absolutely no text, no letters, no glyphs, no writing, no symbols, no numbers, no logos, no user interface, deep near-black background, obsidian and graphite tones, a single luminous emerald green accent, ultra-fine micro-detail, subtle volumetric glow, cinematic depth, premium editorial sci-fi minimalism, matte surfaces, one long unbroken horizontal bar of dark smoked glass spanning the full width of an otherwise empty field, a single small round luminous emerald orb stopped hard against the upper edge of the bar, a faint emerald halo only at the exact point of contact, everything else still and near-black",
+    "seed": 915533,
+    "note": "second take — the first (efea2032-f624-4651-b501-ada59c835878) rendered a scrawl, not a mark stopped at a barrier"
   },
   "bands": {
-    "model": "fal-ai/flux/dev",
-    "prompt": "abstract non-representational technical illustration, no text, no letters, no numbers, no logos, no user interface, deep near-black background #0b0f0d, a single restrained emerald green accent #0a7d45, fine hairline geometry, generous empty space, matte, calm, editorial, flat depth, no lens flare, no 3d render sheen, three broad horizontal strata of visibly different particle density stacked in one dark field, the sparsest at the top and the densest at the bottom, a thin hairline separating each, geological and calm",
-    "seed": 704777087,
-    "width": 1280,
-    "height": 720
+    "model": "higgsfield/text2image_soul_v2",
+    "job": "20081e30-8346-483b-94bf-71b4fa1145da",
+    "prompt": "abstract non-representational technical illustration, no text, no letters, no numbers, no logos, no user interface, deep near-black background, obsidian and graphite tones, a single luminous emerald green accent, ultra-fine micro-detail, subtle volumetric glow, cinematic depth, premium editorial sci-fi minimalism, matte surfaces, generous empty space, three broad horizontal strata of visibly different particle density stacked in one dark field, the sparsest at the top and the densest at the bottom glowing faint emerald, a thin hairline separating each, geological and calm",
+    "seed": 704777
+  },
+  "og": {
+    "model": "higgsfield/text2image_soul_v2",
+    "job": "c7f240fc-e5eb-4ea4-b127-034c71685404",
+    "prompt": "abstract non-representational technical illustration, absolutely no text, no letters, no glyphs, no writing, no symbols, no numbers, no logos, no user interface, deep near-black background, obsidian and graphite tones, a single luminous emerald green accent, ultra-fine micro-detail, subtle volumetric glow, cinematic depth, premium editorial sci-fi minimalism, matte surfaces, a centered symmetrical composition, a wide thin emerald spread between two long dark horizontal ledger lines, faint luminous particulate drifting between them, everything else near-black, monumental and calm",
+    "seed": 662140,
+    "note": "backdrop for the GitHub social-preview (OG) image, not a README card"
   }
 }

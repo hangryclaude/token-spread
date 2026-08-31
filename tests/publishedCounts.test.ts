@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { cohortFiles, loadRegister, tally } from "../src/register/load";
+import { duplicateIds } from "../src/register/ids";
 
 /**
  * The site publishes the register's tally as four hand-typed numbers. Nothing tied them to the
@@ -12,39 +14,32 @@ import { readFileSync } from "node:fs";
  * not less, as the register grows — every new candidate moves all five figures.
  */
 
-/* Two cohorts, kept in separate files on purpose. The 176 were adjudicated by one process in
+/* Cohorts are kept in separate files on purpose. The 176 were adjudicated by one process in
    August; the addendum is what nine later sweeps produced, each entry re-verified against its
    primary source by hand before being written down. Merging them into one file would lose which
    process produced which verdict, and that provenance is the thing being sold. Merging them for
    the published TALLY is right, because a reader counting techniques does not care which week
-   they were judged in — but the ids must not collide, which is what the test below enforces. */
-const COHORTS = [
-  "docs/research/2026-08-10-verdicts-final.json",
-  "docs/research/2026-08-12-addendum.json",
-];
-type Entry = { id: number; strictVerdict: string; name: string };
-const entries: Entry[] = COHORTS.flatMap((f) => JSON.parse(readFileSync(f, "utf8")) as Entry[]);
+   they were judged in — but the ids must not collide, which is what the test below enforces.
+
+   Which files those are lives in docs/research/cohorts.json, not here: this test, the film and
+   the CLI all read the register, and a cohort added to two of the three lists is the same class
+   of drift this whole file exists to catch. */
+const entries = loadRegister();
 
 test("no two register entries share an id", () => {
   // Two cohorts numbered independently would silently double-count or overwrite on any future
-  // merge, and the published total is derived from length rather than from max(id).
-  const ids = entries.map((e) => e.id);
-  const dupes = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
+  // merge, and the published total is derived from length rather than from max(id). This is not
+  // hypothetical: the 2026-08-12 sweep brief numbered its findings 185-199 while the verdict
+  // files already held 185 and 186, and thirteen of them went unmerged for five days.
+  const dupes = duplicateIds(entries);
   expect(dupes, `duplicate register ids across cohorts: ${dupes.join(", ")}`).toEqual([]);
 });
 
-const tally = (v: string) => entries.filter((e) => e.strictVerdict === v).length;
 /* "Pass the bar" is the four classes where identity is demonstrable. CONTRACTUAL_ONLY is
    deliberately not among them — the provider asserts neutrality and we cannot verify it — which
    is exactly why it needs its own published number rather than being folded in or dropped. */
 const PASSING = ["PASS_ABSOLUTE", "PASS_METADATA", "PASS_SCHEDULING", "PASS_REPLAY"];
-const counts = {
-  total: entries.length,
-  pass: PASSING.reduce((n, v) => n + tally(v), 0),
-  contractual: tally("CONTRACTUAL_ONLY"),
-  rejected: tally("FAIL"),
-  unresolved: tally("INSUFFICIENT_EVIDENCE"),
-};
+const counts = tally(entries);
 
 test("every verdict is a class the site knows how to publish", () => {
   const known = new Set([...PASSING, "CONTRACTUAL_ONLY", "FAIL", "INSUFFICIENT_EVIDENCE"]);
@@ -101,15 +96,36 @@ const READERS: Record<string, Record<string, RegExp>> = {
   "README.md": {
     total: /(\d+) candidate techniques were adjudicated/,
     pass: /\*\*(\d+) pass\*\*/,
-    contractual: /\*\*(\d+) pass on\n?the provider's word alone\*\*/,
+    contractual: /\*\*(\d+) pass on\s+the provider's word alone\*\*/,
     rejected: /\*\*(\d+) rejected\*\*/,
     unresolved: /\*\*(\d+) unresolved\*\*/,
+  },
+  /* The alt text on the two register images restates the whole tally, and both said "51
+     rejected" against a register holding 52 — stale since the day four entries were expelled
+     from the passing column. Nothing read them, because every reader above stops at the prose.
+     A sighted reader saw the correct figure in the picture; a screen-reader user was told a
+     different one, which is the one audience this project cannot afford to hand a wrong number.
+     Keyed `file#label` so two independent claims in one file each get their own reader — the
+     same idiom publishedTestCount.test.ts uses for the README's two test counts. */
+  "README.md#alt-gif": {
+    total: /then (\d+) candidates sorting into/,
+    pass: /sorting into (\d+) that pass the bar/,
+    contractual: /pass the bar, (\d+) that pass on the provider's word alone/,
+    rejected: /that pass on the provider's word alone, (\d+) rejected and/,
+    unresolved: /(\d+) unresolved" width=/,
+  },
+  "README.md#alt-card": {
+    total: /(\d+) techniques adjudicated: /,
+    pass: /techniques adjudicated: (\d+) pass the bar/,
+    contractual: /pass the bar, (\d+) pass on the provider's word alone/,
+    rejected: /pass on the provider's word alone, (\d+) rejected outright/,
+    unresolved: /rejected outright, (\d+) unresolved and stated as unresolved/,
   },
 };
 
 for (const [page, reader] of Object.entries(READERS)) {
   test(`${page} publishes the counts the data actually holds`, () => {
-    const html = readFileSync(page, "utf8");
+    const html = readFileSync(page.split("#")[0]!, "utf8");
     const found = Object.fromEntries(
       Object.entries(reader).map(([k, re]) => [k, html.match(re) ? Number(html.match(re)![1]) : null]),
     ) as Record<string, number | null>;
@@ -133,3 +149,66 @@ for (const [page, reader] of Object.entries(READERS)) {
     }
   });
 }
+
+/* Each reader above aims at one number in one place, which is precise and leaves everything it
+   was not aimed at unwatched: two meta descriptions, the headlines that repeat "N techniques, M
+   survive", the "those four add to N" sums, the entry count in SCHEMA.md. The alt text sat in
+   that gap for five days carrying the wrong figure.
+
+   This is the coarse net under the fine one. It does not know which bucket a number belongs to —
+   the readers do that — it only asserts that a figure standing next to a register word is still
+   one of the five the register currently holds. That catches the failure that actually happens:
+   the register grows, one copy is updated, a second is forgotten. */
+const SCANNED = [
+  "README.md",
+  "site/index.html",
+  "site/methods.html",
+  "site/index-scroll.html",
+  "docs/research/SCHEMA.md",
+];
+const BUCKET_WORD = /(\d{1,4}) (?:candidates?|techniques?|entries|passes|pass|rejected|unresolved|survives?|survive)\b/gi;
+const SUM = /adds? to (\d+)/gi;
+
+test("no published file states a register number that is no longer one", () => {
+  const live = new Set<number>(Object.values(counts));
+  const wrong = new Set<string>();
+  for (const file of SCANNED) {
+    /* A page may recount the register's own history — the founding 176, the 71→59→49→47 audit —
+       and a dated historical tally is not a stale current claim; it is the story this register
+       exists to tell. Those passages sit inside explicit markers so the exemption is visible in
+       the source, and everything outside them is still held to the live tally. An unclosed
+       marker fails loudly rather than silently exempting the rest of the file. */
+    let raw = readFileSync(file, "utf8");
+    const open = (raw.match(/<!-- dated-history -->/g) ?? []).length;
+    const close = (raw.match(/<!-- \/dated-history -->/g) ?? []).length;
+    expect(open, `${file}: ${open} dated-history openers vs ${close} closers`).toBe(close);
+    raw = raw.replace(/<!-- dated-history -->[\s\S]*?<!-- \/dated-history -->/g, " ");
+    /* Two haystacks, because neither alone sees every claim. Stripping tags is what joins
+       "<strong>67</strong>" to the "pass the bar" after it — but a tag is also where alt= and
+       content= keep their text, so stripping deletes the meta descriptions and the image alt
+       text wholesale. Scanning the raw file catches those and misses the split ones. The union
+       sees both; a claim caught twice is reported once. */
+    for (const text of [raw.replace(/<[^>]+>/g, " "), raw].map((t) => t.replace(/\s+/g, " "))) {
+      for (const m of text.matchAll(BUCKET_WORD)) {
+        if (!live.has(Number(m[1]))) wrong.add(`${file}: "${m[0]}" is not any current count`);
+      }
+      for (const m of text.matchAll(SUM)) {
+        if (Number(m[1]) !== counts.total) wrong.add(`${file}: "${m[0]}" — the four add to ${counts.total}`);
+      }
+    }
+  }
+  expect([...wrong], `published copy carries stale register numbers:\n  ${[...wrong].join("\n  ")}`).toEqual([]);
+});
+
+test("the README hands out every cohort file, and only files that exist", () => {
+  /* The README used to say "two JSON files" and print two curl lines. Both were true on the day
+     they were written and neither knew about a third cohort. A reader who takes the register at
+     its word gets a silently partial copy — worse than a broken link, because it looks complete
+     and its tally will not match the site's. */
+  const readme = readFileSync("README.md", "utf8");
+  const published = [...readme.matchAll(/raw\.githubusercontent\.com\/[^\s]*?\/docs\/research\/([^\s`]+\.json)/g)]
+    .map((m) => m[1]!);
+  const expected = cohortFiles();
+  expect([...published].sort(), `README publishes ${published.length} cohort URLs, cohorts.json lists ${expected.length}`)
+    .toEqual([...expected].sort());
+});

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { loadCohorts, loadRegister, type Entry } from "../src/register/load";
 
 /**
  * The register's format, enforced.
@@ -12,12 +12,7 @@ import { readFileSync } from "node:fs";
  * docs/research/SCHEMA.md is the contract. This is the enforcement.
  */
 
-const COHORTS = [
-  "docs/research/2026-08-10-verdicts-final.json",
-  "docs/research/2026-08-12-addendum.json",
-];
-type Entry = Record<string, unknown> & { id: number; name: string; strictVerdict: string };
-const entries: Entry[] = COHORTS.flatMap((f) => JSON.parse(readFileSync(f, "utf8")) as Entry[]);
+const entries: Entry[] = loadRegister();
 
 const REQUIRED = ["id", "name", "strictVerdict", "reasoning", "savings", "provenance", "telemetrySignal", "providers"];
 const VERDICTS = new Set([
@@ -93,4 +88,23 @@ test("ids are unique and stable enough to cite", () => {
   const dupes = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
   expect(dupes, `duplicate ids break citation: ${dupes.join(", ")}`).toEqual([]);
   expect(ids.every((id) => Number.isInteger(id) && id >= 0)).toBe(true);
+});
+
+test("entries adjudicated from 2026-08-17 carry a dated source, not \"this session\"", () => {
+  /* SCHEMA.md documents verifiedAgainst as "the source re-read, with the date". Of the 98
+     entries carrying the field before this rule existed, none carried a date — they say "this
+     session", which was unambiguous to whoever typed it and is unrecoverable now. Those stay as
+     written, because rewriting them would be inventing a date. From the cohort that introduced
+     this test onward the field means what the schema says it means, so `register stale` has
+     something better to read than a filename. */
+  const bad: string[] = [];
+  for (const { file, entries: inFile } of loadCohorts()) {
+    const cohortDate = /^(\d{4}-\d{2}-\d{2})/.exec(file)?.[1];
+    if (cohortDate === undefined || cohortDate < "2026-08-17") continue;
+    for (const e of inFile) {
+      const src = typeof e.verifiedAgainst === "string" ? e.verifiedAgainst : "";
+      if (!/\b20\d{2}-\d{2}-\d{2}\b/.test(src)) bad.push(`${file} id ${e.id}: ${src || "(no verifiedAgainst)"}`);
+    }
+  }
+  expect(bad, `entries in a post-2026-08-17 cohort with no dated source:\n  ${bad.join("\n  ")}`).toEqual([]);
 });

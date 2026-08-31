@@ -1,145 +1,173 @@
 [
- {
-  "id": 176,
-  "name": "Zero-output refusals are not billed (Anthropic, from 2026-06-02)",
-  "strictVerdict": "PASS_ABSOLUTE",
-  "reasoning": "Anthropic's API release notes, 2026-06-02: \"On the Claude API, you are no longer billed for a request when it returns stop_reason: 'refusal' without Claude having generated any output.\" Restated 2026-06-09 alongside the Fable 5 launch: \"You are not billed for a request refused before any output is generated.\" Both fetched directly from platform.claude.com/docs/en/release-notes/api on 2026-08-12. This is not a lever anyone can pull — nobody engineers refusals — but it corrects an assumption a cost model can easily hold, which is the same shelf as the compaction entry. Identity is preserved structurally rather than by assertion: a refusal with zero output cannot differ in output from a refusal with zero output, so this does not rest on the provider's word about neutrality the way a batch-tier claim does. What DOES rest on their word is the zero itself; a usage report showing refusal events at $0.00 would upgrade the evidence from documented to measured.",
-  "savings": "Not a lever. Removes a cost a model of the bill may wrongly assume.",
-  "provenance": "primary-doc, release notes, fetched 2026-08-12",
-  "telemetrySignal": "stop_reason=\"refusal\" with output_tokens=0",
-  "providers": [
-   "anthropic"
-  ],
-  "verifiedAgainst": "platform.claude.com/docs/en/release-notes/api"
- },
- {
-  "id": 177,
-  "name": "Sonnet 5 introductory pricing became the standard price; the 2026-09-01 rise was cancelled",
-  "strictVerdict": "PASS_ABSOLUTE",
-  "reasoning": "Anthropic's API release notes, 2026-08-10: \"The introductory pricing for Claude Sonnet 5 ($2 / $10 per MTok) is now the standard price: the previously scheduled increase to $3 / $15 per MTok on September 1, 2026 will not occur.\" Fetched directly 2026-08-12. Recorded as an entry rather than a footnote because this repo got it wrong in the most instructive way available: the errata table whose job is catching stale prices called the rise \"the most time-boxed item in the register\" on 2026-08-11, one day after it was cancelled, and src/rates.ts carried the post-lapse $3/$15 for three days — which over-stated Sonnet cost by 50% and every saving measured against it by the same margin. A cancelled future event is the failure mode a lapse date cannot see: lapsesDue() correctly reports a lapse that has passed and has no way to know one was called off. Only re-reading the source finds it.",
-  "savings": "None. Prevents a 50% over-statement of Sonnet 5 cost and of every saving measured against it.",
-  "provenance": "primary-doc, release notes, fetched 2026-08-12",
-  "telemetrySignal": "none — this is a rate-card fact",
-  "providers": [
-   "anthropic"
-  ],
-  "verifiedAgainst": "platform.claude.com/docs/en/release-notes/api"
- },
- {
-  "id": 178,
-  "name": "A PDF page bills twice: extracted text AND a rendered page image, unconditionally",
-  "strictVerdict": "PASS_ABSOLUTE",
-  "reasoning": "platform.claude.com/docs/en/build-with-claude/pdf-support, fetched 2026-08-12: \"The system converts each page of the document into an image\" and \"The text from each page is extracted and provided alongside each page's image,\" with \"Each page typically uses 1,500-3,000 tokens\" of text on top of the image tokens. Both charges apply to every page of every document block; the docs offer no way to take one without the other. Like the compaction entry this changes nothing about the request — it corrects a bill the customer is misreading, and document-heavy workloads are exactly where a cost model built on text-token estimates diverges most from the invoice. The obvious remedy is NOT a lever and must not be published as one: extracting the text locally and sending it as plain text drops the chart, table and layout content the model was reading from the page image, so it changes what the model reads and fails the bar.",
-  "savings": "None directly. Corrects a systematic under-estimate of document workload cost.",
-  "provenance": "primary-doc, fetched 2026-08-12",
-  "telemetrySignal": "input tokens on document blocks far exceeding a text-only estimate",
-  "providers": [
-   "anthropic"
-  ],
-  "verifiedAgainst": "platform.claude.com/docs/en/build-with-claude/pdf-support"
- },
- {
-  "id": 179,
-  "name": "Citations: cited_text is free on output and on replay, but enabling citations adds input tokens",
-  "strictVerdict": "FAIL",
-  "reasoning": "The exemption is real and verified verbatim at platform.claude.com/docs/en/build-with-claude/citations on 2026-08-12: \"The cited_text field is provided for convenience and does not count toward output tokens\" and \"When passed back in subsequent conversation turns, cited_text is also not counted toward input tokens.\" Against a baseline of prompting Claude to quote directly, that is a genuine saving on quoted spans, compounding across a conversation. It fails anyway, and the same page says why: \"Enabling citations incurs a slight increase in input tokens because of system prompt additions and document chunking.\" You can only collect the free quotes by changing what the model reads, and the comparison is therefore between two different requests, not the same request billed two ways — the exact pattern this register exists to reject. Filed as a rejection rather than dropped because it is the most persuasive near-miss found in nine sweeps, and an adjudication pass initially scored it PASS_ABSOLUTE by reading only the exemption sentence.",
-  "savings": "Real against a quote-in-prose baseline; not identity-preserving.",
-  "provenance": "primary-doc, fetched 2026-08-12",
-  "telemetrySignal": "input token delta on enabling citations for an otherwise unchanged request",
-  "providers": [
-   "anthropic"
-  ],
-  "verifiedAgainst": "platform.claude.com/docs/en/build-with-claude/citations"
- },
- {
-  "id": 180,
-  "name": "Files API management operations are free; only file content used in a Messages request bills",
-  "strictVerdict": "CONTRACTUAL_ONLY",
-  "reasoning": "platform.claude.com/docs/en/build-with-claude/files, fetched 2026-08-12: \"Files API operations are free: Uploading files, Downloading files, Listing files, Getting file metadata, Deleting files. File content used in Messages requests is priced as input tokens.\" These endpoints never invoke a model, so there is no identity question to answer at all. It sits in CONTRACTUAL_ONLY rather than a pass for the reason every billing-policy fact does: the evidence is the provider's stated policy, not an observed usage report, and the register's own rule is that a documentation sentence is the provider's word however clear it reads. A usage report showing zero line items against file operations would move it.",
-  "savings": "Unquantified. Removes an assumed per-operation cost.",
-  "provenance": "primary-doc, fetched 2026-08-12",
-  "telemetrySignal": "absence of billed line items for /v1/files operations",
-  "providers": [
-   "anthropic"
-  ],
-  "verifiedAgainst": "platform.claude.com/docs/en/build-with-claude/files"
- },
- {
-  "id": 181,
-  "name": "Message Batches: errored, canceled and expired requests bill at zero",
-  "strictVerdict": "CONTRACTUAL_ONLY",
-  "reasoning": "platform.claude.com/docs/en/build-with-claude/batch-processing, fetched 2026-08-12, states \"You will not be billed for these requests\" against each of the errored, canceled and expired result types. Distinct from every registered batch entry, which all concern the 50% discount rather than the failure paths. No message is created on these paths, so there is no different-tokens, different-model or different-thinking question. CONTRACTUAL_ONLY on evidence class alone — this is Anthropic's documented policy, not a measured usage report, and it sits alongside the existing batch-discount entry which carries the same class for the same reason. Practically it matters most to anyone cancelling large batches routinely, where an assumed partial charge would distort the economics of the cancel-and-resubmit pattern.",
-  "savings": "Unquantified. Removes an assumed cost on abandoned batch work.",
-  "provenance": "primary-doc, fetched 2026-08-12",
-  "telemetrySignal": "batch result_type in (errored, canceled, expired) with no matching charge",
-  "providers": [
-   "anthropic"
-  ],
-  "verifiedAgainst": "platform.claude.com/docs/en/build-with-claude/batch-processing"
- },
- {
-  "id": 182,
-  "name": "web_fetch carries no per-call fee where web_search charges per use, and errored searches are not billed",
-  "strictVerdict": "CONTRACTUAL_ONLY",
-  "reasoning": "platform.claude.com/docs/en/about-claude/pricing, fetched 2026-08-12: \"Web fetch usage has no additional charges beyond standard token costs... You only pay standard token costs for the fetched content that becomes part of your conversation context,\" against web search's flat per-use fee, and separately \"If an error occurs during web search, the web search will not be billed.\" Distinct from the registered entry on code execution being free when bundled with search or fetch, which is a different rule on the same page. The asymmetry is the useful part: a pipeline that already knows its URLs pays no tool fee at all, while the same work routed through search pays per use — and neither changes what the model reads once the content is in context. CONTRACTUAL_ONLY on evidence class: documented, not measured. Note that engineering search errors to avoid the fee is not a strategy and is not proposed as one.",
-  "savings": "Unquantified. The per-use search fee, avoided where the URL is already known.",
-  "provenance": "primary-doc, fetched 2026-08-12",
-  "telemetrySignal": "web_search_requests count against server_tool_use line items",
-  "providers": [
-   "anthropic"
-  ],
-  "verifiedAgainst": "platform.claude.com/docs/en/about-claude/pricing"
- },
- {
-  "id": 183,
-  "name": "The extended-thinking share of output is not recoverable from Claude Code transcripts",
-  "strictVerdict": "PASS_METADATA",
-  "reasoning": "usage.output_tokens_details is the only place the thinking share of output is reported, and it is absent from Claude Code transcripts. Measured on this machine 2026-08-12: 0 of 108,042 usage records across 1,661 transcript files carry the field. This is the one entry in the addendum that is MEASURED rather than documented, and it is the only class of evidence the register treats as stronger than a provider's word. Extended thinking bills as output either way, so no total is affected; what cannot be answered from this source is how much of that output was thinking, which on reasoning-heavy traffic is the question worth asking. A diagnosis about the instrument, not a lever — the same family as the register's other telemetry-gap entries. The tool now counts the field and states the absence rather than leaving the reader to notice it; the first implementation passed its unit tests and stayed silent on the real run, because cli.ts merged provenance by Object.keys over a literal that omitted the new counter.",
-  "savings": "None. Bounds what the audit can honestly claim about reasoning spend.",
-  "provenance": "measured, 108,042 records, 2026-08-12",
-  "telemetrySignal": "usage.output_tokens_details present or absent",
-  "providers": [
-   "anthropic"
-  ],
-  "verifiedAgainst": "~/.claude/projects, 1,661 transcript files"
- },
- {
-  "id": 184,
-  "name": "Claude Code cache TTL flips from 1h to 5m on crossing from subscription into usage-credit billing; ENABLE_PROMPT_CACHING_1H=1 restores it",
-  "strictVerdict": "PASS_METADATA",
-  "reasoning": "code.claude.com/docs/en/costs, fetched 2026-08-12: \"The lifetime is an hour on a subscription and drops to five minutes once you're drawing on usage credits; on an API key or cloud provider, it's five minutes by default. You can keep the one-hour lifetime while drawing on usage credits by setting ENABLE_PROMPT_CACHING_1H=1.\" The boundary is the BILLING REGIME, not the auth type — a session that exhausts its subscription quota mid-day silently drops to 5m, and any pause longer than five minutes then reprocesses the full context at fresh-input rates. TTL is metadata the model never reads: same prompt, same model, same output, different bill. Distinct from the registered server-side TTL override entry (API-key auth granted 5m when 1h was requested): this is a documented, named boundary with a documented, named override. The audit's TTL right-sizing detector measures the opposite risk (1h bought where 5m serves); this is 5m imposed where 1h serves, and the fix is one environment variable.",
-  "savings": "Traffic-dependent: every >5-minute pause in a long session re-bills the full context at 1x instead of 0.1x until the env var is set.",
-  "provenance": "primary-doc, fetched 2026-08-12",
-  "telemetrySignal": "cache_read collapse after idle gaps of 5-60 minutes in sessions drawing on usage credits",
-  "providers": [
-   "anthropic"
-  ],
-  "verifiedAgainst": "code.claude.com/docs/en/costs"
- },
- {
-  "id": 185,
-  "name": "DeepSeek on-disk context caching: default-on, no TTL ceiling, 98-99% cache-read discount",
-  "strictVerdict": "CONTRACTUAL_ONLY",
-  "reasoning": "api-docs.deepseek.com, fetched 2026-08-12: caching is \"enabled by default for all users... without needing to modify their code\"; entries persist on disk and clear \"usually within a few hours to a few days\" — no fixed TTL, a shape with no counterpart in the register's Anthropic/OpenAI/Azure/Bedrock/Gemini entries, all minutes-to-1h capped. Pricing page the same day: v4-flash $0.0028 hit vs $0.14 miss (98% off); v4-pro $0.003625 vs $0.435 (99.2% off) — deeper than Anthropic's flat 90% and OpenAI's 50-90% range. Their docs state \"The output is still generated through computation and inference\" — the cache stores prefix KV state, not responses. CONTRACTUAL_ONLY on evidence class: that identity statement is DeepSeek's own documentation, never independently replayed the way Anthropic's and OpenAI's near-identical statements were crosschecked across earlier sweeps. And the register's standing caution stands: for a buyer, moving traffic TO DeepSeek to collect this discount is model routing and FAILS; this entry prices the cache for traffic already there.",
-  "savings": "For existing DeepSeek traffic: up to 98-99% on cached prefix reads, per their published rates.",
-  "provenance": "primary-doc, fetched 2026-08-12",
-  "telemetrySignal": "prompt_cache_hit_tokens / prompt_cache_miss_tokens in DeepSeek usage objects",
-  "providers": [
-   "deepseek"
-  ],
-  "verifiedAgainst": "api-docs.deepseek.com/guides/kv_cache and /quick_start/pricing"
- },
- {
-  "id": 186,
-  "name": "Read-path deduplication in Claude Code sessions measures NEGATIVE: an independent benchmark over 1,839 real transcripts",
-  "strictVerdict": "FAIL",
-  "reasoning": "NORTHTEKDevs/lossless-context-mcp (2 stars, MIT, pushed 2026-08-12 — cited as the SUBJECT of the finding, not as authority) built read-path deduplication for Claude Code — replace a repeated file read with a marker or a diff — then benchmarked it against real traffic and published the result against its own interest. From its BENCHMARK.md, read via the GitHub API on 2026-08-12: \"-1.4% over 1,839 transcripts / 16,823 reads / 64 MB: only 7-8% of reads are re-reads, the median session re-reads 0% of its files, and a unified diff can exceed the file it patches\", with a per-task variant measured \"19.6% worse than baseline\" and the theoretical ceiling for the whole technique put at \"about 0.2%\". It FAILS the bar anyway — a marker is a different token sequence than the text it replaces, however reconstructable — but the reason to register it is the measurement, not the verdict. This is the strongest INDEPENDENT corroboration of this project's own central finding: on Claude Code traffic the cache-shaped opportunity is already gone, and a technique designed to capture it makes the bill worse. Our own machine measured 100% cache-hit and $0.00 of cache headroom across 43,658 events; this is someone else, on 1,839 other transcripts, arriving at the same place by a different route and publishing the negative.",
-  "savings": "Negative. Measured -1.4% to -2.6%; theoretical ceiling ~0.2%.",
-  "provenance": "third-party benchmark, read via GitHub API 2026-08-12",
-  "telemetrySignal": "re-read rate per session — 7-8% of reads, median session 0%",
-  "providers": [
-   "anthropic"
-  ],
-  "verifiedAgainst": "github.com/NORTHTEKDevs/lossless-context-mcp BENCHMARK.md"
- }
+  {
+    "id": 176,
+    "name": "Zero-output refusals are not billed (Anthropic, from 2026-06-02)",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "Anthropic's API release notes, 2026-06-02: \"On the Claude API, you are no longer billed for a request when it returns stop_reason: 'refusal' without Claude having generated any output.\" Restated 2026-06-09 alongside the Fable 5 launch: \"You are not billed for a request refused before any output is generated.\" Both fetched directly from platform.claude.com/docs/en/release-notes/api on 2026-08-12. This is not a lever anyone can pull — nobody engineers refusals — but it corrects an assumption a cost model can easily hold, which is the same shelf as the compaction entry. Identity is preserved structurally rather than by assertion: a refusal with zero output cannot differ in output from a refusal with zero output, so this does not rest on the provider's word about neutrality the way a batch-tier claim does. What DOES rest on their word is the zero itself; a usage report showing refusal events at $0.00 would upgrade the evidence from documented to measured.",
+    "savings": "Not a lever. Removes a cost a model of the bill may wrongly assume.",
+    "provenance": "primary-doc, release notes, fetched 2026-08-12",
+    "telemetrySignal": "stop_reason=\"refusal\" with output_tokens=0",
+    "providers": [
+      "anthropic"
+    ],
+    "verifiedAgainst": "platform.claude.com/docs/en/release-notes/api",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Split 1-1 on audit and demoted by a third judge, which re-fetched platform.claude.com/docs/en/release-notes and confirmed both quotes verbatim — sourcing was never the dispute. The reasoning: a request demonstrably WAS sent and processed, because a safety classifier ran on it to produce stop_reason 'refusal'. So the 'no request was ever sent' exemption cannot apply, leaving only a measurement, and there is none. The judge selected FAIL from the enum but argued the CONTRACTUAL_ONLY case; recorded as argued."
+      }
+    ]
+  },
+  {
+    "id": 177,
+    "name": "Anthropic states Sonnet 5's 2026-09-01 price rise will not occur (documentation only; no invoice measured)",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "Anthropic's API release notes, 2026-08-10: \"The introductory pricing for Claude Sonnet 5 ($2 / $10 per MTok) is now the standard price: the previously scheduled increase to $3 / $15 per MTok on September 1, 2026 will not occur.\" Fetched directly 2026-08-12. Recorded as an entry rather than a footnote because this repo got it wrong in the most instructive way available: the errata table whose job is catching stale prices called the rise \"the most time-boxed item in the register\" on 2026-08-11, one day after it was cancelled, and src/rates.ts carried the post-lapse $3/$15 for three days — which over-stated Sonnet cost by 50% and every saving measured against it by the same margin. A cancelled future event is the failure mode a lapse date cannot see: lapsesDue() correctly reports a lapse that has passed and has no way to know one was called off. Only re-reading the source finds it.",
+    "savings": "None. Prevents a 50% over-statement of Sonnet 5 cost and of every saving measured against it.",
+    "provenance": "primary-doc, release notes, fetched 2026-08-12",
+    "telemetrySignal": "none — this is a rate-card fact",
+    "providers": [
+      "anthropic"
+    ],
+    "verifiedAgainst": "platform.claude.com/docs/en/release-notes/api",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Split 1-1 on audit and demoted by a third judge. A statement about a future price is the provider's word about its own conduct and cannot be measured until the date passes. The same judge reported that of the 30 PASS_ABSOLUTE entries it examined, 18 rest on primary-doc, release-notes or pricing-page provenance with nothing else — recorded in the 2026-08-18 audit brief as an open systemic finding."
+      }
+    ]
+  },
+  {
+    "id": 178,
+    "name": "A PDF page bills twice: extracted text AND a rendered page image, unconditionally",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "platform.claude.com/docs/en/build-with-claude/pdf-support, fetched 2026-08-12: \"The system converts each page of the document into an image\" and \"The text from each page is extracted and provided alongside each page's image,\" with \"Each page typically uses 1,500-3,000 tokens\" of text on top of the image tokens. Both charges apply to every page of every document block; the docs offer no way to take one without the other. Like the compaction entry this changes nothing about the request — it corrects a bill the customer is misreading, and document-heavy workloads are exactly where a cost model built on text-token estimates diverges most from the invoice. The obvious remedy is NOT a lever and must not be published as one: extracting the text locally and sending it as plain text drops the chart, table and layout content the model was reading from the page image, so it changes what the model reads and fails the bar.",
+    "savings": "None directly. Corrects a systematic under-estimate of document workload cost.",
+    "provenance": "primary-doc, fetched 2026-08-12",
+    "telemetrySignal": "input tokens on document blocks far exceeding a text-only estimate",
+    "providers": [
+      "anthropic"
+    ],
+    "verifiedAgainst": "platform.claude.com/docs/en/build-with-claude/pdf-support",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "withdrawn-from-passing",
+        "note": "Withdrawn on audit of the passing column. Re-fetched platform.claude.com/docs/en/build-with-claude/pdf-support as raw HTML on 2026-08-18: every quote is verbatim and unchanged. The demotion is not about the quotes — it is that a documentation sentence describing Anthropic's own internal billing of a PDF page was carrying a PASS_ABSOLUTE, which the register's rule caps at CONTRACTUAL_ONLY."
+      }
+    ]
+  },
+  {
+    "id": 179,
+    "name": "Citations: cited_text is free on output and on replay, but enabling citations adds input tokens",
+    "strictVerdict": "FAIL",
+    "reasoning": "The exemption is real and verified verbatim at platform.claude.com/docs/en/build-with-claude/citations on 2026-08-12: \"The cited_text field is provided for convenience and does not count toward output tokens\" and \"When passed back in subsequent conversation turns, cited_text is also not counted toward input tokens.\" Against a baseline of prompting Claude to quote directly, that is a genuine saving on quoted spans, compounding across a conversation. It fails anyway, and the same page says why: \"Enabling citations incurs a slight increase in input tokens because of system prompt additions and document chunking.\" You can only collect the free quotes by changing what the model reads, and the comparison is therefore between two different requests, not the same request billed two ways — the exact pattern this register exists to reject. Filed as a rejection rather than dropped because it is the most persuasive near-miss found in nine sweeps, and an adjudication pass initially scored it PASS_ABSOLUTE by reading only the exemption sentence.",
+    "savings": "Real against a quote-in-prose baseline; not identity-preserving.",
+    "provenance": "primary-doc, fetched 2026-08-12",
+    "telemetrySignal": "input token delta on enabling citations for an otherwise unchanged request",
+    "providers": [
+      "anthropic"
+    ],
+    "verifiedAgainst": "platform.claude.com/docs/en/build-with-claude/citations"
+  },
+  {
+    "id": 180,
+    "name": "Files API management operations are free; only file content used in a Messages request bills",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "platform.claude.com/docs/en/build-with-claude/files, fetched 2026-08-12: \"Files API operations are free: Uploading files, Downloading files, Listing files, Getting file metadata, Deleting files. File content used in Messages requests is priced as input tokens.\" These endpoints never invoke a model, so there is no identity question to answer at all. It sits in CONTRACTUAL_ONLY rather than a pass for the reason every billing-policy fact does: the evidence is the provider's stated policy, not an observed usage report, and the register's own rule is that a documentation sentence is the provider's word however clear it reads. A usage report showing zero line items against file operations would move it.",
+    "savings": "Unquantified. Removes an assumed per-operation cost.",
+    "provenance": "primary-doc, fetched 2026-08-12",
+    "telemetrySignal": "absence of billed line items for /v1/files operations",
+    "providers": [
+      "anthropic"
+    ],
+    "verifiedAgainst": "platform.claude.com/docs/en/build-with-claude/files"
+  },
+  {
+    "id": 181,
+    "name": "Message Batches: errored, canceled and expired requests bill at zero",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "platform.claude.com/docs/en/build-with-claude/batch-processing, fetched 2026-08-12, states \"You will not be billed for these requests\" against each of the errored, canceled and expired result types. Distinct from every registered batch entry, which all concern the 50% discount rather than the failure paths. No message is created on these paths, so there is no different-tokens, different-model or different-thinking question. CONTRACTUAL_ONLY on evidence class alone — this is Anthropic's documented policy, not a measured usage report, and it sits alongside the existing batch-discount entry which carries the same class for the same reason. Practically it matters most to anyone cancelling large batches routinely, where an assumed partial charge would distort the economics of the cancel-and-resubmit pattern.",
+    "savings": "Unquantified. Removes an assumed cost on abandoned batch work.",
+    "provenance": "primary-doc, fetched 2026-08-12",
+    "telemetrySignal": "batch result_type in (errored, canceled, expired) with no matching charge",
+    "providers": [
+      "anthropic"
+    ],
+    "verifiedAgainst": "platform.claude.com/docs/en/build-with-claude/batch-processing"
+  },
+  {
+    "id": 182,
+    "name": "web_fetch carries no per-call fee where web_search charges per use, and errored searches are not billed",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "platform.claude.com/docs/en/about-claude/pricing, fetched 2026-08-12: \"Web fetch usage has no additional charges beyond standard token costs... You only pay standard token costs for the fetched content that becomes part of your conversation context,\" against web search's flat per-use fee, and separately \"If an error occurs during web search, the web search will not be billed.\" Distinct from the registered entry on code execution being free when bundled with search or fetch, which is a different rule on the same page. The asymmetry is the useful part: a pipeline that already knows its URLs pays no tool fee at all, while the same work routed through search pays per use — and neither changes what the model reads once the content is in context. CONTRACTUAL_ONLY on evidence class: documented, not measured. Note that engineering search errors to avoid the fee is not a strategy and is not proposed as one.",
+    "savings": "Unquantified. The per-use search fee, avoided where the URL is already known.",
+    "provenance": "primary-doc, fetched 2026-08-12",
+    "telemetrySignal": "web_search_requests count against server_tool_use line items",
+    "providers": [
+      "anthropic"
+    ],
+    "verifiedAgainst": "platform.claude.com/docs/en/about-claude/pricing",
+    "corrections": [
+      {
+        "date": "2026-08-18",
+        "kind": "source-corrected",
+        "note": "Found by the 2026-08-18 quote-integrity sweep, which fetched each cited source as raw HTML and grepped every quoted string with a control phrase reported alongside, so a zero hit count cannot be a failed fetch. The two fragments are separated on the page by a full JSON code example and a paragraph break; the entry joins them as one quotation."
+      }
+    ]
+  },
+  {
+    "id": 183,
+    "name": "The extended-thinking share of output is not recoverable from Claude Code transcripts",
+    "strictVerdict": "PASS_METADATA",
+    "reasoning": "usage.output_tokens_details is the only place the thinking share of output is reported, and it is absent from Claude Code transcripts. Measured on this machine 2026-08-12: 0 of 108,042 usage records across 1,661 transcript files carry the field. This is the one entry in the addendum that is MEASURED rather than documented, and it is the only class of evidence the register treats as stronger than a provider's word. Extended thinking bills as output either way, so no total is affected; what cannot be answered from this source is how much of that output was thinking, which on reasoning-heavy traffic is the question worth asking. A diagnosis about the instrument, not a lever — the same family as the register's other telemetry-gap entries. The tool now counts the field and states the absence rather than leaving the reader to notice it; the first implementation passed its unit tests and stayed silent on the real run, because cli.ts merged provenance by Object.keys over a literal that omitted the new counter.",
+    "savings": "None. Bounds what the audit can honestly claim about reasoning spend.",
+    "provenance": "measured, 108,042 records, 2026-08-12",
+    "telemetrySignal": "usage.output_tokens_details present or absent",
+    "providers": [
+      "anthropic"
+    ],
+    "verifiedAgainst": "~/.claude/projects, 1,661 transcript files"
+  },
+  {
+    "id": 184,
+    "name": "Claude Code cache TTL flips from 1h to 5m on crossing from subscription into usage-credit billing; ENABLE_PROMPT_CACHING_1H=1 restores it",
+    "strictVerdict": "PASS_METADATA",
+    "reasoning": "code.claude.com/docs/en/costs, fetched 2026-08-12: \"The lifetime is an hour on a subscription and drops to five minutes once you're drawing on usage credits; on an API key or cloud provider, it's five minutes by default. You can keep the one-hour lifetime while drawing on usage credits by setting ENABLE_PROMPT_CACHING_1H=1.\" The boundary is the BILLING REGIME, not the auth type — a session that exhausts its subscription quota mid-day silently drops to 5m, and any pause longer than five minutes then reprocesses the full context at fresh-input rates. TTL is metadata the model never reads: same prompt, same model, same output, different bill. Distinct from the registered server-side TTL override entry (API-key auth granted 5m when 1h was requested): this is a documented, named boundary with a documented, named override. The audit's TTL right-sizing detector measures the opposite risk (1h bought where 5m serves); this is 5m imposed where 1h serves, and the fix is one environment variable.",
+    "savings": "Traffic-dependent: every >5-minute pause in a long session re-bills the full context at 1x instead of 0.1x until the env var is set.",
+    "provenance": "primary-doc, fetched 2026-08-12",
+    "telemetrySignal": "cache_read collapse after idle gaps of 5-60 minutes in sessions drawing on usage credits",
+    "providers": [
+      "anthropic"
+    ],
+    "verifiedAgainst": "code.claude.com/docs/en/costs"
+  },
+  {
+    "id": 185,
+    "name": "DeepSeek on-disk context caching: default-on, no TTL ceiling, 98-99% cache-read discount",
+    "strictVerdict": "CONTRACTUAL_ONLY",
+    "reasoning": "api-docs.deepseek.com, fetched 2026-08-12: caching is \"enabled by default for all users... without needing to modify their code\"; entries persist on disk and clear \"usually within a few hours to a few days\" — no fixed TTL, a shape with no counterpart in the register's Anthropic/OpenAI/Azure/Bedrock/Gemini entries, all minutes-to-1h capped. Pricing page the same day: v4-flash $0.0028 hit vs $0.14 miss (98% off); v4-pro $0.003625 vs $0.435 (99.2% off) — deeper than Anthropic's flat 90% and OpenAI's 50-90% range. Their docs state \"The output is still generated through computation and inference\" — the cache stores prefix KV state, not responses. CONTRACTUAL_ONLY on evidence class: that identity statement is DeepSeek's own documentation, never independently replayed the way Anthropic's and OpenAI's near-identical statements were crosschecked across earlier sweeps. And the register's standing caution stands: for a buyer, moving traffic TO DeepSeek to collect this discount is model routing and FAILS; this entry prices the cache for traffic already there.",
+    "savings": "For existing DeepSeek traffic: up to 98-99% on cached prefix reads, per their published rates.",
+    "provenance": "primary-doc, fetched 2026-08-12",
+    "telemetrySignal": "prompt_cache_hit_tokens / prompt_cache_miss_tokens in DeepSeek usage objects",
+    "providers": [
+      "deepseek"
+    ],
+    "verifiedAgainst": "api-docs.deepseek.com/guides/kv_cache and /quick_start/pricing"
+  },
+  {
+    "id": 186,
+    "name": "Read-path deduplication in Claude Code sessions measures NEGATIVE: an independent benchmark over 1,839 real transcripts",
+    "strictVerdict": "FAIL",
+    "reasoning": "NORTHTEKDevs/lossless-context-mcp (2 stars, MIT, pushed 2026-08-12 — cited as the SUBJECT of the finding, not as authority) built read-path deduplication for Claude Code — replace a repeated file read with a marker or a diff — then benchmarked it against real traffic and published the result against its own interest. From its BENCHMARK.md, read via the GitHub API on 2026-08-12: \"-1.4% over 1,839 transcripts / 16,823 reads / 64 MB: only 7-8% of reads are re-reads, the median session re-reads 0% of its files, and a unified diff can exceed the file it patches\", with a per-task variant measured \"19.6% worse than baseline\" and the theoretical ceiling for the whole technique put at \"about 0.2%\". It FAILS the bar anyway — a marker is a different token sequence than the text it replaces, however reconstructable — but the reason to register it is the measurement, not the verdict. This is the strongest INDEPENDENT corroboration of this project's own central finding: on Claude Code traffic the cache-shaped opportunity is already gone, and a technique designed to capture it makes the bill worse. Our own machine measured 100% cache-hit and $0.00 of cache headroom across 43,658 events; this is someone else, on 1,839 other transcripts, arriving at the same place by a different route and publishing the negative.",
+    "savings": "Negative. Measured -1.4% to -2.6%; theoretical ceiling ~0.2%.",
+    "provenance": "third-party benchmark, read via GitHub API 2026-08-12",
+    "telemetrySignal": "re-read rate per session — 7-8% of reads, median session 0%",
+    "providers": [
+      "anthropic"
+    ],
+    "verifiedAgainst": "github.com/NORTHTEKDevs/lossless-context-mcp BENCHMARK.md"
+  }
 ]

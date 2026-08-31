@@ -1,7 +1,7 @@
 # The verdict format
 
 Every entry in the register is one JSON object. This document is the contract, and
-`tests/registerSchema.test.ts` enforces it against all 187 entries on every run — a register
+`tests/registerSchema.test.ts` enforces it against all 371 entries on every run — a register
 whose shape is only described in prose is a register whose shape can drift.
 
 The reason this file exists: the project's one verified differentiator is that it publishes its
@@ -56,9 +56,13 @@ adversarial pass overruled the first adjudication).
 
 `kind` is one of `withdrawn-from-passing`, `verdict-changed`, `source-corrected`,
 `superseded`. Corrections are **appended, never edited away**, and the original reasoning stays
-in place above them. Four entries carry one today: ids 13, 15, 16 and 18 were expelled from the
-passing column on 2026-08-12 when their cited tools turned out to be zero-star repositories and
-one could not be found at all. The pass count fell from 70 to 66 that day and the site said so.
+in place above them. Fifty-five entries carry one today. The first four were ids 13, 15, 16 and
+18, expelled on 2026-08-12 when their cited tools turned out to be zero-star repositories and one
+could not be found at all; the pass count fell from 70 to 66 that day and the site said so. The
+rest arrived on 2026-08-18, when the passing column was adversarially audited for the first time
+and the pass count fell again — from 71 to 59 on the first round, to 49 once the entries that round
+had cleared without attacking were attacked too, and to 47 when every quoted string in the
+register was grepped against the source it cites.
 
 A register that can only grow its pass count is advertising. The `corrections` array is how this
 one proves it is not.

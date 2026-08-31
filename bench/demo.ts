@@ -19,11 +19,7 @@ import { readFileSync } from "node:fs";
 import { costOfEvent } from "../src/pricing";
 import { RATE_CARD_2026_08_08 as CARD } from "../src/rates";
 import type { UsageEvent } from "../src/types";
-
-const arg = (n: string, d?: string) => {
-  const i = process.argv.indexOf(`--${n}`);
-  return i === -1 ? d : process.argv[i + 1];
-};
+import { arg, usd, n } from "./util";
 
 const ARM = (arg("arm", "with") as "with" | "without");
 const SECONDS = Number(arg("seconds", "26"));
@@ -36,11 +32,14 @@ const DIM = "\x1b[38;5;244m";
 const BOLD = "\x1b[1m";
 const R = "\x1b[0m";
 
-interface Lean { m: string; i: number; r: number; w: number; o: number }
+interface Lean { m: string; i: number; r: number; w5: number; w1: number; o: number; tier: UsageEvent["serviceTier"] }
 const snap = JSON.parse(readFileSync(SNAP, "utf8")) as { takenAt: string; files: number; events: Lean[] };
 const events: UsageEvent[] = snap.events.map((x, k) => ({
-  idempotencyKey: String(k), accountId: "local", projectId: "-", ts: "", source: "claude_code",
-  model: x.m, inputTokens: x.i, cacheReadTokens: x.r, cacheCreationTokens: x.w, outputTokens: x.o,
+  idempotencyKey: String(k), accountId: "local", projectId: "-", ts: "", sessionId: null,
+  source: "claude_code", serviceTier: x.tier, model: x.m,
+  inputTokens: x.i, cacheReadTokens: x.r, cacheCreationTokens: x.w5 + x.w1,
+  cacheCreation5mTokens: x.w5, cacheCreation1hTokens: x.w1, outputTokens: x.o,
+  compactionInputTokens: 0, compactionOutputTokens: 0,
 }));
 
 /** Arm A bills cache reads as fresh input, and pays no write premium it never made. */
@@ -50,6 +49,10 @@ const priced = events.map((e) => {
     inputTokens: e.inputTokens + e.cacheReadTokens + e.cacheCreationTokens,
     cacheReadTokens: 0,
     cacheCreationTokens: 0,
+    // Must stay in sync with cacheCreationTokens above, or costOfEvent refuses the
+    // event as malformed instead of pricing it.
+    cacheCreation5mTokens: 0,
+    cacheCreation1hTokens: 0,
   };
   const c = costOfEvent(ev, CARD);
   const tok = e.inputTokens + e.cacheReadTokens + e.cacheCreationTokens + e.outputTokens;
@@ -57,8 +60,6 @@ const priced = events.map((e) => {
 }).filter((x) => x.ok);
 
 const GRAND = priced.reduce((s, x) => s + x.uc, 0);
-const usd = (uc: number) => "$" + (uc / 1e8).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const n = (x: number) => x.toLocaleString("en-US");
 
 const t0 = START_AT || Date.now();
 const cols = () => Math.max(40, process.stdout.columns || 60);

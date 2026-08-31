@@ -4,6 +4,8 @@ import { computeMetrics } from "../src/metrics";
 import { simulate } from "../src/simulate";
 import { buildReport } from "../src/report";
 import { detectTtlRightSizing } from "../src/detect/ttlRightSizing";
+import { detectTtlCrossing } from "../src/detect/ttlCrossing";
+import { detectSpendAnomaly } from "../src/detect/spendAnomaly";
 import { RATE_CARD_2026_08_08 as CARD } from "../src/rates";
 
 /**
@@ -39,6 +41,7 @@ const report = (lines: string[]) => {
     report: buildReport({
       metrics, simulation: simulate(metrics, CARD, A), assumptions: A,
       provenance: imported.provenance, ttlRightSizing: detectTtlRightSizing([], CARD),
+      ttlCrossing: detectTtlCrossing([]), spendAnomaly: detectSpendAnomaly(computeMetrics([], CARD)),
       card: CARD, generatedAt: new Date("2026-08-12T00:00:00Z"),
     }),
   };

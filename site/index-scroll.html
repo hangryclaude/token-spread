@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%233DDC84'/%3E%3C/svg%3E">
 <title>Tokens Saved — the same request, the same model, a smaller bill</title>
-<meta name="description" content="A read-only audit of what your Claude usage actually costs, and which savings survive the test that the model must read the same bytes. 187 techniques adjudicated, 67 pass.">
+<meta name="description" content="A read-only audit of what your Claude usage actually costs, and which savings survive the test that the model must read the same bytes. 371 techniques adjudicated, 81 pass.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Tokens Saved">
 <meta property="og:title" content="Tokens Saved — the same request, the same model, a smaller bill">
@@ -85,8 +85,48 @@
   #act-hero:focus{outline:none}
 
   /* ── act 1 · a real h1, with the marquee demoted to a ticker ─────────────────── */
-  #act-hero{position:relative;min-height:100svh;display:flex;flex-direction:column;
-    justify-content:center;padding-block:clamp(3.5rem,8vh,7rem)}
+  /* Task 6: the section itself now carries the scroll runway the scrubbed prism
+     film needs — 240svh, ~1.4 extra viewport-heights beyond the pin — and
+     .hero-pin (below) is what actually sticks, taking over the flex-centring
+     and padding-block #act-hero used to own outright back when it was exactly
+     one viewport tall. mount.js maps scrollY across THIS section's own range
+     only (spec: "the film must finish before act 2 arrives"). */
+  #act-hero{position:relative;min-height:240svh}
+  /* The sticky PIN. background is opaque so the screen-blend canvas composites
+     against ITS backdrop, not against whatever the ground is doing several
+     viewports away (spec: "blend reaches the pin's backdrop, not through it").
+     z-index:1 keeps it in the same stacking tier as the rest of main's content
+     — #act-problem, a later sibling with no z-index of its own, still paints
+     over it during the release because DOM order settles ties at equal tiers,
+     which is what makes the sticky pin let go instead of hovering above act 2. */
+  .hero-pin{position:sticky;top:0;min-height:100svh;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:center;
+    /* Tighter above than below: the audit measured ~125px of dead darkness
+       before the first content — the marquee should arrive inside the first
+       comfortable glance, the breathing room belongs under the register. */
+    padding-block:clamp(2rem,4.5vh,3.75rem) clamp(3.5rem,8vh,7rem);
+    background:#050b08;z-index:1}
+  /* The film itself. Negative z-index paints it after .hero-pin's own
+     background but before every static in-flow child (marquee, register,
+     #calc-card) — the one CSS lever that puts it behind that content without
+     touching any of THEIR rules ("above it" per spec's integration notes). */
+  [data-sc="scroll-film"]{mix-blend-mode:screen;pointer-events:none;z-index:-1}
+  /* Text-guard. The composited contrast walk failed 5 runs because deep-scrub
+     frames fill the film's interior with folded light and slide it under the
+     headline/wordmark/lede bands — worst measured 1.05:1 under .hero-mark on
+     mobile. This grades the text bands down WITHOUT touching the film: ::after
+     renders after the element's real children, so at the same -1 tier it paints
+     over the engine-appended canvas by tree order, yet stays under every in-flow
+     child. The film keeps its full brightness right-of-centre and in the gaps. */
+  .hero-pin::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+    background:linear-gradient(90deg,rgba(5,11,8,.88) 0%,rgba(5,11,8,.62) 45%,transparent 70%)}
+  /* Mirrors the engine's own portrait matchMedia (max-aspect-ratio:3/4): the
+     9:16 film's beam enters top-of-frame, directly under the wordmark, and the
+     240svh pin means the lede's screen is still inside the pinned range. */
+  @media (max-aspect-ratio:3/4){
+    .hero-pin::after{background:
+      linear-gradient(180deg,rgba(5,11,8,.92) 0%,rgba(5,11,8,.5) 16%,transparent 30%),
+      linear-gradient(90deg,rgba(5,11,8,.85) 0%,rgba(5,11,8,.62) 55%,transparent 88%)}}
   /* A ticker, not the headline. Fixed height in rem: `size` is a fraction of CONTAINER
      height, so a constant container is a constant cap height on every viewport.
      IN FLOW, at every width. It was absolutely positioned at a vh offset and collided with
@@ -111,6 +151,15 @@
      (0,1,1) beats the engine's (0,1,0) so this lands regardless of source order. */
   .hero-act a[data-sc-capsule]{border:1px solid rgba(242,247,244,.34);color:var(--ink)}
   .hero-act a[data-sc-capsule]:hover{border-color:var(--acc);color:var(--acc)}
+  /* The primary action's in-hero echo: accent-bordered, not filled — the one
+     filled cta lives in act 6 (capsule-controls asserts the scarcity). */
+  /* The quiet fill is load-bearing: the portrait film's white glass highlights
+     sit under this band on phones and 16px/600 green needs 4.5:1 — the fill
+     makes the element's own backdrop dark at every scrub frame (same pattern
+     as the docked pill), instead of dimming the film for everyone. */
+  .hero-act a.cta-echo{border-color:rgba(61,220,132,.75);color:var(--acc);
+    font-weight:600;background:rgba(4,7,6,.78)}
+  .hero-act a.cta-echo:hover{background:rgba(61,220,132,.12)}
   .hero-act-note{font-size:.86rem;color:var(--ink-3)}
   /* The in-flow twin of .hud-mark, and only ever one of the two is displayed. */
   .hero-mark{display:none;position:relative;font-family:var(--mono);font-size:.78rem;
@@ -155,6 +204,25 @@
     /* The lede sets its own rhythm under the h1 above; inside the pair it starts at the top. */
     .hero-grid .hero-sub{margin-top:0}
   }
+
+  /* ── acts 2–6 · the film blocks ──────────────────────────────────────────────── */
+  /* One shape, five instances — same idea as .twin-pane authored once. Plain
+     content in normal document flow: act-breaks reveals the SECTION the same
+     way it always has (only the eyebrow/h2 pair inside each section carry
+     data-act-reveal; #refusals, .finds and .shot are already unmarked static
+     content sitting in that same flow, and this joins them rather than
+     getting its own reveal treatment). No backdrops config touched anywhere
+     in mount.js — spec's "no per-act backdrops" stays exactly as it was. */
+  /* --coda: act 3's plate demoted below the terminals — the proof leads, the
+     cinema follows (the full-width plate was pushing the twin a whole viewport
+     down; the metaphor is a footnote to the evidence, never its gate). */
+  .act-film--coda{width:min(560px,100%)}
+  .act-film{width:min(880px,100%);margin:2.2rem 0;border:1px solid rgba(242,247,244,.10);
+    border-radius:14px;overflow:hidden;background:var(--panel)}
+  .act-film img{display:block;width:100%;height:auto;
+    outline:1px solid rgba(255,255,255,.1);outline-offset:-1px}
+  .act-film figcaption{font-family:var(--mono);font-size:.78rem;color:var(--ink-3);
+    padding:.65rem .9rem;border-top:1px solid var(--line-2)}
 
   /* ── act 3 · the twin terminals ──────────────────────────────────────────────── */
   .twin{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:2.6rem}
@@ -251,6 +319,97 @@
     font-weight:600;text-decoration:none;padding:.85rem 1.5rem;border-radius:999px}
   .cta-note{font-size:.86rem;color:var(--ink-3);margin-top:.9rem}
 
+  /* ── the calculator (savings.js, ported) ─────────────────────────────────────
+     Same two-row shape as index.html's .meter, rebuilt against THIS page's dark
+     tokens rather than importing style.css's Spore ones (spec: "New markup/CSS
+     against index-scroll's dark tokens... style.css's Spore tokens are not
+     imported"). One .calc-rows shape shared by both mounted instances — the
+     hero card and act 6's MODELLED sibling — the way .twin-pane is authored
+     once and used twice. */
+  /* 100%, never 100vw: on a phone #act-hero reserves the HUD lane as right
+     padding, so the pin's content box (296px at 390vw) is narrower than the
+     viewport — a vw-based width overflows it straight into the pin's
+     overflow:hidden. Measured: card 352px inside a 296px parent, chips and
+     the assumptions line clipped mid-word on both audit breakpoints. */
+  /* Neutral border (regrade: green lives in type/CTAs only) and a concentric
+     radius: inner rows are 11px with 6.4px card padding, so 18px outer. */
+  .calc{width:min(420px,100%);background:var(--panel);
+    border:1px solid rgba(242,247,244,.12);border-radius:18px;padding:.4rem;
+    backdrop-filter:blur(8px)}
+  .calc-rows{position:relative;display:flex;flex-direction:column;gap:.25rem}
+  .calc-row{background:rgba(4,12,9,.86);border-radius:11px;padding:1.1rem 1.2rem}
+  .calc-lab{font-size:.85rem;color:var(--ink-2);display:block;margin-bottom:.35rem}
+  .calc-big{display:flex;align-items:center;gap:.6rem;justify-content:space-between}
+  .calc-amt{font-family:var(--mono);font-size:1.7rem;line-height:1.15;font-weight:600;
+    letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink);
+    border:none;background:none;width:100%;min-width:0;padding:0}
+  .calc-amt::-webkit-outer-spin-button,.calc-amt::-webkit-inner-spin-button{
+    -webkit-appearance:none;margin:0}
+  .calc-out{color:var(--acc)}
+  .calc-sub{font-size:.8rem;color:var(--ink-3);margin-top:.5rem;display:block}
+  .calc-sub strong{color:var(--ink)}
+  .calc-chip{background:rgba(255,255,255,.08);border-radius:999px;padding:.35rem .75rem;
+    font-size:.78rem;white-space:nowrap;color:var(--ink-2)}
+  .calc-seam{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:32px;height:32px;border-radius:9px;background:#0a1a12;
+    display:grid;place-items:center;z-index:2;border:4px solid #050b08;
+    color:var(--ink-2);font-size:.9rem;line-height:1}
+  /* act 6: subordinate to the MEASURED cta below it — one step quieter than the
+     hero's own card ("calculator card stays panel-ghost" per spec). */
+  .calc--ghost{background:rgba(4,12,9,.4);border-color:rgba(61,220,132,.1);
+    backdrop-filter:none;margin-top:1.8rem}
+
+  /* the HUD dock pill — lives in the same right-edge lane the chapter rail
+     already owns (fixed-hud/capsule-controls lane reservations, spec's
+     integration notes), so it never claims new space. Hidden until #act-hero
+     itself has scrolled out of view (body.calc-docked, set by the
+     IntersectionObserver below) so it never doubles the inline hero card. */
+  /* visibility/opacity, not display:none — capsule-controls measures the label's
+     rendered width once at mount (CONTRACT-adjacent: it re-measures on resize
+     and on document.fonts.ready, neither of which fires when a display:none
+     ancestor later becomes visible). display:none at mount time measured a
+     permanent 0 and the pill rendered as an empty circle; visibility:hidden
+     keeps it laid out and correctly measured throughout. */
+  /* navitem's rest fill is a barely-there 12% tint by design (SKILL.md: "the
+     quiet register") — right for sitting over the ground, wrong for FIXED
+     chrome over scrolling text. product-check caught it: on mobile, body copy
+     scrolling underneath painted straight through the pill, both illegible
+     ("share the same pixels"). #hud's own chips solve the identical problem
+     with an explicit opaque backdrop (`#hud .sc-hud-chip`, a few rules up) —
+     same fix, same value, applied here. An ID selector beats capsule-controls'
+     own attribute-selector rule regardless of injection order. */
+  #calc-pill{position:fixed;top:1.15rem;right:.6rem;z-index:6;
+    font-family:var(--mono);font-size:.78rem;
+    background:rgba(3,12,8,.93);border-color:rgba(255,255,255,.22);
+    visibility:hidden;opacity:0;pointer-events:none;transition:opacity .18s ease}
+  body.calc-docked #calc-pill{visibility:visible;opacity:1;pointer-events:auto}
+  /* The compact mobile trigger — see the markup comment. Same lane #calc-pill
+     sits in on desktop, sized to the 44px tap floor capsule-controls itself
+     defaults to. display:none here; the mobile media query below is what
+     turns it on (and turns #calc-pill off) below 761px. */
+  #calc-pill-sm{display:none;position:fixed;top:.9rem;right:.45rem;z-index:6;
+    width:2.75rem;height:2.75rem;border-radius:999px;
+    font-family:var(--mono);font-size:1.05rem;font-weight:600;
+    color:var(--ink);background:rgba(3,12,8,.93);border:1px solid rgba(255,255,255,.22);
+    visibility:hidden;opacity:0;pointer-events:none;transition:opacity .18s ease}
+  body.calc-docked #calc-pill-sm{visibility:visible;opacity:1;pointer-events:auto}
+  /* Dock enter: a soft 6px drop-in beside the fade; interruptible CSS
+     transitions with named properties, never `all`. Press feedback at .96 —
+     input response, so it stays live under reduced motion. */
+  #calc-pill,#calc-pill-sm{translate:0 -6px;
+    transition-property:opacity,translate,scale;transition-duration:.24s;
+    transition-timing-function:cubic-bezier(.2,0,0,1)}
+  body.calc-docked #calc-pill,body.calc-docked #calc-pill-sm{translate:0 0}
+  a[data-sc-capsule]:active,#calc-pill:active,#calc-pill-sm:active{scale:.96}
+  a[data-sc-capsule]{transition-property:scale,color,border-color,background-color;
+    transition-duration:.16s;transition-timing-function:cubic-bezier(.2,0,0,1)}
+  /* The plain in-flow state needs no rule — it is wherever #calc-card already
+     sits in the hero's document flow. This class only fires once the pill is
+     clicked while docked, "without scrolling" per spec. */
+  #calc-card.calc-overlay{position:fixed;inset:auto 1.2rem 1.2rem auto;z-index:6;
+    max-height:calc(100svh - 2.4rem);overflow-y:auto;
+    box-shadow:0 12px 40px rgba(0,0,0,.5)}
+
   @media (max-width:760px){
     .twin{grid-template-columns:1fr}
     .twin-out{min-height:8.5rem}
@@ -281,12 +440,17 @@
     .foot{padding-left:var(--gutter);padding-right:calc(var(--gutter) + 3.4rem)}
     .hud-mark{display:none}
     .hero-mark{display:block}
+    /* Same swap, same reason, one line down: the full-text pill is wider
+       than the reserved right lane, so it takes body copy with it as the
+       page scrolls (product-check, mobile-occluded-5064/7596/8440.png). */
+    #calc-pill{display:none}
+    #calc-pill-sm{display:grid}
     /* The base clamp floors at 2.5rem, which never yields to 7.2vw on a phone: 40px type in
        a 239px column breaks "The same request." across two lines. 6.2vw ≈ 24px at 390px. */
     #h1{font-size:clamp(1.6rem,7.4vw,2.9rem)}
     /* 18vh of an 844px phone is 152px of padding at each end. Narrowing the register to clear
        the rail made it taller, and that padding was what pushed its last line past the fold. */
-    #act-hero{padding-block:clamp(3.5rem,9vh,5.5rem)}
+    .hero-pin{padding-block:clamp(3.5rem,9vh,5.5rem)}
     #hero-marquee{margin-bottom:clamp(.8rem,2.5vh,1.4rem)}
     /* capsule-controls ships white-space:nowrap. At 320px that made a 240px pill in a 226px
        column and put 4px of horizontal scroll on the whole document. Allowed to wrap it fits,
@@ -296,10 +460,17 @@
     /* The hero now carries five blocks on a phone. Its rhythm was authored against a hero of
        three, and vh-based gaps compound: four of them cost 137px of a 740px screen. Tightened
        so the register's numbers make the first view on a small phone as well as a large one. */
-    #act-hero{padding-block:clamp(2rem,5vh,4rem)}
+    .hero-pin{padding-block:clamp(2rem,5vh,4rem)}
     .hero-grid{gap:clamp(1.2rem,3vh,2rem)}
     .hero-sub{margin-top:clamp(1rem,2.4vh,1.5rem)}
     .hero-act{margin-top:clamp(1.2rem,3vh,1.8rem)}
+    /* The reserved right lane is 3.4rem here (see .act above), and the rail's
+       own chips sit inside it — a plain 1.2rem inset would run the overlay's
+       right edge straight through them. Clearing the lane is the same fix the
+       acts already use, just applied to a fixed-position element instead of a
+       padded one. */
+    #calc-card.calc-overlay{right:calc(3.4rem + .6rem);
+      max-width:calc(100vw - (3.4rem + .6rem) - 1.2rem)}
   }
   /* A horizontal rail pinned to the bottom edge claims a ~345px-wide band of the bottom of
      every screen, and .act only reserves a 3.5rem lane for it — fine while every act was
@@ -337,15 +508,67 @@
 <div id="hud">
   <a class="hud-mark" href="index.html" data-hud-halo>Tokens&nbsp;Saved</a>
   <nav class="hud-rail" data-hud-rail aria-label="Sections"></nav>
+  <!-- Docked state of the hero calculator (Task 5 step 2). Hidden by CSS until
+       body.calc-docked; the IntersectionObserver that sets that class and the
+       click handler that opens #calc-card live in the module below.
+       Two triggers, same swap as .hud-mark/.hero-mark just below: full text
+       for desktop, where the top-right corner is otherwise empty; a compact
+       chip on mobile, confined to the SAME ~74px lane .hud-rail already
+       proves text-free. product-check caught the full pill overlapping
+       scrolling body copy at 390px — capsule-controls' own opaque backdrop
+       fix (below) stops the text bleeding through it, but an opaque cover
+       over PART of a sentence is exactly as illegible as a translucent one;
+       only staying inside the reserved lane is actually safe at every
+       scroll position, which is the same reason .hud-rail's own chips work
+       there. Plain button, not capsule-controls — avoids that engine's
+       label-width measurement entirely for an element narrow enough that
+       there is no label to measure. -->
+  <button type="button" id="calc-pill" data-sc-capsule="navitem"
+    aria-haspopup="true" aria-expanded="false" aria-controls="calc-card">Estimate your savings</button>
+  <button type="button" id="calc-pill-sm" aria-haspopup="true" aria-expanded="false"
+    aria-controls="calc-card" aria-label="Estimate your savings">$</button>
 </div>
 
 <main>
 
   <!-- ══ ACT 1 · the thesis ══════════════════════════════════════════════════════ -->
   <section class="act" id="act-hero" tabindex="-1" aria-labelledby="h1" data-act>
+    <!-- The pin. scroll-film mounts directly on this element (mount.js) — it is
+         already position:sticky with a real size, so the engine's own injected
+         canvas needs no extra stage div. The section above carries the scroll
+         runway; this is what actually stays on screen while it's consumed. -->
+    <div class="hero-pin" data-film-stage>
     <a class="hero-mark" href="index.html">Tokens&nbsp;Saved</a>
     <div id="hero-marquee" aria-hidden="true"></div>
+
+
     <h1 id="h1">The same request.<br>The same model.<br><span class="h1-turn">A smaller bill.</span></h1>
+
+    <!-- The widget IS the hero (Uniswap DNA, spec's "The widget" section): live,
+         first-screen, usable before any scroll. initCalc() is defined in the
+         module at the foot of the page and mounts every [data-calc] root. -->
+    <div class="calc" id="calc-card" data-calc aria-label="Estimate your savings">
+      <div class="calc-rows">
+        <div class="calc-row">
+          <span class="calc-lab">You spend now</span>
+          <div class="calc-big">
+            <input class="calc-amt" type="text" inputmode="numeric" autocomplete="off"
+                   value="$40,000" aria-label="Your monthly Anthropic spend, US dollars" data-in>
+            <span class="calc-chip">per month</span>
+          </div>
+        </div>
+        <div class="calc-seam" aria-hidden="true">&darr;</div>
+        <div class="calc-row">
+          <span class="calc-lab">You'd spend</span>
+          <div class="calc-big">
+            <span class="calc-amt calc-out" data-out>$17,967</span>
+            <span class="calc-chip">same output</span>
+          </div>
+          <span class="calc-sub"><strong data-pct>55%</strong> less &middot; <span data-save>$22,033</span>
+            a month &middot; assumes a <span data-hit>30%</span> hit rate today</span>
+        </div>
+      </div>
+    </div>
     <div class="hero-grid">
     <div class="hero-say">
     <p class="lede hero-sub">Most ways to cut an AI bill change what the model gives back.
@@ -354,23 +577,34 @@
          [data-sc-capsule="cta"] per root and is right about why: a second primary does not
          add a choice, it removes the first. The single ask stays in act 6, where the
          argument has been made; the first screen points at the proof instead. -->
+    <!-- The brief's one primary action leads; the demo anchor is the ghost.
+         The independent audit read the old order as burying the conversion
+         action ("the required action is not visually dominant in the opening
+         viewport") — same wording as #close-cta so the action reads as one
+         action wherever it appears. -->
     <p class="hero-act">
+      <!-- navitem, not cta: capsule-controls asserts ONE filled cta per document
+           and act 6's close owns it. The accent border below keeps this the
+           dominant affordance in the opening viewport without a second fill. -->
+      <a class="cta-echo" data-sc-capsule="navitem"
+         href="mailto:angus@angusbuilds.com?subject=Audit%20-%20usage.json%20attached">Send the file, get the $0 audit</a>
       <a data-sc-capsule="navitem" href="#act-twin">See the same answer billed twice</a>
-      <span class="hero-act-note">The audit is $0, and it writes 0 bytes to your files.</span>
+      <span class="hero-act-note">Read-only — it writes 0 bytes to your files.</span>
     </p>
     </div>
 
     <figure class="reg" aria-labelledby="reg-t">
       <p class="reg-k">The register</p>
-      <figcaption class="reg-t" id="reg-t">187 candidate techniques, adjudicated</figcaption>
+      <figcaption class="reg-t" id="reg-t">371 candidate techniques, adjudicated</figcaption>
       <dl class="reg-rows">
-        <div class="reg-row"><dt>pass</dt><dd class="num">67</dd></div>
-        <div class="reg-row"><dt>provider's word only</dt><dd class="num">28</dd></div>
-        <div class="reg-row"><dt>rejected</dt><dd class="num">52</dd></div>
-        <div class="reg-row"><dt>unresolved</dt><dd class="num">40</dd></div>
+        <div class="reg-row"><dt>pass</dt><dd class="num">81</dd></div>
+        <div class="reg-row"><dt>provider's word only</dt><dd class="num">95</dd></div>
+        <div class="reg-row"><dt>rejected</dt><dd class="num">135</dd></div>
+        <div class="reg-row"><dt>unresolved</dt><dd class="num">60</dd></div>
       </dl>
-      <p class="reg-note">Rejected means it changes what the model returns. The four add to 187.</p>
+      <p class="reg-note">Rejected means it changes what the model returns. The four add to 371.</p>
     </figure>
+    </div>
     </div>
   </section>
 
@@ -386,6 +620,19 @@
         <code class="num">messages_changed</code> or <code class="num">model_changed</code>. It is
         opt-in, first-party only, and needs the previous response id threaded through every turn.</p>
       <p><strong>The signal exists now. Nobody is watching it.</strong></p>
+
+      <!-- Copy column, NOT data-split-media below — sticky-split adopts every
+           element child of the media slot and would stack this against the
+           usage-pair comparison (single-adoptee rule, spec's integration
+           notes). Below 721px sticky-split doesn't mount at all, so this is
+           the only media in the section on a phone. -->
+      <figure class="act-film">
+        <picture>
+          <source media="(prefers-reduced-motion: reduce)" srcset="assets/film/act2-still.avif">
+          <img src="assets/film/act2.avif" width="720" height="406" alt="A steady green fibre core; a thin coral leak threading sideways through the cladding" loading="lazy">
+        </picture>
+        <figcaption>The fibre that leaks without breaking</figcaption>
+      </figure>
     </div>
 
     <div data-split-media>
@@ -420,6 +667,7 @@
     <p class="lede">Both panes run Claude Opus 5 on the identical prompt and stream the identical
       response, at the identical speed. The only difference is whether the 40,000 tokens of context
       in front of it were already in the cache.</p>
+
 
     <div class="twin">
       <div class="twin-pane">
@@ -460,15 +708,37 @@ Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
       <strong>7.55&times;</strong> cheaper. Over a thousand turns that is $207.50 against $27.50.
       <button class="twin-replay" type="button" data-twin-replay>Replay</button>
     </p>
+    <figure class="act-film act-film--coda">
+      <picture>
+        <source media="(prefers-reduced-motion: reduce)" srcset="assets/film/act3-still.avif">
+        <img src="assets/film/act3.avif" width="720" height="406" alt="A beamsplitter cube sending one path straight through black space and one through a delay coil, arriving together" loading="lazy">
+      </picture>
+      <figcaption>Two paths, one arrival</figcaption>
+    </figure>
+
   </section>
 
   <!-- ══ ACT 4 · the bar ═════════════════════════════════════════════════════════ -->
   <section class="act act--tall" id="act-bar" aria-labelledby="h-bar" data-act>
     <p class="eyebrow" data-act-reveal="0">The bar</p>
-    <h2 data-act-reveal="1" id="h-bar">187 techniques. 67 survive.</h2>
+    <h2 data-act-reveal="1" id="h-bar">371 techniques. 81 survive.</h2>
     <p class="lede">One question decides it: does the model read a different sequence of tokens,
       does a different model answer, or does a different amount of thinking happen? If the answer
       is yes, it is not a saving — it is a changed product sold as one.</p>
+
+    <!-- The page's one sanctioned multi-hue moment (spec: "Act 4's spectrum,
+         spent on the 187→67 triage"). Normal flow between the lede and the
+         ledger grid — .act-film's own margin keeps it clear of #refusals
+         below; checked at 1440 and 390 (Task 7 verification) that neither
+         the h2 above nor the grid below ever sits under the image. -->
+    <figure class="act-film">
+      <picture>
+        <source media="(prefers-reduced-motion: reduce)" srcset="assets/film/act4-still.avif">
+        <img src="assets/film/act4.avif" width="720" height="406" alt="White light fanning through five glass plates in depth, dispersing into a spectrum that narrows to one surviving green ray" loading="lazy">
+      </picture>
+      <figcaption>The slit stack</figcaption>
+    </figure>
+
     <div id="refusals"></div>
   </section>
 
@@ -476,6 +746,15 @@ Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
   <section class="act act--tall" id="act-found" aria-labelledby="h-found" data-act>
     <p class="eyebrow" data-act-reveal="0">What the audit found</p>
     <h2 data-act-reveal="1" id="h-found">Two things nobody was billing for correctly.</h2>
+
+    <figure class="act-film">
+      <picture>
+        <source media="(prefers-reduced-motion: reduce)" srcset="assets/film/act5-still.avif">
+        <img src="assets/film/act5.avif" width="720" height="406" alt="A sealed glass tube holding a slow-pulsing sphere of light, then a beam through two frosted plates casting two marks that do not quite agree" loading="lazy">
+      </picture>
+      <figcaption>Held too long, measured twice</figcaption>
+    </figure>
+
     <div class="finds">
       <div class="find">
         <span class="big num">100%</span>
@@ -504,6 +783,17 @@ Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
       to the events and the dated rate card that produced it. Where a lever cannot be measured from
       your data, it says so instead of estimating it.</p>
 
+    <!-- Above the sample-audit shot and distinct from it — the synthetic
+         screenshot below is the MEASURED artefact; this is the closing
+         beat of the film's own story, not evidence. -->
+    <figure class="act-film">
+      <picture>
+        <source media="(prefers-reduced-motion: reduce)" srcset="assets/film/act6-still.avif">
+        <img src="assets/film/act6.avif" width="720" height="406" alt="A green beam resolving onto a vertical glass plate, a luminous mark forming and holding still" loading="lazy">
+      </picture>
+      <figcaption>The mark that holds</figcaption>
+    </figure>
+
     <a class="shot" href="sample-audit.html">
       <img src="assets/img/sample-audit.png" width="920" height="700" loading="lazy"
         alt="A sample audit: $19,486.50 of measured spend, a 5% cache-hit rate, $10,563.68 recoverable, and a cache-write TTL exposure stated as exposure rather than as a saving">
@@ -511,6 +801,33 @@ Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
     </a>
     <p class="synthetic">Generated from synthetic usage, not a customer's. Yours is computed the
       same way, from a file you produce yourself.</p>
+
+    <!-- Subordinate sibling to the MEASURED cta below: same initCalc() module,
+         second [data-calc] root, explicitly labelled as a model rather than a
+         measurement (spec: "The calculator never replaces the measurement"). -->
+    <div class="calc calc--ghost" id="calc-close" data-calc aria-label="Modelled savings estimate">
+      <p class="eyebrow">Modelled &mdash; three-band formula</p>
+      <div class="calc-rows">
+        <div class="calc-row">
+          <span class="calc-lab">You spend now</span>
+          <div class="calc-big">
+            <input class="calc-amt" type="text" inputmode="numeric" autocomplete="off"
+                   value="$40,000" aria-label="Your monthly Anthropic spend, US dollars" data-in>
+            <span class="calc-chip">per month</span>
+          </div>
+        </div>
+        <div class="calc-seam" aria-hidden="true">&darr;</div>
+        <div class="calc-row">
+          <span class="calc-lab">You'd spend</span>
+          <div class="calc-big">
+            <span class="calc-amt calc-out" data-out>$17,967</span>
+            <span class="calc-chip">same output</span>
+          </div>
+          <span class="calc-sub"><strong data-pct>55%</strong> less &middot; <span data-save>$22,033</span>
+            a month &middot; assumes a <span data-hit>30%</span> hit rate today</span>
+        </div>
+      </div>
+    </div>
 
     <div id="close-cta">
       <a class="cta" data-sc-capsule="cta"
@@ -532,5 +849,112 @@ Narrow the catch to 429 and 5xx, and let 4xx propagate.</pre>
 <script type="module" src="assets/mount.js"></script>
 <!-- Self-mounting on [data-twin]; shared verbatim with index.html. -->
 <script type="module" src="assets/twin.js"></script>
+<!-- The calculator port (Task 5). savings.js's logic is untouched; only the
+     markup and the dark-page tokens around it are new. Two [data-calc] roots
+     share initCalc() — the hero card and act 6's MODELLED sibling — the same
+     "author once, mount twice" shape mount.js already uses for split/twin. -->
+<script type="module">
+import { modelSavings, usd } from './assets/savings.js';
+
+/* Only `spend` is live here; the other four assumptions match index.html's
+   hero widget exactly, so the two pages can't quote different numbers for the
+   same spend. */
+const ASSUMED = { hit: 30, inputShare: 70, batchable: 20, dupRate: 5 };
+
+function initCalc(root) {
+  const inp  = root.querySelector('[data-in]');
+  const out  = root.querySelector('[data-out]');
+  const pct  = root.querySelector('[data-pct]');
+  const save = root.querySelector('[data-save]');
+  const hit  = root.querySelector('[data-hit]');
+  if (!inp || !out) return;
+  if (hit) hit.textContent = ASSUMED.hit + '%';
+
+  /* Caret-preserving formatter, copied verbatim from index.html's initMeter —
+     it is already framework-free. Caret is restored by counting digits to its
+     left, not by character offset, because inserting a comma shifts every
+     offset to its right. */
+  const digitsLeft = (s, pos) => (s.slice(0, pos).match(/\d/g) || []).length;
+  const posAfter = (s, n) => {
+    if (n <= 0) return s.search(/\d/) < 0 ? s.length : s.search(/\d/);
+    let seen = 0;
+    for (let i = 0; i < s.length; i++) {
+      if (/\d/.test(s[i])) { seen++; if (seen === n) return i + 1; }
+    }
+    return s.length;
+  };
+
+  /* The output counts to its new value instead of snapping — 240ms ease-out,
+     interruptible (a fresh keystroke cancels the running tween). tabular-nums
+     on .calc-amt keeps the card from breathing while digits change. First
+     paint snaps (no load animation), and reduced-motion always snaps. */
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let tweenRaf = 0, shown = null;
+  const setOut = (target) => {
+    cancelAnimationFrame(tweenRaf);
+    if (shown === null || still.matches) {
+      shown = target; out.textContent = usd(target); return;
+    }
+    const from = shown, t0 = performance.now();
+    const tick = (now) => {
+      const k = Math.min(1, (now - t0) / 240), e = 1 - Math.pow(1 - k, 3);
+      shown = from + (target - from) * e;
+      out.textContent = usd(Math.round(shown));
+      if (k < 1) tweenRaf = requestAnimationFrame(tick);
+    };
+    tweenRaf = requestAnimationFrame(tick);
+  };
+  const draw = () => {
+    const spend = Math.max(0, Number(inp.value.replace(/[^\d]/g, '')) || 0);
+    const r = modelSavings({ spend, ...ASSUMED });
+    setOut(r.final);
+    if (pct) pct.textContent = r.pct.toFixed(0) + '%';
+    if (save) save.textContent = usd(r.saved);
+    return spend;
+  };
+
+  inp.addEventListener('input', () => {
+    const n = digitsLeft(inp.value, inp.selectionStart ?? inp.value.length);
+    const spend = draw();
+    inp.value = usd(spend);
+    const p = posAfter(inp.value, n);
+    inp.setSelectionRange(p, p);
+  });
+  draw();
+}
+
+try {
+  document.querySelectorAll('[data-calc]').forEach(initCalc);
+
+  /* ── the dock (Task 5 step 2) ── pill visible only once #act-hero has
+     scrolled out of view; click toggles the SAME #calc-card into a fixed
+     overlay in place, no scroll. This is an IntersectionObserver, not a
+     scroll listener — the one rAF clock stays in mount.js (CONTRACT §3). */
+  const heroEl = document.querySelector('#act-hero');
+  // Two triggers (desktop pill, mobile chip) — only one is ever display:block
+  // per the media query, but both stay wired so the swap needs no JS of its
+  // own (CSS breakpoint, live, matching .hud-mark/.hero-mark next to it).
+  const pills = [...document.querySelectorAll('#calc-pill, #calc-pill-sm')];
+  const card = document.querySelector('#calc-card');
+  if (heroEl && pills.length && card) {
+    const io = new IntersectionObserver(([entry]) => {
+      document.body.classList.toggle('calc-docked', !entry.isIntersecting);
+      if (entry.isIntersecting) {
+        card.classList.remove('calc-overlay');
+        for (const p of pills) p.setAttribute('aria-expanded', 'false');
+      }
+    }, { threshold: 0 });
+    io.observe(heroEl);
+
+    for (const p of pills) p.addEventListener('click', () => {
+      const open = card.classList.toggle('calc-overlay');
+      for (const q of pills) q.setAttribute('aria-expanded', String(open));
+      if (open) card.querySelector('[data-in]')?.focus();
+    });
+  }
+} catch (err) {
+  console.info('calculator did not mount, page continues flat:', err);
+}
+</script>
 </body>
 </html>

@@ -63,17 +63,28 @@ const TURN_PROMPTS: string[] = [
 type Block = { type: "text"; text: string; cache_control?: { type: "ephemeral" } };
 
 function toEvent(usage: Anthropic.Messages.Usage, tag: string): UsageEvent {
+  // Mirrors src/importers/claudeCode.ts's readCounts: when the API response doesn't
+  // carry the TTL split, the whole write lands in the cheaper 5-minute bucket rather
+  // than being dropped — costOfEvent refuses a write total that doesn't match the split.
+  const cacheCreationTokens = usage.cache_creation_input_tokens ?? 0;
+  const cc = usage.cache_creation;
   return {
     idempotencyKey: tag,
     accountId: "bench",
     projectId: "bench",
     ts: new Date().toISOString(),
+    sessionId: null,
     source: "claude_code",
+    serviceTier: usage.service_tier,
     model: MODEL,
     inputTokens: usage.input_tokens ?? 0,
     cacheReadTokens: usage.cache_read_input_tokens ?? 0,
-    cacheCreationTokens: usage.cache_creation_input_tokens ?? 0,
+    cacheCreationTokens,
+    cacheCreation5mTokens: cc ? cc.ephemeral_5m_input_tokens : cacheCreationTokens,
+    cacheCreation1hTokens: cc ? cc.ephemeral_1h_input_tokens : 0,
     outputTokens: usage.output_tokens ?? 0,
+    compactionInputTokens: 0,
+    compactionOutputTokens: 0,
   };
 }
 

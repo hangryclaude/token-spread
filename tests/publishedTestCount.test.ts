@@ -20,7 +20,7 @@ const CHILD = "TOKEN_SPREAD_COUNTING_TESTS";
    quick-start 140, RUNNING.md 140, BRIEF.md 130 — while the suite ran 157. Checking only the
    banner would have left a reader running `bun run test` against a comment promising 140. */
 const PUBLISHED: Record<string, RegExp> = {
-  "README.md": /`(\d+) tests`/,
+  "README.md": /badge\/tests-(\d+)/,
   "README.md#quickstart": /bun run test\s+# (\d+) tests/,
   "RUNNING.md": /bun run test\s+# (\d+) tests/,
   "site/BRIEF.md": /\*\*(\d+) tests\*\*/,

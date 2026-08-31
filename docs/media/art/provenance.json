@@ -47,9 +47,15 @@
   },
   "hero-illustration": {
     "model": "higgsfield/nano_banana_pro",
-    "job": "a3c3fe54-cd34-4f0f-a15f-56e2f26e8080",
+    "job": "fb2af19a-540a-4f82-8900-7e9a8886277d",
     "resolution": "4k",
     "prompt": "richly detailed cinematic illustration in the style of a campy movie poster: a charismatic old-school AUDITOR character (green eyeshade visor, sleeve garters, waistcoat) at a massive oak desk inside a candle-lit bank vault, brass balance scale weighing two identical glowing white request-orbs, a paper bill burning down to a stub, rubber stamps reading PASS and FAIL, a ledger embossed THE REGISTER, CRT screens reading SAME BYTES ~ SMALLER BILL and READ ONLY, jars of luminous green tokens, warm tungsten plus emerald glow, NO numbers or digits anywhere",
-    "note": "the README character hero, frankentui-style, picked by Angus over a dragon-accountant take and a Seedream take; parchment border cropped with ffmpeg; in-image text is word-labels only, never numerals — tallies stay computed"
+    "note": "v2, the integrated scene: same Auditor via image-reference chain (a3c3fe54 base -> 6b1380af enrichment -> fb2af19a fix pass restoring the FAIL stamp and cleaning drawer text). Every product surface is a prop: IDENTITY BAR tag, PASS/FAIL/UNRESOLVED stamps, THE REGISTER, SWEEPS cabinet, skill ledgers, TTL gauge, CACHE HIT meter, TOKENS jar. Word-labels only, no numerals; border cropped with ffmpeg."
+  },
+  "auditor-master": {
+    "model": "higgsfield/nano_banana_pro",
+    "job": "a3c3fe54-cd34-4f0f-a15f-56e2f26e8080",
+    "resolution": "4k",
+    "note": "THE CHARACTER MASTER — the clean first take of the Auditor, kept at 2048px as the image-reference for all future renders of him (new cards, seasonal art, the site). To keep him consistent, always pass docs/img/auditor-master.jpg as --image-references and describe changes relative to this scene."
   }
 }

@@ -11,7 +11,7 @@
 
 <div align="center">
 
-<img src="docs/img/hero-illustration.jpg" alt="The Auditor: a green-visored adjudicator at a vault desk weighing two identical glowing requests on a brass scale while a paper bill burns down to a stub — PASS and FAIL stamps ready beside a ledger embossed THE REGISTER" width="820">
+<img src="docs/img/hero-illustration.jpg" alt="The Auditor: a green-visored adjudicator at a vault desk, weighing two identical glowing requests on a brass scale tagged IDENTITY BAR while a bill burns to a stub — PASS, FAIL and UNRESOLVED stamps by a ledger embossed THE REGISTER, a SWEEPS card-catalog behind him, skill ledgers PROMPT CACHE, BATCH TIER, BILL AUDIT and DEDUP on the desk, a TTL gauge, a CACHE HIT meter, and a jar of glowing TOKENS" width="820">
 
 <br>
 

@@ -96,7 +96,7 @@ const READERS: Record<string, Record<string, RegExp>> = {
   "README.md": {
     total: /(\d+) candidate techniques were adjudicated/,
     pass: /\*\*(\d+) pass\*\*/,
-    contractual: /\*\*(\d+) pass on\n?the provider's word alone\*\*/,
+    contractual: /\*\*(\d+) pass on\s+the provider's word alone\*\*/,
     rejected: /\*\*(\d+) rejected\*\*/,
     unresolved: /\*\*(\d+) unresolved\*\*/,
   },
@@ -173,7 +173,16 @@ test("no published file states a register number that is no longer one", () => {
   const live = new Set<number>(Object.values(counts));
   const wrong = new Set<string>();
   for (const file of SCANNED) {
-    const raw = readFileSync(file, "utf8");
+    /* A page may recount the register's own history — the founding 176, the 71→59→49→47 audit —
+       and a dated historical tally is not a stale current claim; it is the story this register
+       exists to tell. Those passages sit inside explicit markers so the exemption is visible in
+       the source, and everything outside them is still held to the live tally. An unclosed
+       marker fails loudly rather than silently exempting the rest of the file. */
+    let raw = readFileSync(file, "utf8");
+    const open = (raw.match(/<!-- dated-history -->/g) ?? []).length;
+    const close = (raw.match(/<!-- \/dated-history -->/g) ?? []).length;
+    expect(open, `${file}: ${open} dated-history openers vs ${close} closers`).toBe(close);
+    raw = raw.replace(/<!-- dated-history -->[\s\S]*?<!-- \/dated-history -->/g, " ");
     /* Two haystacks, because neither alone sees every claim. Stripping tags is what joins
        "<strong>67</strong>" to the "pass the bar" after it — but a tag is also where alt= and
        content= keep their text, so stripping deletes the meta descriptions and the image alt

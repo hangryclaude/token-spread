@@ -89,7 +89,7 @@ your own real transcripts, and refuses to print a number it cannot back with a t
 | **Read-only guarantee, tested not promised** | asserts byte-identical input after a full run | `tests/readOnly.test.ts` |
 | **Standalone audit document** | one HTML file, no remote stylesheet, no webfont, no script | `render/auditHtml.ts` |
 | **Adjudicated register, not a vibe** | 371 techniques graded against one machine-checked bar | `docs/research/SCHEMA.md` |
-| **Corrections that don't disappear** | verdicts change in public, dated, appended, never edited away | 63 entries, walked through below |
+| **Corrections that don't disappear** | verdicts change in public, dated, appended, never edited away | corrections on 63 of 371 entries, walked through below |
 
 ---
 
@@ -210,6 +210,8 @@ counts are read from the verdict file at render time, never typed into the film.
 
 ## The sweep-by-sweep history
 
+<!-- dated-history -->
+
 The register did not arrive at 371 entries in one pass. It arrived by growing, getting checked,
 losing entries it was wrong about, and writing that down instead of quietly fixing it. This is
 the whole arc, in order.
@@ -326,6 +328,7 @@ smoothed over.
 attributed, and still on the page. That is not a bug in the process. It is the only evidence the
 process is real.**
 
+<!-- /dated-history -->
 ---
 
 ## The nine adjudication traps
@@ -971,6 +974,8 @@ has already passed the bar.
 
 <img src="docs/media/cards/register.jpg" alt="371 techniques adjudicated: 81 pass the bar, 95 pass on the provider's word alone, 135 rejected outright, 60 unresolved and stated as unresolved." width="820">
 
+<!-- dated-history -->
+
 | Document | |
 |---|---|
 | [Strict identity register](docs/research/2026-08-10-strict-identity-register.md) | the founding 176, plus the 2026-08-11 errata that corrected nine of them |
@@ -987,6 +992,8 @@ has already passed the bar.
 | [Optical compression bench](bench/optical/README.md) | 2.07× at 93.9% blind recall, against 20–100× from delegation |
 | [SCHEMA.md](docs/research/SCHEMA.md) | the verdict format, the evidence-class enum, and the dispute path this whole register is falsifiable through |
 
+
+<!-- /dated-history -->
 The explainer cards above are composed by [`docs/media/cards.mjs`](docs/media/cards.mjs): the
 backdrops are generated with Higgsfield Soul 2.0 (model, job ids, seeds and full prompts recorded
 in [`docs/media/art/provenance.json`](docs/media/art/provenance.json); the earlier fal set lives in
@@ -1032,7 +1039,7 @@ Honest version, with the numbers that are not flattering:
 | Live, browsable spend dashboard | ✅ | ❌ | ❌ — one-shot report, not a dashboard |
 | Cross-session memory / context recall | ❌ | ✅ | ❌ — a different problem entirely |
 | Publishes rejected & unresolved techniques, not just what passed | ❌ | ❌ | ✅ — 135 `FAIL` + 60 unresolved, published |
-| Dated, appended, never-edited-away corrections ledger | ❌ | ❌ | ✅ — 63 entries |
+| Dated, appended, never-edited-away corrections ledger | ❌ | ❌ | ✅ — corrections on 63 of 371 entries |
 | Read-only guarantee backed by a test suite | ⚠️ not independently checked here | ⚠️ not independently checked here | ✅ `tests/readOnly.test.ts` |
 
 **When to use token-spread:** you want a citable answer to "is this LLM cost claim real," or you

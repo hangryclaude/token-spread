@@ -44,5 +44,12 @@
     "prompt": "abstract cinematic illustration, absolutely no text, no letters, no glyphs, no symbols, no numbers, no logos, deep near-black field, the left half perfectly empty and calm, on the right a tall rising sweep of emerald aurora light made of millions of fine luminous particles, like a column of green energy or data rising into darkness, volumetric glow, ultra fine particulate detail, premium editorial sci-fi, dark matte background",
     "seed": 222222,
     "note": "third hero take, picked by Angus from three composited variants (dense circuit rejected for faint pseudo-digits, slab for ambiguity); backdrop for docs/img/banner.html via banner.mjs"
+  },
+  "hero-illustration": {
+    "model": "higgsfield/nano_banana_pro",
+    "job": "a3c3fe54-cd34-4f0f-a15f-56e2f26e8080",
+    "resolution": "4k",
+    "prompt": "richly detailed cinematic illustration in the style of a campy movie poster: a charismatic old-school AUDITOR character (green eyeshade visor, sleeve garters, waistcoat) at a massive oak desk inside a candle-lit bank vault, brass balance scale weighing two identical glowing white request-orbs, a paper bill burning down to a stub, rubber stamps reading PASS and FAIL, a ledger embossed THE REGISTER, CRT screens reading SAME BYTES ~ SMALLER BILL and READ ONLY, jars of luminous green tokens, warm tungsten plus emerald glow, NO numbers or digits anywhere",
+    "note": "the README character hero, frankentui-style, picked by Angus over a dragon-accountant take and a Seedream take; parchment border cropped with ffmpeg; in-image text is word-labels only, never numerals — tallies stay computed"
   }
 }

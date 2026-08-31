@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "starting_at": "2026-08-30T10:00:00Z",
+      "ending_at": "2026-08-30T10:01:00Z",
+      "results": [
+        {
+          "model": "claude-haiku-4-5",
+          "service_tier": "standard",
+          "workspace_id": "ws-a",
+          "account_id": "acct-1",
+          "uncached_input_tokens": 1000,
+          "cache_read_input_tokens": 0,
+          "output_tokens": 500,
+          "cache_creation": { "ephemeral_5m_input_tokens": 0, "ephemeral_1h_input_tokens": 0 }
+        }
+      ]
+    }
+  ],
+  "has_more": true,
+  "next_page": "page-2-cursor"
+}

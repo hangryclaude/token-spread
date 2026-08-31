@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Nightly, 02:10 local. Exit 2 means a workspace-day fell outside 1¢ + 0.1% —
+     the err log carries the verdict table; freeze admissions until it's explained. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.tokenspread.pool.reconcile</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>set -a; . "$HOME/.config/token-spread/admin.env"; set +a; exec /opt/homebrew/bin/bun run /Users/angus/dev/token-spread/src/pool/cli.ts reconcile --config /Users/angus/dev/token-spread/pool.json --data /Users/angus/dev/token-spread/pool-data</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>2</integer>
+    <key>Minute</key><integer>10</integer>
+  </dict>
+  <key>StandardOutPath</key><string>/Users/angus/dev/token-spread/pool-data/logs/reconcile.out.log</string>
+  <key>StandardErrorPath</key><string>/Users/angus/dev/token-spread/pool-data/logs/reconcile.err.log</string>
+</dict>
+</plist>

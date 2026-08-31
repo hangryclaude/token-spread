@@ -1,0 +1,12 @@
+{
+  "data": [
+    {
+      "starting_at": "2026-08-30T00:00:00Z",
+      "results": [
+        { "amount": "500.0000", "currency": "USD", "workspace_id": "ws-a" }
+      ]
+    }
+  ],
+  "has_more": false,
+  "next_page": null
+}

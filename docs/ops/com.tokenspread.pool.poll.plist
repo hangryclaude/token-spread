@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- launchd gets /usr/bin:/bin:/usr/sbin:/sbin and no shell profile: every path here is
+     absolute, and the admin key is sourced from the env file rather than assumed. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.tokenspread.pool.poll</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>set -a; . "$HOME/.config/token-spread/admin.env"; set +a; exec /opt/homebrew/bin/bun run /Users/angus/dev/token-spread/src/pool/cli.ts poll --config /Users/angus/dev/token-spread/pool.json --data /Users/angus/dev/token-spread/pool-data --enforce</string>
+  </array>
+  <key>StartInterval</key><integer>60</integer>
+  <key>StandardOutPath</key><string>/Users/angus/dev/token-spread/pool-data/logs/poll.out.log</string>
+  <key>StandardErrorPath</key><string>/Users/angus/dev/token-spread/pool-data/logs/poll.err.log</string>
+  <key>ThrottleInterval</key><integer>30</integer>
+</dict>
+</plist>

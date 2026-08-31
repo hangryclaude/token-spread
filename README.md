@@ -11,6 +11,10 @@
 
 <div align="center">
 
+<img src="docs/img/hero-illustration.jpg" alt="The Auditor: a green-visored adjudicator at a vault desk weighing two identical glowing requests on a brass scale while a paper bill burns down to a stub — PASS and FAIL stamps ready beside a ledger embossed THE REGISTER" width="820">
+
+<br>
+
 <img src="docs/img/banner.png" alt="token-spread — the same request, the same model, a smaller bill" width="820">
 
 <br>

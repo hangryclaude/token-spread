@@ -37,5 +37,12 @@
     "prompt": "abstract non-representational technical illustration, absolutely no text, no letters, no glyphs, no writing, no symbols, no numbers, no logos, no user interface, deep near-black background, obsidian and graphite tones, a single luminous emerald green accent, ultra-fine micro-detail, subtle volumetric glow, cinematic depth, premium editorial sci-fi minimalism, matte surfaces, a centered symmetrical composition, a wide thin emerald spread between two long dark horizontal ledger lines, faint luminous particulate drifting between them, everything else near-black, monumental and calm",
     "seed": 662140,
     "note": "backdrop for the GitHub social-preview (OG) image, not a README card"
+  },
+  "hero": {
+    "model": "higgsfield/text2image_soul_v2",
+    "job": "31ac5429-ec23-4b20-be7b-7cb3b4063ff5",
+    "prompt": "abstract cinematic illustration, absolutely no text, no letters, no glyphs, no symbols, no numbers, no logos, deep near-black field, the left half perfectly empty and calm, on the right a tall rising sweep of emerald aurora light made of millions of fine luminous particles, like a column of green energy or data rising into darkness, volumetric glow, ultra fine particulate detail, premium editorial sci-fi, dark matte background",
+    "seed": 222222,
+    "note": "third hero take, picked by Angus from three composited variants (dense circuit rejected for faint pseudo-digits, slab for ambiguity); backdrop for docs/img/banner.html via banner.mjs"
   }
 }

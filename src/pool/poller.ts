@@ -4,7 +4,7 @@
  * sibling modules; this file's job is to fetch honestly, write raw-first, and never lose
  * a row to a crash mid-cycle.
  */
-import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { appendRows, balances, parseLedgerJsonl, serializeLedgerRow, usageRowsFromEvents } from "./ledger";
 import { actionsFromDecision, budgetDecision } from "./budget";
@@ -139,6 +139,16 @@ async function acquireLock(path: string): Promise<() => void> {
       return () => unlinkSync(path);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw err;
+      // A lock older than any legitimate poll could run means its holder died mid-cycle.
+      // Honoring it forever keeps the poller down until a human notices — the exact
+      // failure the heartbeat exists to catch — so a stale lock is broken, not obeyed.
+      // The removal races benignly: whoever wins the subsequent "wx" holds the lock.
+      try {
+        if (Date.now() - statSync(path).mtimeMs > LOCK_STALE_MS) {
+          unlinkSync(path);
+          continue;
+        }
+      } catch { /* lock vanished between checks — loop and retake */ }
       if (Date.now() >= deadline) {
         throw new Error(`acquireLock: timed out after ${LOCK_MAX_WAIT_MS}ms waiting for ${path}`);
       }
@@ -146,6 +156,9 @@ async function acquireLock(path: string): Promise<() => void> {
     }
   }
 }
+
+/** Longer than any legitimate poll cycle; past this the lock's holder is presumed dead. */
+const LOCK_STALE_MS = 10 * 60_000;
 
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;

@@ -355,3 +355,22 @@ test("a torn alerts.json neither bricks the poll nor kills cap enforcement", asy
   // And the rewritten alerts.json is whole again.
   expect(() => JSON.parse(readFileSync(join(dataDir, "alerts.json"), "utf8"))).not.toThrow();
 });
+
+test("a stale poll.lock from a killed process is broken, not honored forever", async () => {
+  // A poll killed mid-cycle leaves its lock behind. Honoring it forever means the
+  // poller is down until a human notices — the exact failure the heartbeat exists to
+  // catch, so the lock self-heals: older than the staleness line, it gets broken.
+  const dataDir = tmpDataDir();
+  const lockPath = join(dataDir, "poll.lock");
+  writeFileSync(lockPath, "");
+  const past = new Date(Date.now() - 15 * 60_000); // 15 minutes ago
+  const { utimesSync } = await import("node:fs");
+  utimesSync(lockPath, past, past);
+  const { fn } = usageFetchStub();
+  const summary = await pollOnce({
+    fetchFn: fn, adminKey: "sk-ant-admin-test", config: CONFIG, dataDir,
+    nowIso: () => "2026-08-30T10:05:00Z", enforce: false, log: () => {},
+  });
+  // The poll ran (rows appended from the fixture pages) instead of timing out.
+  expect(summary.appended).toBeGreaterThan(0);
+});

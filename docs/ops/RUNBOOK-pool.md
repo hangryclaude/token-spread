@@ -87,7 +87,8 @@ launchctl load ~/Library/LaunchAgents/com.tokenspread.pool.poll.plist
 launchctl load ~/Library/LaunchAgents/com.tokenspread.pool.reconcile.plist
 ```
 
-Poll runs every 60s; reconcile nightly at 02:10 (exit 2 = out of tolerance — check
+Poll runs every 60s; reconcile nightly at 02:10 (exit 2 = out of tolerance **or**
+unmapped ledger rows — either way the books don't fully reconcile; check
 `pool-data/logs/reconcile.err.log`). The dead-man check is `pool-data/health.json`:
 if its `lastPollAt` goes stale by more than 10 minutes, the poller is down and the
 workspace spend limits from step 1 are the only cap — fix it before topping anyone up.

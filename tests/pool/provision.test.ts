@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { planWorkspaces, matchKeys, workspaceNameFor, fetchAllAdminPages } from "../../src/pool/provision";
+import { planWorkspaces, matchKeys, workspaceNameFor, fetchAllAdminPages, provision } from "../../src/pool/provision";
 
 test("workspace names are derived, bounded, and collision-proof for legal member ids", () => {
   // Convention pinned here: "pool-" + member id. Member ids are lowercase kebab (config.ts
@@ -61,4 +61,74 @@ test("fetchAllAdminPages throws loudly on a non-2xx page, never half-returns", a
   await expect(
     fetchAllAdminPages(fetchFn, "https://api.anthropic.com/v1/organizations/workspaces", "k"),
   ).rejects.toThrow(/403/);
+});
+
+function adminStub() {
+  // Scripted Admin API: no workspaces yet; creates succeed; the key list carries
+  // exactly one active workspace-scoped key per created workspace.
+  const calls: { url: string; method: string; body?: unknown }[] = [];
+  let created = 0;
+  const fn = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    const method = init?.method ?? "GET";
+    calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+    if (url.includes("/workspaces") && method === "POST") {
+      created++;
+      return new Response(JSON.stringify({ id: `wrkspc_new_${created}`, name: JSON.parse(String(init!.body)).name }), { status: 200 });
+    }
+    if (url.includes("/workspaces")) {
+      return new Response(JSON.stringify({ data: [], has_more: false }), { status: 200 });
+    }
+    // api_keys list: one active key per workspace created so far
+    const data = Array.from({ length: created }, (_, i) => ({
+      id: `apikey_new_${i + 1}`, status: "active",
+      scope: { type: "workspace", workspace_id: `wrkspc_new_${i + 1}` },
+    }));
+    return new Response(JSON.stringify({ data, has_more: false }), { status: 200 });
+  }) as unknown as typeof fetch;
+  return { fn, calls };
+}
+
+test("provision end-to-end: creates missing workspaces and writes a valid pool.json", async () => {
+  const { mkdtempSync, readFileSync: rf } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join: j } = await import("node:path");
+  const dir = mkdtempSync(j(tmpdir(), "ts-pool-prov-"));
+  const outPath = j(dir, "pool.json");
+  const { fn, calls } = adminStub();
+  const logs: string[] = [];
+  const r = await provision({ fetchFn: fn, adminKey: "k", memberIds: ["angus", "friend-one"], outPath, log: (l) => logs.push(l) });
+  expect(r.created).toEqual(["angus", "friend-one"]);
+  expect(r.wrote).toBe(true);
+  const config = JSON.parse(rf(outPath, "utf8"));
+  // Pairing is by workspace id, not list order luck: angus got wrkspc_new_1 → apikey_new_1.
+  expect(config.members).toEqual([
+    { id: "angus", workspaceId: "wrkspc_new_1", apiKeyId: "apikey_new_1" },
+    { id: "friend-one", workspaceId: "wrkspc_new_2", apiKeyId: "apikey_new_2" },
+  ]);
+  // And the workspace create bodies used the pool-<member> convention.
+  const posts = calls.filter((c) => c.method === "POST").map((c) => (c.body as { name: string }).name);
+  expect(posts).toEqual(["pool-angus", "pool-friend-one"]);
+});
+
+test("provision with a keyless workspace names the gap and refuses to write pool.json", async () => {
+  const { mkdtempSync, existsSync: ex } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join: j } = await import("node:path");
+  const dir = mkdtempSync(j(tmpdir(), "ts-pool-prov-"));
+  const outPath = j(dir, "pool.json");
+  // Same stub but the key list is always empty: workspaces exist, keys never clicked out.
+  const fn = (async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes("/workspaces") && (init?.method ?? "GET") === "POST") {
+      return new Response(JSON.stringify({ id: "wrkspc_x", name: "pool-angus" }), { status: 200 });
+    }
+    return new Response(JSON.stringify({ data: [], has_more: false }), { status: 200 });
+  }) as unknown as typeof fetch;
+  const logs: string[] = [];
+  const r = await provision({ fetchFn: fn, adminKey: "k", memberIds: ["angus"], outPath, log: (l) => logs.push(l) });
+  expect(r.wrote).toBe(false);
+  expect(r.missing).toEqual(["angus"]);
+  expect(ex(outPath)).toBe(false);
+  expect(logs.some((l) => l.includes("MISSING"))).toBe(true);
 });

@@ -66,3 +66,25 @@ test("a missing admin key is a warning, never fatal — doctor must run keyless"
   expect(check(r, "admin-key").ok).toBe(false);
   expect(check(r, "admin-key").fatal).toBe(false);
 });
+
+test("an unreadable ledger is fatal, distinct from an empty one", () => {
+  const r = doctorReport({ ...base(), ledgerText: null });
+  expect(r.ok).toBe(false);
+  expect(check(r, "ledger").ok).toBe(false);
+  expect(check(r, "ledger").detail).toContain("unreadable");
+});
+
+test("a missing config file and an unwritable data dir are both fatal", () => {
+  const r1 = doctorReport({ ...base(), configText: null });
+  expect(r1.ok).toBe(false);
+  expect(check(r1, "config").ok).toBe(false);
+  const r2 = doctorReport({ ...base(), dataDirWritable: false });
+  expect(r2.ok).toBe(false);
+  expect(check(r2, "data-dir").ok).toBe(false);
+});
+
+test("health.json that exists but cannot be parsed is fatal", () => {
+  const r = doctorReport({ ...base(), healthText: "<<unreadable>>" });
+  expect(r.ok).toBe(false);
+  expect(check(r, "health").detail).toContain("unreadable");
+});

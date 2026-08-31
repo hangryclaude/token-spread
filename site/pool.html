@@ -283,7 +283,7 @@ function recalc(){
   const verdict = $("pc-verdict");
   if (u >= PRO) {
     verdict.textContent = `At ${money(u)} a month, Claude Pro is simply the better deal — the audit would say so and the pool would point you there.`;
-  } else if (u * 2 > t) {
+  } else if (u * 2 >= t) { // >=: the backend gate is STRICTLY under half, so the boundary refuses here too
     verdict.textContent = `${money(u)} a month is over half a ${money(t)} seat — the admission gate wants a bigger top-up or lighter usage, so nobody joins a pool that barely helps them.`;
   } else {
     verdict.textContent = `Under the seat gate (${money(u)} < half of ${money(t)}) — you're exactly who this is for, spending ~${mtok.toFixed(1)}M tokens of real work a month.`;

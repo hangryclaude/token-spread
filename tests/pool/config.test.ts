@@ -165,3 +165,9 @@ test("memberById finds a member by id and returns null for an unknown id", () =>
   expect(memberById(EXAMPLE_POOL_CONFIG, "friend-two")?.workspaceId).toBe("ws-friend-two");
   expect(memberById(EXAMPLE_POOL_CONFIG, "nobody")).toBeNull();
 });
+
+test("EXAMPLE_POOL_CONFIG carries the spec's 1-cent floor, not the pre-fix value", () => {
+  // The default was fixed to 1,000,000 µ¢ (= 1¢); the example must not quietly
+  // re-teach the 100x-too-tight number the fix existed to kill.
+  expect(EXAMPLE_POOL_CONFIG.toleranceFloorMicroCents).toBe(1_000_000);
+});

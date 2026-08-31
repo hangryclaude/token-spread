@@ -269,3 +269,36 @@ test("status --html writes a standalone member page: balances in, key ids out", 
   expect(html).not.toMatch(/<link[^>]+(href=")?http/);
   expect(html).not.toContain("<script src=");
 });
+
+test("qualify exits 0 in, 3 out, 1 on a nonsense report — all three doors", async () => {
+  const dir = tmpDataDir();
+  const good = join(dir, "light.json"), heavy = join(dir, "heavy.json"), junk = join(dir, "junk.json");
+  // $5.20 over 26 days -> 600/30d < 1500 (half of $30): in. $515.10 -> way out.
+  writeFileSync(good, JSON.stringify({ currentCost: { cents: 520 } }));
+  writeFileSync(heavy, JSON.stringify({ currentCost: { cents: 51510 } }));
+  writeFileSync(junk, JSON.stringify({ hello: "world" }));
+  const base = ["qualify", "--days", "26", "--seat-cents", "3000", "--report"];
+  const rIn = await run([...base, good]);
+  expect(rIn.code).toBe(0);
+  expect(rIn.stdout).toContain("QUALIFIED");
+  const rOut = await run([...base, heavy]);
+  expect(rOut.code).toBe(3);
+  expect(rOut.stdout).toContain("NOT QUALIFIED");
+  const rJunk = await run([...base, junk]);
+  expect(rJunk.code).toBe(1);
+});
+
+test("doctor exits 0 on a healthy dir and 1 with a FAIL line on a poisoned ledger", async () => {
+  const dir = tmpDataDir();
+  const configPath = writeConfig(dir, {
+    members: [{ id: "solo", workspaceId: "ws-solo", apiKeyId: "apikey_solo" }],
+  });
+  const ok = await run(["doctor", "--config", configPath, "--data", dir]);
+  expect(ok.code).toBe(0);
+  expect(ok.stdout).toContain("doctor: ready");
+  writeFileSync(join(dir, "ledger.jsonl"), '{"seq":1,broken\n');
+  const bad = await run(["doctor", "--config", configPath, "--data", dir]);
+  expect(bad.code).toBe(1);
+  expect(bad.stdout).toContain("FAIL");
+  expect(bad.stdout).toContain("malformed");
+});

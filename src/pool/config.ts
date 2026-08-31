@@ -201,6 +201,6 @@ export const EXAMPLE_POOL_CONFIG: PoolConfig = {
   alertThresholdPcts: [50, 80, 95],
   exposureWindowMinutes: 7,
   burnLookbackDays: 7,
-  toleranceFloorMicroCents: 10_000,
+  toleranceFloorMicroCents: 1_000_000,
   tolerancePpm: 1000,
 };

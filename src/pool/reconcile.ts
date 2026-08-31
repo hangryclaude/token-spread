@@ -129,6 +129,8 @@ export function parseCostReport(
       if (typeof bucket?.starting_at !== "string") { malformed++; continue; }
       const day: string = bucket.starting_at.slice(0, 10);
       for (const result of bucket.results ?? []) {
+        // A null or non-object entry is one rotten row, not a reason to lose the night.
+        if (result === null || typeof result !== "object") { malformed++; continue; }
         if (result.currency !== "USD") { malformed++; continue; }
         const micro = parseDecimalCentsToMicroCents(String(result.amount));
         if (micro === null) { malformed++; continue; }

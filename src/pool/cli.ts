@@ -53,8 +53,9 @@ reconcile flags:
                             worth reconciling once it has fully elapsed)
   --admin-key-env <name>   env var holding the Admin API key (default ANTHROPIC_ADMIN_KEY)
 
-  Exits 2 if any workspace-day is outside tolerance (spec §6) — a cron job turns that
-  into an alarm. 0 means every compared day matched within tolerance.
+  Exits 2 if any workspace-day is outside tolerance (spec §6) OR any ledger row has no
+  current workspace mapping — both mean the books don't fully reconcile, and a cron job
+  turns either into an alarm. 0 means every row mapped and every day matched.
 
 credit flags:
   --member <id>     member id from the config
@@ -484,10 +485,20 @@ function cmdDoctor(argv: string[]): void {
     dataDirWritable = true;
   } catch { /* reported by the check */ }
 
+  // An unreadable file is a doctor FINDING, never a stack trace — the whole point
+  // of doctor is to be runnable when things are broken.
   const ledgerPath = join(dataDir, "ledger.jsonl");
-  const ledgerText = existsSync(ledgerPath) ? readFileSync(ledgerPath, "utf8") : "";
+  let ledgerText: string | null = "";
+  if (existsSync(ledgerPath)) {
+    try { ledgerText = readFileSync(ledgerPath, "utf8"); } catch { ledgerText = null; }
+  }
   const healthPath = join(dataDir, "health.json");
-  const healthText = existsSync(healthPath) ? readFileSync(healthPath, "utf8") : null;
+  let healthText: string | null = null;
+  if (existsSync(healthPath)) {
+    // Read failure degrades to a non-JSON marker, which the health check reports
+    // as unreadable — the same verdict a corrupted file earns.
+    try { healthText = readFileSync(healthPath, "utf8"); } catch { healthText = "<<unreadable>>"; }
+  }
   const plistsPresent = ["com.tokenspread.pool.poll.plist", "com.tokenspread.pool.reconcile.plist"]
     .every((p) => existsSync(join(process.env.HOME ?? "", "Library", "LaunchAgents", p)));
 

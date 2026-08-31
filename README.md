@@ -38,7 +38,7 @@ for a document; 0 prompts are ever read.
 
 <p align="center">
 
-![tests](https://img.shields.io/badge/tests-407%20passing-brightgreen) ![register](https://img.shields.io/badge/register-371%20adjudicated-blue) ![pass](https://img.shields.io/badge/pass-81%2F371-informational) ![license](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-lightgrey) ![runtime deps](https://img.shields.io/badge/runtime%20deps-0-success) ![runtime](https://img.shields.io/badge/runtime-bun-black) ![skills](https://img.shields.io/badge/skills-8-orange)
+![tests](https://img.shields.io/badge/tests-418%20passing-brightgreen) ![register](https://img.shields.io/badge/register-371%20adjudicated-blue) ![pass](https://img.shields.io/badge/pass-81%2F371-informational) ![license](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-lightgrey) ![runtime deps](https://img.shields.io/badge/runtime%20deps-0-success) ![runtime](https://img.shields.io/badge/runtime-bun-black) ![skills](https://img.shields.io/badge/skills-8-orange)
 
 </p>
 
@@ -820,7 +820,7 @@ traffic. The example is the shape, not your bill.
 
 ```bash
 bun install                              # no runtime deps
-bun run test        # 407 tests
+bun run test        # 418 tests
 bun run typecheck   # no type errors
 bun run src/cli.ts --dir ~/.claude/projects
 ```

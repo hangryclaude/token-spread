@@ -26,7 +26,8 @@ export interface DoctorResult {
 export function doctorReport(deps: {
   configText: string | null;
   dataDirWritable: boolean;
-  ledgerText: string;
+  /** null = the file exists but could not be read — worse than empty, and fatal. */
+  ledgerText: string | null;
   healthText: string | null;
   adminKeySet: boolean;
   plistsPresent: boolean;
@@ -54,6 +55,9 @@ export function doctorReport(deps: {
     ? { name: "data-dir", ok: true, fatal: true, detail: "writable" }
     : { name: "data-dir", ok: false, fatal: true, detail: "not writable — the ledger cannot append" });
 
+  if (deps.ledgerText === null) {
+    checks.push({ name: "ledger", ok: false, fatal: true, detail: "ledger.jsonl unreadable — fix permissions or restore from raw/" });
+  } else {
   const ledger = parseLedgerJsonl(deps.ledgerText.split("\n"));
   checks.push(ledger.malformed === 0
     ? { name: "ledger", ok: true, fatal: true, detail: `${ledger.state.rows.length} row(s), clean` }
@@ -61,6 +65,7 @@ export function doctorReport(deps: {
         name: "ledger", ok: false, fatal: true,
         detail: `${ledger.malformed} malformed line(s) — restore from raw/ before going further`,
       });
+  }
 
   if (deps.healthText === null) {
     // Pre-live is a legitimate state; the heartbeat only binds once it has ever beaten.

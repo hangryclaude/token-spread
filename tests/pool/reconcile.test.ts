@@ -227,3 +227,15 @@ test("a bucket with a missing or non-string starting_at is malformed, not a cras
     { day: "2026-08-30", workspaceId: "ws-b", amountMicroCents: 123_450_000 },
   ]);
 });
+
+test("a null or non-object entry in bucket.results is malformed, not a crash", () => {
+  const pages = [{ data: [{ starting_at: "2026-08-30T00:00:00Z", results: [
+    null,
+    "garbage",
+    { amount: "50.0000", currency: "USD", workspace_id: "ws-a" },
+  ] } ] }];
+  const { rows, malformed } = parseCostReport(pages);
+  // "50.0000" cents = 50 x 1,000,000 = 50,000,000 micro-cents.
+  expect(malformed).toBe(2);
+  expect(rows).toEqual([{ day: "2026-08-30", workspaceId: "ws-a", amountMicroCents: 50_000_000 }]);
+});

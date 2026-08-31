@@ -6,7 +6,7 @@
  * it is the outermost shell: something has to supply the real "now" the rest of the
  * system only ever receives as an injected string.
  */
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   buildCostReportUrl, buildUsageReportUrl, fetchAllPages, pollOnce,
@@ -16,6 +16,8 @@ import { peakBurnPerMinuteMicroCents, reserveMicroCents } from "./reserve";
 import { budgetDecision } from "./budget";
 import { ledgerDailyByWorkspace, parseCostReport, reconcile, reconciliationRows } from "./reconcile";
 import { memberById, memberToWorkspace, parsePoolConfig } from "./config";
+import { qualifyVerdict } from "./qualify";
+import { doctorReport } from "./doctor";
 import { formatCents, microCentsToCents } from "../pricing";
 import type { LedgerState, PoolConfig } from "./types";
 
@@ -31,6 +33,8 @@ commands:
   poll        one usage-report poll cycle: fetch, price, append, alert/enforce
   reconcile   compare the ledger against Anthropic's cost report for one day
   credit      record a top-up that happened outside this system (no payment processing)
+  qualify     apply the admission gate to a candidate's slice-1 audit report
+  doctor      go-live health checks: config, ledger, heartbeat, key, launchd
 
 common flags (status, poll, reconcile, credit):
   --config <path>   pool config JSON (see src/pool/config.ts, EXAMPLE_POOL_CONFIG)
@@ -61,7 +65,22 @@ credit flags:
   processing here (spec §10). Running the same member/cents/note on the same UTC day
   twice posts once and dedups the second time.
 
-exit codes: 0 ok, 1 usage or config error, 2 reconciliation out of tolerance.
+qualify flags:
+  --report <path>   the candidate's slice-1 audit JSON (bun run src/cli.ts --json on THEIR machine)
+  --days <n>        how many days the audit's transcripts actually span — stated, never guessed
+  --seat-cents <n>  the seat price in cents (e.g. 3000 = $30.00)
+
+  Applies spec §0's rule: normalized-to-30-days cost STRICTLY under half the seat.
+  Exits 0 qualified, 3 not qualified — so a script can gate on it.
+
+doctor flags:
+  --config <path>  --data <dir>  [--admin-key-env NAME]
+
+  Checks config, data dir, ledger integrity, heartbeat freshness (10-minute dead-man
+  line), admin key presence, and launchd plists. Exits 0 when every fatal check
+  passes; advisory checks (key, plists) print but never fail the run.
+
+exit codes: 0 ok, 1 usage or config error, 2 reconciliation out of tolerance, 3 not qualified.
 
 It reads. The only files it writes live under --data.`;
 
@@ -409,11 +428,92 @@ if (argv.includes("--version")) {
 
 const [command, ...rest] = argv;
 
+function cmdQualify(argv: string[]): void {
+  const reportPath = arg(argv, "report");
+  const daysStr = arg(argv, "days");
+  const seatStr = arg(argv, "seat-cents");
+  if (!reportPath || !daysStr || !seatStr) {
+    console.error("qualify needs --report, --days and --seat-cents\nrun with --help to see what is accepted");
+    process.exit(1);
+  }
+  let reportCents: number;
+  try {
+    const report = JSON.parse(readFileSync(reportPath, "utf8"));
+    reportCents = report?.currentCost?.cents;
+    if (!Number.isInteger(reportCents)) throw new Error("currentCost.cents missing — is this a slice-1 --json report?");
+  } catch (err) {
+    console.error(`cannot read audit report: ${reportPath} — ${(err as Error).message}`);
+    process.exit(1);
+  }
+  let v: ReturnType<typeof qualifyVerdict>;
+  try {
+    v = qualifyVerdict({ reportCents, days: Number(daysStr), seatCents: Number(seatStr) });
+  } catch (err) {
+    console.error((err as Error).message);
+    process.exit(1);
+  }
+  const fmt = (c: number) => formatCents(c);
+  console.log(`audited: ${fmt(reportCents)} over ${daysStr} day(s) → ${fmt(v.normalized30Cents)} per 30 days`);
+  console.log(`gate:    strictly under ${fmt(v.thresholdCents)} (half of the ${fmt(Number(seatStr))} seat)`);
+  if (v.qualified) {
+    console.log("verdict: QUALIFIED — the pool genuinely beats a subscription for this usage");
+  } else {
+    console.log("verdict: NOT QUALIFIED — at this usage a flat subscription is the better deal; say so and point them there");
+    process.exit(3);
+  }
+}
+
+function cmdDoctor(argv: string[]): void {
+  const configPath = arg(argv, "config");
+  const dataDir = arg(argv, "data");
+  if (!configPath || !dataDir) {
+    console.error("doctor needs --config and --data\nrun with --help to see what is accepted");
+    process.exit(1);
+  }
+  const adminEnvName = arg(argv, "admin-key-env") ?? "ANTHROPIC_ADMIN_KEY";
+
+  let configText: string | null = null;
+  try { configText = readFileSync(configPath, "utf8"); } catch { /* reported by the check */ }
+
+  let dataDirWritable = false;
+  try {
+    mkdirSync(dataDir, { recursive: true });
+    const probe = join(dataDir, ".doctor-probe");
+    writeFileSync(probe, "ok");
+    unlinkSync(probe);
+    dataDirWritable = true;
+  } catch { /* reported by the check */ }
+
+  const ledgerPath = join(dataDir, "ledger.jsonl");
+  const ledgerText = existsSync(ledgerPath) ? readFileSync(ledgerPath, "utf8") : "";
+  const healthPath = join(dataDir, "health.json");
+  const healthText = existsSync(healthPath) ? readFileSync(healthPath, "utf8") : null;
+  const plistsPresent = ["com.tokenspread.pool.poll.plist", "com.tokenspread.pool.reconcile.plist"]
+    .every((p) => existsSync(join(process.env.HOME ?? "", "Library", "LaunchAgents", p)));
+
+  const r = doctorReport({
+    configText,
+    dataDirWritable,
+    ledgerText,
+    healthText,
+    adminKeySet: Boolean(process.env[adminEnvName]),
+    plistsPresent,
+    nowIso: nowIso(),
+  });
+  for (const c of r.checks) {
+    console.log(`${c.ok ? "ok  " : c.fatal ? "FAIL" : "warn"}  ${c.name.padEnd(10)} ${c.detail}`);
+  }
+  console.log(r.ok ? "\ndoctor: ready" : "\ndoctor: NOT ready — fix the FAIL lines before going live");
+  if (!r.ok) process.exit(1);
+}
+
 switch (command) {
   case "status": await cmdStatus(rest); break;
   case "poll": await cmdPoll(rest); break;
   case "reconcile": await cmdReconcile(rest); break;
   case "credit": await cmdCredit(rest); break;
+  case "qualify": cmdQualify(rest); break;
+  case "doctor": cmdDoctor(rest); break;
   default:
     console.error(`unknown command: ${command}\nrun with --help to see what is accepted`);
     process.exit(1);

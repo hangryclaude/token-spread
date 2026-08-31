@@ -6,7 +6,7 @@
  * it is the outermost shell: something has to supply the real "now" the rest of the
  * system only ever receives as an injected string.
  */
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   buildCostReportUrl, buildUsageReportUrl, fetchAllPages, pollOnce,
@@ -149,16 +149,19 @@ const fetchFn: typeof fetch = TEST_BASE_URL === undefined
   : (((input: string | URL | Request, init?: RequestInit) =>
       fetch(String(input).replace("https://api.anthropic.com", TEST_BASE_URL), init)) as typeof fetch);
 
-async function cmdStatus(argv: string[]): Promise<void> {
-  const config = loadConfig(argv);
-  const dataDir = loadDataDir(argv);
-  const state = readLedgerState(dataDir);
-  const bals = balances(state);
-  const now = nowIso();
-  const fmt = (mc: number) => formatCents(microCentsToCents(mc));
+interface SeatRow {
+  memberId: string;
+  creditedMicroCents: number;
+  consumedMicroCents: number;
+  balanceMicroCents: number;
+  reserveMicroCents: number;
+  spendableMicroCents: number;
+  hardCap: boolean;
+}
 
-  console.log("member          credited     consumed      balance      reserve    spendable  capped?");
-  for (const member of config.members) {
+function computeSeatRows(config: PoolConfig, state: LedgerState, now: string): SeatRow[] {
+  const bals = balances(state);
+  return config.members.map((member) => {
     const bal = bals.get(member.id) ?? { creditedMicroCents: 0, consumedMicroCents: 0, balanceMicroCents: 0 };
     const memberRows = state.rows.filter((r) => r.memberId === member.id);
     const peak = peakBurnPerMinuteMicroCents(memberRows, { nowIso: now, lookbackDays: config.burnLookbackDays });
@@ -174,10 +177,94 @@ async function cmdStatus(argv: string[]): Promise<void> {
       alreadyAlertedPcts: [],
       thresholds: config.alertThresholdPcts,
     });
+    return {
+      memberId: member.id,
+      creditedMicroCents: bal.creditedMicroCents,
+      consumedMicroCents: bal.consumedMicroCents,
+      balanceMicroCents: bal.balanceMicroCents,
+      reserveMicroCents: reserve,
+      spendableMicroCents: decision.spendableMicroCents,
+      hardCap: decision.hardCap,
+    };
+  });
+}
+
+/**
+ * The member-facing page: money only, no plumbing. Deliberately carries no key or
+ * workspace ids — a member reads their balance, not the infrastructure. Standalone
+ * like slice 1's audit document: no remote stylesheet, font, or script; it opens
+ * offline, from an attachment, on a machine that has never heard of this tool.
+ */
+function renderSeatsHtml(rows: readonly SeatRow[], now: string): string {
+  const fmt = (mc: number) => formatCents(microCentsToCents(mc));
+  const tr = rows.map((r) => `
+    <tr${r.hardCap ? ' class="capped"' : ""}>
+      <td>${r.memberId}</td>
+      <td class="n">${fmt(r.creditedMicroCents)}</td>
+      <td class="n">${fmt(r.consumedMicroCents)}</td>
+      <td class="n">${fmt(r.reserveMicroCents)}</td>
+      <td class="n big">${fmt(r.spendableMicroCents)}</td>
+      <td>${r.hardCap ? "⛔ paused — top up to resume" : "✓ active"}</td>
+    </tr>`).join("");
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pool seats</title>
+<style>
+  body{font:16px/1.6 -apple-system,Helvetica,sans-serif;color:#121917;background:#fff;
+    max-width:760px;margin:0 auto;padding:48px 20px}
+  h1{font-size:26px;letter-spacing:-.02em}
+  p.sub{color:#5c6f66;margin-top:6px;font-size:14px}
+  table{width:100%;border-collapse:collapse;margin-top:28px;font-size:15px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #e3e9e5}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#5c6f66}
+  td.n{font-variant-numeric:tabular-nums;text-align:right}
+  td.big{font-weight:700}
+  tr.capped td{color:#8c3a2e}
+  p.note{color:#5c6f66;font-size:13px;margin-top:26px;line-height:1.7}
+</style>
+</head>
+<body>
+<h1>Pool seats</h1>
+<p class="sub">Prepaid, metered at Anthropic's list rates, zero markup. Generated ${now}.</p>
+<table>
+  <tr><th>member</th><th>paid in</th><th>used</th><th>held back</th><th>spendable</th><th>status</th></tr>${tr}
+</table>
+<p class="note">"Held back" covers the meter's ~7-minute blind window at your own peak burn rate —
+it is still your money, it just can't be promised twice. A paused seat resumes when a top-up is
+recorded; nobody can ever owe anything. Unused credit is refundable when you leave.</p>
+</body>
+</html>
+`;
+}
+
+async function cmdStatus(argv: string[]): Promise<void> {
+  const config = loadConfig(argv);
+  const dataDir = loadDataDir(argv);
+  const state = readLedgerState(dataDir);
+  const now = nowIso();
+  const fmt = (mc: number) => formatCents(microCentsToCents(mc));
+  const rows = computeSeatRows(config, state, now);
+
+  const htmlIdx = argv.indexOf("--html");
+  if (htmlIdx !== -1) {
+    const outPath = argv[htmlIdx + 1];
+    if (!outPath) {
+      console.error("--html needs a path\nrun with --help to see what is accepted");
+      process.exit(1);
+    }
+    writeFileSync(outPath, renderSeatsHtml(rows, now));
+    console.log(`wrote ${outPath} — ${rows.length} seats, no ids, safe to send to members`);
+  }
+
+  console.log("member          credited     consumed      balance      reserve    spendable  capped?");
+  for (const r of rows) {
     console.log(
-      `${member.id.padEnd(15)} ${fmt(bal.creditedMicroCents).padStart(11)} ${fmt(bal.consumedMicroCents).padStart(12)} ` +
-      `${fmt(bal.balanceMicroCents).padStart(12)} ${fmt(reserve).padStart(11)} ${fmt(decision.spendableMicroCents).padStart(12)}  ` +
-      `${decision.hardCap ? "yes" : "no"}`,
+      `${r.memberId.padEnd(15)} ${fmt(r.creditedMicroCents).padStart(11)} ${fmt(r.consumedMicroCents).padStart(12)} ` +
+      `${fmt(r.balanceMicroCents).padStart(12)} ${fmt(r.reserveMicroCents).padStart(11)} ${fmt(r.spendableMicroCents).padStart(12)}  ` +
+      `${r.hardCap ? "yes" : "no"}`,
     );
   }
 

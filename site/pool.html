@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%233DDC84'/%3E%3C/svg%3E">
+<title>The Pool — metered seats, zero markup</title>
+<meta name="description" content="A private pool of prepaid Claude API seats for people who use a little. Metered at Anthropic's list rates, zero markup, hard-capped so nobody can ever owe anything.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tokens Saved">
+<meta property="og:title" content="The Pool — metered seats, zero markup">
+<meta property="og:description" content="Prepaid Claude API seats among friends. Metered at list rates, zero markup, hard-capped: nobody can ever owe anything.">
+<meta property="og:image" content="assets/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Pool — metered seats, zero markup">
+<meta name="twitter:description" content="Prepaid Claude API seats among friends. Metered at list rates, zero markup, hard-capped: nobody can ever owe anything.">
+<meta name="twitter:image" content="assets/img/og.jpg">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131313" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="pool.html">
+<script>document.documentElement.classList.add("js")</script>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .seatrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(13rem,100%),1fr));gap:1.1rem}
+  .seat-fig{background:var(--bg-2);border-radius:var(--r-20);padding:1.5rem 1.4rem}
+  .seat-fig .n{font-size:clamp(1.6rem,3.4vw,2.1rem);font-weight:var(--w-med);letter-spacing:-.03em;
+    font-variant-numeric:tabular-nums;display:block}
+  .seat-fig .l{font-size:.86rem;color:var(--ink-2);margin-top:.35rem;display:block}
+  .ladder{display:flex;flex-direction:column;gap:.55rem;margin-top:.4rem}
+  .rung{display:grid;grid-template-columns:5.2rem 1fr;gap:.9rem;align-items:baseline;font-size:.93rem}
+  .rung b{font-variant-numeric:tabular-nums;color:var(--ink)}
+  .rung span{color:var(--ink-2)}
+  .rung.stop b{color:#8c3a2e}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+
+<nav><div class="inner">
+  <a class="brand" href="index.html"><span class="dot"></span>Tokens Saved</a>
+  <div class="links">
+    <a href="how.html">How it works</a>
+    <a href="methods.html" class="hide-sm">Methods</a>
+    <a href="pricing.html">Pricing</a>
+    <a class="btn pri sm" href="pricing.html#audit">Free audit</a>
+  </div>
+</div></nav>
+
+<header class="page-head">
+  <div class="orbwrap" data-orbs aria-hidden="true"></div>
+  <div class="wrap"><div class="head">
+  <p class="eyebrow">The pool</p>
+  <h1>Prepaid seats. Metered honestly. Nobody owes anything.</h1>
+  <p class="lede">A private pool of Claude API seats for people who use a little: pay in what you
+    like, spend it at Anthropic's own list rates with zero markup, and get switched off — never
+    billed — the moment your credit runs out.</p>
+</div></div></header>
+
+<main id="content" tabindex="-1">
+
+<section><div class="wrap stack reveal">
+  <div class="head">
+    <p class="eyebrow">The whole deal</p>
+    <h2>Four steps, one of which is Venmo.</h2>
+    <p class="lede">There is no checkout, no subscription, no card on file. Money moves between
+      people; the ledger only ever records it.</p>
+  </div>
+  <div class="flow">
+    <span class="on">venmo</span><i>→</i><span class="on">credit recorded</span><i>→</i>
+    <span class="on">your own API key</span><i>→</i><span>metered until it's spent</span>
+  </div>
+  <p class="note">Your seat is your own Anthropic workspace and your own key — no shared logins,
+    nothing against the rules. Claude Code picks the key up from one environment variable and
+    works exactly as it always does.</p>
+</div></section>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
+    <p class="eyebrow">What a $30 seat looks like</p>
+    <h2>Pay in any amount. Watch it, or don't — the meter watches for you.</h2>
+    <p class="lede">Every minute of usage is priced at Anthropic's published rates and subtracted
+      from your balance. You get told before it matters, and stopped before it costs anyone.</p>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>The ladder down</h3>
+      <div class="ladder">
+        <div class="rung"><b>$30.00</b><span>paid in — recorded the day it arrives</span></div>
+        <div class="rung"><b>$15.00</b><span>50% used — first heads-up</span></div>
+        <div class="rung"><b>$6.00</b><span>80% used — second heads-up</span></div>
+        <div class="rung"><b>$1.50</b><span>95% used — last heads-up</span></div>
+        <div class="rung stop"><b>$0</b><span>spendable gone — key paused, not billed</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>The held-back sliver</h3>
+      <p>Anthropic's usage meter runs about five minutes behind reality. A small slice of your
+        balance — your own peak burn rate times that blind window — is held back so the pause
+        always lands before zero. It's still your money; it just can't be promised twice.</p>
+      <p class="note" style="margin-top:.8rem">Paused means paused: top up and it resumes. Debt is
+        not a state this system has.</p>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
+    <p class="eyebrow">Who it's for</p>
+    <h2>Light users only — and we check, with a measurement.</h2>
+    <p class="lede">Before a seat exists, the free audit runs on your machine and prices your last
+      thirty days of Claude usage at list rates. Under half the seat price: you're in, and the pool
+      genuinely saves you money versus a flat subscription.</p>
+  </div>
+  <div class="seatrow">
+    <div class="seat-fig"><span class="n">$0.00</span><span class="l">markup, by design — metered cost
+      is the whole price. Charging more would be resale, which Anthropic's terms prohibit.</span></div>
+    <div class="seat-fig"><span class="n">$8,100</span><span class="l">what one heavy Claude Code user
+      metered in 26 days. If your audit reads like that, a flat subscription is your deal — the pool
+      will tell you so and point you there.</span></div>
+    <div class="seat-fig"><span class="n">100%</span><span class="l">of unused credit is refundable
+      when you leave. It was always your money.</span></div>
+  </div>
+  <p class="note">The pool is 3–5 people who know each other, prepaid, run at cost by one operator
+    who carries the liability. It is deliberately not a product for strangers.</p>
+</div></section>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
+    <p class="eyebrow">The receipts</p>
+    <h2>Two meters, and they check each other nightly.</h2>
+    <p class="lede">Your balance page is generated from an append-only ledger that prices every
+      request itself — and every night that ledger is compared against Anthropic's own cost report.
+      If they ever disagree by more than a cent and a rounding hair, everything freezes until a
+      human explains why.</p>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>What you see</h3>
+      <p>A one-page balance sheet: paid in, used, held back, spendable, status. No dashboards, no
+        login — it's a file, sent to you, that opens anywhere.</p></div>
+    <div class="card"><h3>What you never see</h3>
+      <p>Your prompts. The meter reads token counts and dollar amounts from Anthropic's usage API —
+        the content of what you ask Claude never passes through the pool at all.</p></div>
+  </div>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  <div class="fl">
+    <a class="brand" href="index.html" style="margin-bottom:.4rem"><span class="dot"></span>Tokens Saved</a>
+    <a href="how.html">How it works</a>
+    <a href="methods.html">Methods</a>
+    <a href="pricing.html">Pricing</a>
+  </div>
+  <small>Seats are Anthropic API workspaces metered at published list rates.<br>
+    Contact <a href="mailto:angus@angusbuilds.com">angus@angusbuilds.com</a><br>
+    <span data-sc-tbd>&mdash; to supply &mdash;</span> legal entity &middot; terms &middot; privacy policy &middot; data processing agreement<br><br>
+    Zero markup is a design constraint, not a promotion. Rates and meter freshness are Anthropic's,
+    current as of August 2026.</small>
+</div></footer>
+
+<script type="module" src="assets/fx.js"></script>
+<script type="module">
+import { initOrbField } from "./assets/orbfield.js";
+try { document.querySelectorAll("[data-orbs]").forEach((el) => initOrbField(el, { count: 14, scale: .82 })); }
+catch (err) { console.info("orb field skipped, page continues flat:", err); }
+window.__ready = true;
+</script>
+</body>
+</html>

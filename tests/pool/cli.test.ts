@@ -246,3 +246,26 @@ test("poll runs end to end through the CLI process boundary against a stub Admin
     server.stop(true);
   }
 });
+
+test("status --html writes a standalone member page: balances in, key ids out", async () => {
+  const dataDir = tmpDataDir();
+  const configPath = writeConfig(dataDir, {
+    members: [{ id: "member-b", workspaceId: "wrkspc_b", apiKeyId: "apikey_b" }],
+  });
+  // $20.00 credit = 2000 cents; no usage yet, so balance = spendable = $20.00
+  // and the page must say so.
+  await run(["credit", "--config", configPath, "--data", dataDir,
+    "--member", "member-b", "--cents", "2000", "--note", "seed"]);
+  const out = join(dataDir, "seats.html");
+  const r = await run(["status", "--config", configPath, "--data", dataDir, "--html", out]);
+  expect(r.code).toBe(0);
+  const html = readFileSync(out, "utf8");
+  expect(html).toContain("member-b");
+  expect(html).toContain("$20.00");
+  // Members see money, never plumbing: no key ids, no workspace ids on the page.
+  expect(html).not.toContain("apikey_");
+  expect(html).not.toContain("wrkspc");
+  // Standalone: no external stylesheet, script, or font — it opens from an attachment.
+  expect(html).not.toMatch(/<link[^>]+(href=")?http/);
+  expect(html).not.toContain("<script src=");
+});

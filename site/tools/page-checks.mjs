@@ -49,7 +49,7 @@ const FULL = ARGS.includes('--full');
 const ORIGIN = process.env.SITE_ORIGIN || 'http://localhost:8740';
 const DEFAULT_PAGES = [
   'index-scroll.html', 'index.html', 'how.html', 'methods.html',
-  'pricing.html', 'sample-audit.html', '404.html',
+  'pricing.html', 'pool.html', 'sample-audit.html', '404.html',
 ].map((p) => `${ORIGIN}/${p}`);
 const URLS = ARGS.filter((a) => !a.startsWith('--'));
 const PAGES = URLS.length ? URLS : DEFAULT_PAGES;

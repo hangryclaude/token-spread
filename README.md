@@ -28,7 +28,7 @@ margin). By serving the **same request to the same model** more cheaply than the
 it direct. That gap is the business, and it survives scrutiny only because nothing about the
 request changes.
 
-token-spread is two things built to the same discipline. First, a **276-test**, zero-runtime-
+token-spread is two things built to the same discipline. First, a **277-test**, zero-runtime-
 dependency Bun/TypeScript CLI (**4,186** lines of source) that reads local Claude Code transcripts
 or an Anthropic admin usage report and turns real token counts into a report on what your spend
 actually is and what caching could recover — reads only, writes nothing you didn't ask for.
@@ -42,7 +42,7 @@ for a document; 0 prompts are ever read.
 
 <p align="center">
 
-![tests](https://img.shields.io/badge/tests-276%20passing-brightgreen) ![register](https://img.shields.io/badge/register-371%20adjudicated-blue) ![pass](https://img.shields.io/badge/pass-81%2F371-informational) ![license](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-lightgrey) ![runtime deps](https://img.shields.io/badge/runtime%20deps-0-success) ![runtime](https://img.shields.io/badge/runtime-bun-black) ![skills](https://img.shields.io/badge/skills-8-orange)
+![tests](https://img.shields.io/badge/tests-277%20passing-brightgreen) ![register](https://img.shields.io/badge/register-371%20adjudicated-blue) ![pass](https://img.shields.io/badge/pass-81%2F371-informational) ![license](https://img.shields.io/badge/license-MIT%20%2B%20CC--BY--4.0-lightgrey) ![runtime deps](https://img.shields.io/badge/runtime%20deps-0-success) ![runtime](https://img.shields.io/badge/runtime-bun-black) ![skills](https://img.shields.io/badge/skills-8-orange)
 
 </p>
 
@@ -53,13 +53,13 @@ quote any verdict, credit the source, so a correction can reach you. <a href="CI
 
 ```bash
 # clone
-git clone https://github.com/hangryclaude/token-spread.git && cd token-spread
+git clone https://github.com/angusbuilds/token-spread.git && cd token-spread
 bun install && bun run audit
 ```
 
 ```bash
 # or: curl the tarball, no git required
-curl -sL https://github.com/hangryclaude/token-spread/archive/refs/heads/main.tar.gz | tar xz
+curl -sL https://github.com/angusbuilds/token-spread/archive/refs/heads/main.tar.gz | tar xz
 cd token-spread-main && bun install && bun run audit
 ```
 
@@ -186,14 +186,14 @@ signup, no rate limit. One file per adjudication cohort, listed in
 [`cohorts.json`](docs/research/cohorts.json):
 
 ```bash
-curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-10-verdicts-final.json
-curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-12-addendum.json
-curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-17-sweep-12-recovered.json
-curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-17-sweep-13.json
-curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-19-sweep-14.json
-curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-20-sweep-15.json
-curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-21-sweep-16.json
-curl -sL https://raw.githubusercontent.com/hangryclaude/token-spread/main/docs/research/2026-08-30-sweep-17.json
+curl -sL https://raw.githubusercontent.com/angusbuilds/token-spread/main/docs/research/2026-08-10-verdicts-final.json
+curl -sL https://raw.githubusercontent.com/angusbuilds/token-spread/main/docs/research/2026-08-12-addendum.json
+curl -sL https://raw.githubusercontent.com/angusbuilds/token-spread/main/docs/research/2026-08-17-sweep-12-recovered.json
+curl -sL https://raw.githubusercontent.com/angusbuilds/token-spread/main/docs/research/2026-08-17-sweep-13.json
+curl -sL https://raw.githubusercontent.com/angusbuilds/token-spread/main/docs/research/2026-08-19-sweep-14.json
+curl -sL https://raw.githubusercontent.com/angusbuilds/token-spread/main/docs/research/2026-08-20-sweep-15.json
+curl -sL https://raw.githubusercontent.com/angusbuilds/token-spread/main/docs/research/2026-08-21-sweep-16.json
+curl -sL https://raw.githubusercontent.com/angusbuilds/token-spread/main/docs/research/2026-08-30-sweep-17.json
 ```
 
 The format is documented in [`SCHEMA.md`](docs/research/SCHEMA.md) and enforced by
@@ -598,7 +598,7 @@ turns that would decide it is not in that data.
 ## Two ways in
 
 ```bash
-git clone https://github.com/hangryclaude/token-spread.git
+git clone https://github.com/angusbuilds/token-spread.git
 cd token-spread && bun install
 ```
 
@@ -824,7 +824,7 @@ traffic. The example is the shape, not your bill.
 
 ```bash
 bun install                              # no runtime deps
-bun run test        # 276 tests
+bun run test        # 277 tests
 bun run typecheck   # no type errors
 bun run src/cli.ts --dir ~/.claude/projects
 ```
@@ -938,7 +938,7 @@ A tool that always finds a saving is not measuring anything.
 
 | Path | What it does | Status |
 |---|---|---|
-| `tests/` | one suite per module + acceptance and read-only gates — 276 passing across 32 files | passing |
+| `tests/` | one suite per module + acceptance and read-only gates — 277 passing across 32 files | passing |
 | `fixtures/` | synthetic transcripts + hand-computed expected values, no real transcripts in the suite | synthetic |
 | `bench/optical/` | does text-as-an-image buy context? measured, published | benchmarked |
 | `bench/margin-model.ts` | regenerates the worked-example table and waterfall image from the real pricing path | stable |

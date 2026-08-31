@@ -33,6 +33,26 @@
   .rung b{font-variant-numeric:tabular-nums;color:var(--ink)}
   .rung span{color:var(--ink-2)}
   .rung.stop b{color:#8c3a2e}
+  /* calc idiom borrowed from pricing.html (page-scoped there too) */
+  .calc{display:grid;grid-template-columns:minmax(0,19rem) minmax(0,1fr);gap:1.15rem;align-items:start}
+  @media (max-width:700px){.calc{grid-template-columns:minmax(0,1fr)}}
+  .fld{display:flex;flex-direction:column;gap:.3rem}
+  .fld label{font-size:.82rem;color:var(--ink-2);display:flex;justify-content:space-between;
+    align-items:baseline;gap:.6rem}
+  .fld .v{color:var(--ink);font-weight:var(--w-med);font-size:.92rem;font-variant-numeric:tabular-nums}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;
+    background:var(--bg-2);border-radius:var(--r-full);cursor:pointer;margin:.45rem 0}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;
+    border-radius:50%;background:var(--acc-text);border:3px solid var(--bg-2);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--acc-text);
+    border:3px solid var(--bg-2);cursor:pointer}
+  .out{display:flex;flex-direction:column;gap:.9rem}
+  .bar{display:grid;grid-template-columns:6.5rem 1fr 5.5rem;gap:.8rem;align-items:center;font-size:.86rem}
+  .bar .nm{color:var(--ink)} .bar.off .nm,.bar.off .amt{color:var(--ink-3)}
+  .bar .tr{height:12px;background:var(--bg-2);border-radius:var(--r-full);overflow:hidden}
+  .bar .tr i{display:block;height:100%;background:var(--acc-text);border-radius:var(--r-full);
+    transition:width .3s cubic-bezier(.4,0,.2,1)}
+  .bar .amt{text-align:right;color:var(--ink-2);font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -107,6 +127,48 @@
 
 <section><div class="wrap stack reveal">
   <div class="head">
+    <p class="eyebrow">The math</p>
+    <h2>Credit doesn't expire. Subscriptions do.</h2>
+    <p class="lede">That one asymmetry is the whole saving. A subscription charges you for the
+      month whether you showed up or not; a prepaid seat only ever spends when you do. Move the
+      slider to your real usage and watch where the money goes.</p>
+  </div>
+  <div class="calc" data-poolcalc>
+    <div class="module">
+      <div class="rowcard"><div class="fld">
+        <label for="pc-use">Your real metered month <span class="v" id="pc-use-v">$6</span></label>
+        <input type="range" id="pc-use" min="1" max="30" step="1" value="6">
+      </div></div>
+      <div class="rowcard"><div class="fld">
+        <label for="pc-top">Your top-up <span class="v" id="pc-top-v">$30</span></label>
+        <input type="range" id="pc-top" min="10" max="100" step="5" value="30">
+      </div></div>
+      <p class="note" style="margin-top:.4rem">Metered at Anthropic's list rates with the cache
+        discount real Claude Code traffic earns — measured $0.72 per million tokens on this
+        machine's own transcripts, so $6 is ~8.3M tokens of actual work.</p>
+    </div>
+    <div class="out">
+      <div class="figs">
+        <div class="fig"><span class="k">Your top-up lasts</span><span class="v acc" id="pc-months">5.0 months</span><span class="n">nothing expires</span></div>
+        <div class="fig"><span class="k">Pro over that span</span><span class="v" id="pc-pro">$100</span><span class="n">$20 × the months</span></div>
+        <div class="fig"><span class="k">You keep</span><span class="v acc" id="pc-save">$70</span><span class="n" id="pc-pct">70% of what Pro takes</span></div>
+      </div>
+      <div class="module" style="padding:1.3rem;gap:.7rem">
+        <div class="bar" id="pc-b-pool"><span class="nm">The pool</span><span class="tr"><i style="width:30%"></i></span><span class="amt" id="pc-b-pool-amt">$30</span></div>
+        <div class="bar off" id="pc-b-pro"><span class="nm">Claude Pro</span><span class="tr"><i style="width:100%"></i></span><span class="amt" id="pc-b-pro-amt">$100</span></div>
+      </div>
+      <p class="note" id="pc-verdict">Under the seat gate ($6 &lt; half of $30) — you're exactly who
+        this is for.</p>
+    </div>
+  </div>
+  <p class="note">Two honest edges of this math. Past $20 a month of real usage, Pro simply wins —
+    the audit will say so and the pool will point you there. And versus opening your own API
+    account the pool saves $0, because the markup is zero: same rates, minus the console setup,
+    plus the hard cap and the Venmo.</p>
+</div></section>
+
+<section><div class="wrap stack reveal">
+  <div class="head">
     <p class="eyebrow">Who it's for</p>
     <h2>Light users only — and we check, with a measurement.</h2>
     <p class="lede">Before a seat exists, the free audit runs on your machine and prices your last
@@ -163,6 +225,45 @@
 
 <script type="module" src="assets/fx.js"></script>
 <script type="module">
+// The seat calculator. Every number is derived here from three constants; the markup's
+// default values are the same math pre-computed at use=$6, top=$30, so the page tells
+// the truth with JS off. PRO is Claude Pro's monthly price as of Aug 2026; BLEND is the
+// measured blended $/MTok from this machine's slice-1 audit (96.4% cache reads).
+const PRO = 20, BLEND = 0.72;
+const $ = (id) => document.getElementById(id);
+const use = $("pc-use"), top = $("pc-top");
+function money(n){ return "$" + (Number.isInteger(n) ? n : n.toFixed(2)); }
+function recalc(){
+  const u = Number(use.value), t = Number(top.value);
+  $("pc-use-v").textContent = money(u);
+  $("pc-top-v").textContent = money(t);
+  const months = t / u;
+  const pro = PRO * months;
+  const save = pro - t;
+  const mtok = u / BLEND;
+  $("pc-months").textContent = months.toFixed(1) + " months";
+  $("pc-pro").textContent = money(Math.round(pro));
+  $("pc-save").textContent = money(Math.round(Math.max(save, 0)));
+  $("pc-pct").textContent = save > 0
+    ? Math.round((1 - u / PRO) * 100) + "% of what Pro takes"
+    : "—";
+  $("pc-b-pool-amt").textContent = money(t);
+  $("pc-b-pro-amt").textContent = money(Math.round(pro));
+  const maxBar = Math.max(t, pro);
+  $("pc-b-pool").querySelector("i").style.width = (t / maxBar * 100).toFixed(1) + "%";
+  $("pc-b-pro").querySelector("i").style.width = (pro / maxBar * 100).toFixed(1) + "%";
+  const verdict = $("pc-verdict");
+  if (u >= PRO) {
+    verdict.textContent = `At ${money(u)} a month, Claude Pro is simply the better deal — the audit would say so and the pool would point you there.`;
+  } else if (u * 2 > t) {
+    verdict.textContent = `${money(u)} a month is over half a ${money(t)} seat — the admission gate wants a bigger top-up or lighter usage, so nobody joins a pool that barely helps them.`;
+  } else {
+    verdict.textContent = `Under the seat gate (${money(u)} < half of ${money(t)}) — you're exactly who this is for, spending ~${mtok.toFixed(1)}M tokens of real work a month.`;
+  }
+}
+use.addEventListener("input", recalc);
+top.addEventListener("input", recalc);
+recalc();
 import { initOrbField } from "./assets/orbfield.js";
 try { document.querySelectorAll("[data-orbs]").forEach((el) => initOrbField(el, { count: 14, scale: .82 })); }
 catch (err) { console.info("orb field skipped, page continues flat:", err); }

@@ -8,12 +8,12 @@ message: "If you cite a verdict from this register, please cite it as below."
 type: dataset
 authors:
   - given-names: Angus
-    alias: hangryclaude
-repository-code: "https://github.com/hangryclaude/token-spread"
+    alias: angusbuilds
+repository-code: "https://github.com/angusbuilds/token-spread"
 abstract: >-
-  187 LLM cost-reduction techniques adjudicated against a single question — does the model read a
+  371 LLM cost-reduction techniques adjudicated against a single question — does the model read a
   different sequence of tokens, does a different model answer, or does a different amount of
-  thinking happen? 67 pass, 28 pass on the provider's word alone, 52 are rejected, and 40 are
+  thinking happen? 81 pass, 95 pass on the provider's word alone, 135 are rejected, and 60 are
   unresolved and published as unresolved. The register publishes what it rejected, what it could
   not settle, and its own dated errata, including four entries expelled from the passing column
   when their cited sources failed verification.
@@ -24,5 +24,5 @@ keywords:
   - adjudication
   - reproducibility
 license: CC-BY-4.0
-date-released: "2026-08-13"
-version: "2026.08.13"
+date-released: "2026-08-31"
+version: "2026.08.31"

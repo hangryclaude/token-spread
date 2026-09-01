@@ -49,7 +49,7 @@ h1 em{font-style:normal;color:#3ddc84}
 </style></head><body>
   <img class="bg" src="${b64("docs/media/art/og.jpg", "image/jpeg")}">
   <div class="veil"></div>
-  <div class="top"><div class="dot"></div><div class="name">hangryclaude/token-spread</div></div>
+  <div class="top"><div class="dot"></div><div class="name">angusbuilds/token-spread</div></div>
   <h1>The same request.<br>The same model.<br><em>A smaller bill.</em></h1>
   <div class="strip">
     <div class="s"><b class="acc">${entries.length}</b><span>techniques adjudicated</span></div>

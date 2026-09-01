@@ -121,6 +121,17 @@ const READERS: Record<string, Record<string, RegExp>> = {
     rejected: /pass on the provider's word alone, (\d+) rejected outright/,
     unresolved: /rejected outright, (\d+) unresolved and stated as unresolved/,
   },
+  /* CITATION.cff is what GitHub's "Cite this repository" button hands out, and it carried the
+     founding 187/67/28/52/40 snapshot for eighteen days after the register left it behind — the
+     one copy of the tally aimed squarely at readers who will reprint it under their own byline.
+     The \s+ at the phrase joins is where YAML's folded scalar may rewrap the abstract. */
+  "CITATION.cff": {
+    total: /(\d+) LLM cost-reduction techniques\s+adjudicated/,
+    pass: /happen\?\s+(\d+) pass\b/,
+    contractual: /(\d+) pass on the provider's\s+word alone/,
+    rejected: /(\d+) are\s+rejected/,
+    unresolved: /(\d+) are\s+unresolved and published as\s+unresolved/,
+  },
 };
 
 for (const [page, reader] of Object.entries(READERS)) {
@@ -165,6 +176,7 @@ const SCANNED = [
   "site/methods.html",
   "site/index-scroll.html",
   "docs/research/SCHEMA.md",
+  "CITATION.cff",
 ];
 const BUCKET_WORD = /(\d{1,4}) (?:candidates?|techniques?|entries|passes|pass|rejected|unresolved|survives?|survive)\b/gi;
 const SUM = /adds? to (\d+)/gi;

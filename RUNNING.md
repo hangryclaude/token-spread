@@ -22,7 +22,7 @@ pass `--html`.
 ## Setup
 
 ```bash
-git clone https://github.com/hangryclaude/token-spread.git
+git clone https://github.com/angusbuilds/token-spread.git
 cd token-spread
 bun install          # the tool imports only Node builtins; these are dev deps
 ```
@@ -111,7 +111,7 @@ asserted by a test.
 ## Verify the build
 
 ```bash
-bun run test        # 276 tests
+bun run test        # 277 tests
 bunx tsc --noEmit   # no type errors
 ```
 

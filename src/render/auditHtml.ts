@@ -179,7 +179,7 @@ ${r.warnings.map((w) => `<div class="warn">${esc(w)}</div>`).join("\n")}` : ""}
 
 <h2>What this audit checked</h2>
 <p class="note">Each lever family below cites the public register entries behind it
-  (<code>hangryclaude/token-spread</code>, docs/research). The rows marked
+  (<code>angusbuilds/token-spread</code>, docs/research). The rows marked
   <em>invisible</em> are load-bearing: they say what token-count data structurally cannot
   see, so an absence in this document reads as "checked and not visible", never "not checked".</p>
 <div class="scroll"><table>
